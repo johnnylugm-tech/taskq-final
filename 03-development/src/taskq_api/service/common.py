@@ -23,7 +23,8 @@ from taskq_api.errors import ValidationProblem, redact_secrets
 # FR-01 AC-1.2 — injection-character blacklist.
 # We ban characters that have no legitimate use in shell-style command lines
 # (backticks, $(), ;, &&, |, >, <, \n) — keeps the input purely as data,
-# which matches SAD.md §2.7's "no shell=True" posture.
+# which matches SAD.md §2.7's no-shell posture (commands are always spawned
+# as an argv list, never handed to a shell — see taskq_api.service.runner).
 _INJECTION_CHARS = re.compile(r"[`$();|&><\n\r]")
 
 

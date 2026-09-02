@@ -185,6 +185,52 @@ class TaskRepository:
                 )
         return {"id": task_id}
 
+    def update_status(self, task_id: str, status: str) -> bool:
+        """[FR-02 AC-2.3] Move one task to a new state; ``False`` if unknown.
+
+        The FR-02 state machine (``pending -> running -> done | failed |
+        timeout``) is sequenced by the service layer; this method is the
+        single write path for the ``status`` column.
+        """
+        with _LOCK:
+            row = _TASKS.get(task_id)
+            if row is None:
+                return False
+            row.status = status
+            return True
+
+    def add_result(
+        self,
+        task_id: str,
+        exit_code: int,
+        stdout_tail: str,
+        stderr_tail: str,
+        duration_ms: int,
+        run_id: Optional[str] = None,
+    ) -> dict:
+        """[FR-02 AC-2.4] Persist one ``task_results`` row in the v3 schema.
+
+        ``run_id`` lets the caller reuse the id it already handed back in the
+        ``202 Accepted`` body, so the run the client polls for and the row it
+        finds are the same record. ``finished_at`` is stamped here — the row
+        only exists once the process has finished.
+
+        Citations: SPEC.md line 98 (v3 columns).
+        """
+        with _LOCK:
+            rid = run_id or str(uuid.uuid4())
+            row = RunRow(
+                id=rid,
+                task_id=task_id,
+                exit_code=exit_code,
+                stdout_tail=stdout_tail,
+                stderr_tail=stderr_tail,
+                duration_ms=duration_ms,
+                finished_at=_now(),
+            )
+            _RESULTS[rid] = row
+            return _run_to_dict(row)
+
     # -- reads ----------------------------------------------------------
 
     def get(self, task_id: str) -> Optional[dict]:

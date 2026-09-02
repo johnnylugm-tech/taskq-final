@@ -21,6 +21,7 @@ from fastapi.responses import JSONResponse
 from taskq_api.api.deps import require_scope
 from taskq_api.errors import ForbiddenProblem, ValidationProblem
 from taskq_api.models.schemas import TaskCreate
+from taskq_api.service import runner as service_runner
 from taskq_api.service import tasks as service_tasks
 from taskq_api.service.auth import Principal
 
@@ -155,6 +156,33 @@ async def delete_task(
     _assert_scope(principal, _ADMIN_ONLY)
     service_tasks.delete_task(task_id)
     return JSONResponse(status_code=204, content=None)
+
+
+@router.post(
+    "/{task_id}/run",
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Run a task",
+    description=(
+        "[FR-02 AC-2.1] Accepts the task for execution and returns 202 with "
+        "a `run_id`; a task already in the `running` state is rejected with "
+        "409 + problem+json. Requires scope=write."
+    ),
+)
+async def run_task(
+    task_id: str,
+    principal: Principal = Depends(require_scope),
+) -> JSONResponse:
+    """[FR-02 AC-2.1, AC-2.3] `POST /v1/tasks/{id}/run` (scope=write).
+
+    Answers ``202 Accepted`` with the ``run_id`` the caller polls for via
+    `GET /v1/tasks/{id}/runs`. The command that executes is the task's own
+    registered ``command`` — the request body never becomes the argv source.
+
+    Citations: SPEC.md line 95 (202 + run_id), line 97 (state machine).
+    """
+    _assert_scope(principal, _WRITE_OR_HIGHER)
+    run_id = service_runner.start_run(task_id)
+    return JSONResponse(status_code=202, content={"run_id": run_id})
 
 
 @router.get(
