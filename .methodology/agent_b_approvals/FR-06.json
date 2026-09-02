@@ -1,0 +1,39 @@
+{
+  "review_status": "APPROVE",
+  "reason": "All 5 FR-06 normative requirements have load-bearing assertions that fail when violated: Req-1 (repository-only/no-Session-in-business) → line 768; Req-2 (commit/rollback via CM) → lines 295 & 307; Req-3 (no string-concat SQL) → lines 422 & 435; Req-4 (eager loading / no N+1) → line 584; Req-5 (pool_size/pre_ping) → lines 808 & 820.",
+  "citations": [
+    "SPEC.md:124",
+    "SPEC.md:125",
+    "SPEC.md:126",
+    "SPEC.md:127",
+    "SPEC.md:128",
+    "tests/test_fr06.py:295",
+    "tests/test_fr06.py:307",
+    "tests/test_fr06.py:422",
+    "tests/test_fr06.py:435",
+    "tests/test_fr06.py:584",
+    "tests/test_fr06.py:768",
+    "tests/test_fr06.py:808",
+    "tests/test_fr06.py:820"
+  ],
+  "docs_embedded": [
+    "SPEC.md"
+  ],
+  "gaps": [],
+  "criteria_review": {
+    "requirement_path": "SPEC.md",
+    "declared_tests": [
+      "test_eager_loading_no_n_plus_one",
+      "test_no_string_sql_concat",
+      "test_session_rollback_on_exception"
+    ],
+    "assertion_digests": {
+      "test_eager_loading_no_n_plus_one": "931fee64b0bef0700777ca664a6a5ea7daf0e7f4d33718e53893c34a524ec5c9",
+      "test_no_string_sql_concat": "7e1cbb93aedec0c347932047b2f4cfda0a03fe30fce74808a63a0aca9b62e6c5",
+      "test_session_rollback_on_exception": "175ded28a3c95498f120218c567a3e9dad7e998b94d09f15f09f96da8d48849b"
+    },
+    "test_files": [
+      "tests/test_fr06.py"
+    ]
+  }
+}
