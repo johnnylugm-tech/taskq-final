@@ -446,6 +446,63 @@ def test_rate_bucket_concurrent_no_overdraft(asgi_client, auth_write):
         f"be enforcing the cap. statuses={statuses!r}"
     )
 
+    # SPEC.md line 119 — the row-level lock requirement. A behavioral
+    # assertion on the success ceiling alone cannot distinguish a
+    # DB-backed row lock from an in-process asyncio.Lock. Pin the
+    # DB-persistence invariant directly: after the concurrent firing,
+    # the ``rate_buckets`` table MUST contain a row keyed by the
+    # principal's ``key_id`` (the auth chokepoint already exposes
+    # ``Principal.key_id``). If the implementation skipped the DB and
+    # held the bucket purely in an asyncio.Lock, this row would not
+    # exist and the assertion would fail.
+    from sqlalchemy import select
+
+    from taskq_api.models.orm import RateBucket
+    from taskq_api.repository.session import get_engine
+    from taskq_api.service.auth import hash_key
+
+    principal_key_id = hash_key("test-write-key")[:16]
+    bucket_tokens = None
+    with get_engine().connect() as conn:
+        bucket_row = conn.execute(
+            select(RateBucket).where(RateBucket.key_id == principal_key_id)
+        ).first()
+        if bucket_row is not None:
+            # SQLAlchemy 2.x connection-level execute returns a Row
+            # keyed by column name. Access via ``._mapping`` to read
+            # the ``tokens`` column without ORM-class coupling.
+            mapping = getattr(bucket_row, "_mapping", None)
+            if mapping is not None:
+                bucket_tokens = int(mapping["tokens"])
+            elif hasattr(bucket_row, "tokens"):
+                bucket_tokens = int(bucket_row.tokens)
+            else:
+                bucket_tokens = int(bucket_row[0])
+
+    # The bucket row is the canonical proof that the limiter consulted
+    # the DB during the concurrent firing. A missing row means the
+    # implementation is NOT persisting bucket state to the database —
+    # SPEC.md line 119 requires row-level lock semantics backed by DB
+    # storage, not an in-process asyncio.Lock (the only thing that
+    # could explain a missing row here).
+    assert bucket_tokens is not None, (
+        f"FR-05 AC-5.3 violated: rate_buckets row for key_id "
+        f"{principal_key_id!r} not found in DB after {concurrency} "
+        f"concurrent /v1/tasks requests; the bucket is NOT being "
+        f"persisted to the database — SPEC.md line 119 requires "
+        f"row-level lock semantics backed by DB storage, not an "
+        f"in-process asyncio.Lock (which is the only thing that "
+        f"could explain the missing row)"
+    )
+    # Belt-and-braces — the persisted tokens field is an integer
+    # between 0 and the bucket capacity. A non-numeric or wildly
+    # out-of-range value indicates the row was written by something
+    # other than the rate-limiter (or was corrupted).
+    assert 0 <= bucket_tokens <= int(burst), (
+        f"FR-05 AC-5.3 violated: persisted rate_buckets.tokens "
+        f"={bucket_tokens!r} is outside [0, {burst}]"
+    )
+
 
 # ---------------------------------------------------------------------------
 # Case 4: `test_healthz_returns_200`
@@ -457,7 +514,7 @@ def test_rate_bucket_concurrent_no_overdraft(asgi_client, auth_write):
 # ---------------------------------------------------------------------------
 
 def test_healthz_returns_200(asgi_client):
-    """FR-05 AC-5.4 — ``/healthz`` and ``/readyz`` are NOT rate-limited.
+    """FR-05 AC-5.4 — ``/healthz`` AND ``/readyz`` are NOT rate-limited.
 
     Same case as FR-03 #5 / FR-09 #1 (probes don't need auth and
     don't have a bucket). This test pins the rate-limit angle: hit
@@ -465,6 +522,12 @@ def test_healthz_returns_200(asgi_client):
     every answer is 200 — if the rate-limit dependency accidentally
     wraps the health router, the probe would 429 and bring the
     service down under a probe storm.
+
+    SPEC.md line 120 names BOTH ``/healthz`` AND ``/readyz`` as
+    rate-limit-exempt; this single declared test pins both, since
+    TEST_SPEC case 4 only names the function symbol (the test
+    runner walks the function body and both probe endpoints are
+    exercised here).
 
     Sub-assertions:
       - FR05-AC-5.4-rate-exempt : endpoint == "/healthz"
@@ -510,6 +573,27 @@ def test_healthz_returns_200(asgi_client):
             f"statuses {statuses!r}; the endpoint MUST be exempt "
             f"from rate limiting (SPEC.md line 120)"
         )
+
+    # Belt-and-braces — ``/readyz`` is the OTHER probe endpoint named
+    # in SPEC.md line 120; the rate-limit dependency must skip it for
+    # the same reason as ``/healthz`` (probe storms would otherwise
+    # flip readiness). This is a direct, in-process check that does
+    # NOT depend on the DB (``/readyz`` would 503 when the DB is
+    # unreachable — that's still a non-429 response and the
+    # rate-limit invariant holds).
+    readyz_responses = []
+    for _ in range(burst_capacity + 5):
+        readyz_responses.append(
+            _run(asgi_client.get("/readyz", headers=headers))
+        )
+    readyz_statuses = [int(r.status_code) for r in readyz_responses]
+    readyz_429s = [s for s in readyz_statuses if s == 429]
+    assert not readyz_429s, (
+        f"FR-05 AC-5.4 violated: /readyz returned 429 "
+        f"{len(readyz_429s)} times in {burst_capacity + 5} requests "
+        f"(statuses={readyz_statuses!r}); SPEC.md line 120 says "
+        f"/readyz MUST be exempt from rate limiting"
+    )
 
 
 # ---------------------------------------------------------------------------
