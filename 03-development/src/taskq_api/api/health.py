@@ -67,7 +67,10 @@ async def readyz() -> JSONResponse:
 
     Both checks delegate to :mod:`taskq_api.service.health` — the
     handler never reaches into the repository directly (NFR-06
-    layering).
+    layering). ``is_migration_at_head()`` encapsulates the
+    ``current == head`` invariant (including the ``None`` →
+    "no migrations applied" case) so the handler stays a flat
+    list of named checks.
     """
     if not _health.is_database_ready():
         return JSONResponse(
@@ -77,8 +80,7 @@ async def readyz() -> JSONResponse:
                 "detail": "database unavailable",
             },
         )
-    current = _health.current_alembic_revision()
-    if current != _health.alembic_head():
+    if not _health.is_migration_at_head():
         return JSONResponse(
             status_code=503,
             content={
