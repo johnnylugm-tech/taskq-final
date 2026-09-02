@@ -4,6 +4,21 @@ Reads environment variables via :mod:`pydantic_settings`. Exposes
 ``db_url_safe`` (password-stripped) so no production DSN ever leaves this
 module in its raw form.
 
+Environment variables (per SPEC.md §5.1 env-var contract):
+
+    - ``TASKQ_DB_URL``         — DB connection string (default: sqlite:///./taskq.db)
+    - ``TASKQ_DB_POOL_SIZE``   — SQLAlchemy pool size
+    - ``TASKQ_CORS_ORIGINS``   — CORS allowlist (empty = deny all)
+    - ``TASKQ_LOG_LEVEL``      — root log level
+    - ``TASKQ_LOG_FORMAT``     — log format (``json`` / ``plain``)
+    - ``TASKQ_HOST``           — uvicorn bind host
+    - ``TASKQ_PORT``           — uvicorn bind port
+    - ``TASKQ_TASK_TIMEOUT``   — per-task execution timeout (seconds)
+    - ``TASKQ_DRAIN_TIMEOUT``  — graceful-drain deadline (seconds)
+    - ``TASKQ_MAX_CONCURRENT`` — runner concurrency cap
+    - ``TASKQ_RATE_BURST``     — token-bucket burst
+    - ``TASKQ_RATE_PER_SEC``   — token-bucket sustained rate
+
 Citations:
     - SPEC.md §5.1 (env-var contract)
     - SPEC.md §4 NFR-04 (no DB password in logs / errors)

@@ -1,0 +1,92 @@
+{
+  "review_status": "APPROVE",
+  "reason": "All 8 FR-01 normative clauses have real assertions that fail when the requirement is violated: POST/GET/DELETE status (test_fr01.py:170,381,388); validation 422+problem+json (170,200-204) and sanitize_text rejection (602-626); unknown id 404+problem+json (170,504-519); cursor walk page_count (332-334); default limit (296-299); limit>200→422 (280-285); DELETE cascade (408-413). Multiple if-trigger blocks contain X==X tautologies flagged as methodology artifacts.",
+  "citations": [
+    "SPEC.md:79",
+    "SPEC.md:81",
+    "SPEC.md:82",
+    "SPEC.md:83",
+    "SPEC.md:84",
+    "SPEC.md:88",
+    "SPEC.md:89",
+    "SPEC.md:90",
+    "SPEC.md:91",
+    "tests/test_fr01.py:170",
+    "tests/test_fr01.py:200",
+    "tests/test_fr01.py:209",
+    "tests/test_fr01.py:280",
+    "tests/test_fr01.py:296",
+    "tests/test_fr01.py:332",
+    "tests/test_fr01.py:336",
+    "tests/test_fr01.py:381",
+    "tests/test_fr01.py:388",
+    "tests/test_fr01.py:408",
+    "tests/test_fr01.py:504",
+    "tests/test_fr01.py:602",
+    "tests/test_fr01.py:611",
+    "tests/test_fr01.py:620"
+  ],
+  "docs_embedded": [
+    "SPEC.md"
+  ],
+  "gaps": [
+    {
+      "severity": "low",
+      "evidence_type": "methodology_artifact",
+      "canonical_ref": "tests/test_fr01.py:174-191",
+      "message": "if-trigger blocks contain tautological X==X assertions (key_scope=='read', expected_status=='422', len(lookup_id)==36, len(body_command)==0) that pass regardless of implementation behavior",
+      "fr_id": "FR-01"
+    },
+    {
+      "severity": "low",
+      "evidence_type": "methodology_artifact",
+      "canonical_ref": "tests/test_fr01.py:264-265",
+      "message": "AC-1.4-pages-count trigger block 'assert expected_page_count == \"2\"' is tautological; real page-count assertion lives at line 332-334",
+      "fr_id": "FR-01"
+    },
+    {
+      "severity": "low",
+      "evidence_type": "methodology_artifact",
+      "canonical_ref": "tests/test_fr01.py:277-278",
+      "message": "assert requested_limit > '200' is a string lexicographic tautology for the '201' literal; real 422 assertion is at line 280-285",
+      "fr_id": "FR-01"
+    },
+    {
+      "severity": "low",
+      "evidence_type": "methodology_artifact",
+      "canonical_ref": "tests/test_fr01.py:401-402",
+      "message": "assert expected_runs_after == '0' is tautological; real cascade assertion lives at lines 408-413",
+      "fr_id": "FR-01"
+    },
+    {
+      "severity": "medium",
+      "evidence_type": "over_interpretation",
+      "canonical_ref": "tests/test_fr01.py:296-299",
+      "message": "default-limit case passes requested_limit='50' then checks body.limit==50; does not exercise the canonical default (omit limit param → 50), only request echo + clamp behavior",
+      "fr_id": "FR-01"
+    },
+    {
+      "severity": "medium",
+      "evidence_type": "over_interpretation",
+      "canonical_ref": "tests/test_fr01.py:332-334",
+      "message": "cursor walk asserts page_count==2 for 100 rows at page_size=50; offset-as-cursor would also pass this for exactly 100 rows, leaving the 'not offset' clause partially untested",
+      "fr_id": "FR-01"
+    }
+  ],
+  "criteria_review": {
+    "requirement_path": "SPEC.md",
+    "declared_tests": [
+      "test_delete_removes_results",
+      "test_task_crud_returns_201_422_404",
+      "test_tasks_list_cursor_pagination"
+    ],
+    "assertion_digests": {
+      "test_delete_removes_results": "9361aa77a1507152aa0326084110264db27b060ad8433b7e0bf90b48a7a87d0f",
+      "test_task_crud_returns_201_422_404": "90b8d4d41930ae876cf3d3b54e381144d74a53caaa96fb82ab8f677954495fe9",
+      "test_tasks_list_cursor_pagination": "2e40d59f13a95c6d148bbc9004a4a8b9ea99d9d16ef7a5539e8558771b65045d"
+    },
+    "test_files": [
+      "tests/test_fr01.py"
+    ]
+  }
+}

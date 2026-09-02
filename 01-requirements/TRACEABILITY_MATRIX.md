@@ -58,13 +58,19 @@ stage's legal set:
 - Phase 4 testing: `04-testing/TEST_PLAN.md`, `04-testing/TEST_RESULTS.md`.
 - Phase 5 verification: `05-verification/BASELINE.md`, `05-verification/VERIFICATION_REPORT.md`.
 - Phase 6 quality: `06-quality/FINAL_SIGN_OFF.md`, `06-quality/QUALITY_REPORT.md`,
-  `06-quality/RELEASE_NOTES.md`, `06-config/quality_manifest.json` *(Phase 6 deliverable group)*.
+  `06-quality/RELEASE_NOTES.md`, plus the `quality_manifest` deliverable at
+  `.methodology/quality_manifest.json` *(Phase 6 deliverable group; not a `06-quality/` doc)*.
 - Phase 7 risk: `07-risk/RISK_REGISTER.md`, `07-risk/RISK_MITIGATION_PLANS.md`,
   `07-risk/RISK_STATUS_REPORT.md`.
-- Phase 8 config: `08-config/CONFIG_RECORDS.md`, `08-config/RELEASE_CHECKLIST.md`,
-  `08-config/SBOM.json`.
+- Phase 8 config: `08-config/CONFIG_RECORDS.md`, `08-config/RELEASE_CHECKLIST.md`.
 
 Never invent filenames (e.g. do NOT use `ARCHITECTURE.md` for P2 — use `SAD.md`).
+
+> **Artifacts vs. stage deliverables.** `08-config/SBOM.json` (cited by NFR-07 in
+> §3 / §4 / §5) is a *build artifact* mandated by `SPEC.md` line 240 and
+> `01-requirements/SRS.md` §4 NFR-07 — not a stage deliverable document. It is
+> intentionally excluded from the legal-filename sets above; the same applies to
+> `.importlinter`, `requirements.lock`, and `Makefile`.
 
 ---
 
