@@ -1,9 +1,9 @@
 # Harness-executed: pytest-cov
 # returncode: 0
-# agent_score: 100.0 | threshold: 80.0
+# agent_score: 85.8 | threshold: 80.0
 
-........................................................................ [ 57%]
-.....................................................                    [100%]
+........................................................................ [ 55%]
+.........................................................                [100%]
 =============================== warnings summary ===============================
 .venv/lib/python3.11/site-packages/starlette/formparsers.py:12
   /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
@@ -28,7 +28,7 @@ Name                                                         Stmts   Miss  Cover
 03-development/src/taskq_api/api/health.py                      12      1    92%   30
 03-development/src/taskq_api/api/metrics.py                     11      1    91%   52
 03-development/src/taskq_api/api/tasks.py                       55      0   100%
-03-development/src/taskq_api/app.py                             33      1    97%   77
+03-development/src/taskq_api/app.py                             47     11    77%   60-74, 109
 03-development/src/taskq_api/config.py                          33     11    67%   64-74
 03-development/src/taskq_api/errors.py                          41      0   100%
 03-development/src/taskq_api/models/__init__.py                  0      0   100%
@@ -45,8 +45,8 @@ Name                                                         Stmts   Miss  Cover
 03-development/src/taskq_api/service/common.py                  25      0   100%
 03-development/src/taskq_api/service/health.py                   4      0   100%
 03-development/src/taskq_api/service/ratelimit.py               23      1    96%   92
-03-development/src/taskq_api/service/runner.py                  72     10    86%   94, 116-119, 125, 127, 185-186, 218
+03-development/src/taskq_api/service/runner.py                 157     13    92%   166, 286, 337, 354, 376-379, 385, 387, 445-446, 478
 03-development/src/taskq_api/service/tasks.py                   29      0   100%
 ------------------------------------------------------------------------------------------
-TOTAL                                                         1017     35    97%
-125 passed, 1 warning in 3.23s
+TOTAL                                                         1116     48    96%
+129 passed, 1 warning in 4.48s
