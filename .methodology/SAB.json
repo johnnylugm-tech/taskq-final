@@ -78,7 +78,9 @@
         "migrations.versions.v2_tags",
         "migrations.versions.v3_split_results",
         "migrations.versions._shared",
-        "taskq_api"
+        "taskq_api",
+        "migrations",
+        "migrations.versions"
       ],
       "allowed_dependencies": []
     }
