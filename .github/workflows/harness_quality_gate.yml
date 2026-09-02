@@ -95,6 +95,7 @@ jobs:
         # G-02 fix: P6 no longer skipped — run-phase --phase 6 is safe in CI (no interactive gate eval).
         env:
           PHASE: ${{ steps.phase.outputs.PHASE }}
+          GH_TOKEN: ${{ github.token }}
         run: python harness/harness_cli.py run-phase --phase $PHASE --project .
 
 
