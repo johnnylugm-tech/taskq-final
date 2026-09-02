@@ -60,6 +60,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -698,3 +699,1123 @@ def test_v3_data_migration_round_trip_preserves_columns(
             f"{row_count}, expected {expected_row_count_after} ("
             f"sample_count={sample_count})"
         )
+
+
+# ---------------------------------------------------------------------------
+# Direct coverage tests for ``migrations.env`` (env.py).
+#
+# The existing parametrized cases run alembic as a SUBPROCESS — so the
+# ``run_migrations_online`` / ``run_migrations_offline`` / ``_dispatch``
+# branches in env.py never run in the parent process and are therefore
+# missed by coverage. We exercise them here by patching the alembic
+# context proxy directly.
+# ---------------------------------------------------------------------------
+
+
+def test_env_configure_logging_when_config_file_name_set(monkeypatch):
+    """env._configure_logging_if_available invokes ``fileConfig`` when the
+    alembic runtime proxy supplies ``config_file_name``.
+    """
+    import migrations.env as env_module
+
+    mock_cfg = MagicMock()
+    mock_cfg.config_file_name = "/tmp/fake_alembic.ini"
+    monkeypatch.setattr(
+        env_module, "_alembic_context", lambda: MagicMock(config=mock_cfg)
+    )
+
+    calls: list[str] = []
+    monkeypatch.setattr(
+        env_module, "fileConfig", lambda name: calls.append(name)
+    )
+
+    env_module._configure_logging_if_available()
+    assert calls == ["/tmp/fake_alembic.ini"]
+
+
+def test_env_configure_logging_when_config_file_name_none(monkeypatch):
+    """env._configure_logging_if_available is a no-op when the alembic
+    proxy does NOT supply a config file name.
+    """
+    import migrations.env as env_module
+
+    mock_cfg = MagicMock()
+    mock_cfg.config_file_name = None
+    monkeypatch.setattr(
+        env_module, "_alembic_context", lambda: MagicMock(config=mock_cfg)
+    )
+
+    calls: list[str] = []
+    monkeypatch.setattr(
+        env_module, "fileConfig", lambda name: calls.append(name)
+    )
+
+    env_module._configure_logging_if_available()
+    assert calls == []
+
+
+def test_env_run_migrations_offline_direct(monkeypatch):
+    """env.run_migrations_offline sets ``sqlalchemy.url``, calls
+    ``context.configure`` and runs migrations inside a transaction.
+    """
+    import migrations.env as env_module
+
+    cfg = MagicMock()
+    cfg.config_file_name = None
+    cfg.get_main_option.return_value = "sqlite:///offline.db"
+
+    tx_ctx = MagicMock()
+    tx_ctx.__enter__ = MagicMock(return_value=tx_ctx)
+    tx_ctx.__exit__ = MagicMock(return_value=None)
+
+    ctx = MagicMock()
+    ctx.config = cfg
+    ctx.begin_transaction.return_value = tx_ctx
+
+    monkeypatch.setattr(env_module, "_alembic_context", lambda: ctx)
+
+    env_module.run_migrations_offline()
+
+    cfg.set_main_option.assert_any_call("sqlalchemy.url", env_module._settings.db_url)
+    cfg.get_main_option.assert_called_with("sqlalchemy.url")
+    ctx.configure.assert_called_once()
+    kwargs = ctx.configure.call_args.kwargs
+    assert kwargs["literal_binds"] is True
+    assert kwargs["dialect_opts"] == {"paramstyle": "named"}
+    assert ctx.run_migrations.called
+
+
+def test_env_run_migrations_online_direct(monkeypatch, tmp_path):
+    """env.run_migrations_online opens a live DB connection and runs
+    migrations inside a transaction.
+    """
+    from sqlalchemy import create_engine
+
+    import migrations.env as env_module
+
+    db_url = f"sqlite:///{tmp_path}/online.db"
+    engine = create_engine(db_url, future=True)
+
+    def fake_engine_from_config(cfg_section, prefix, poolclass=None):
+        # ``poolclass=pool.NullPool`` must be accepted but is unused here.
+        return engine
+
+    monkeypatch.setattr(
+        env_module, "engine_from_config", fake_engine_from_config
+    )
+
+    cfg = MagicMock()
+    cfg.config_file_name = None
+    cfg.get_section.return_value = {"sqlalchemy.url": db_url}
+
+    tx_ctx = MagicMock()
+    tx_ctx.__enter__ = MagicMock(return_value=tx_ctx)
+    tx_ctx.__exit__ = MagicMock(return_value=None)
+
+    ctx = MagicMock()
+    ctx.config = cfg
+    ctx.begin_transaction.return_value = tx_ctx
+
+    monkeypatch.setattr(env_module, "_alembic_context", lambda: ctx)
+
+    env_module.run_migrations_online()
+
+    cfg.set_main_option.assert_any_call("sqlalchemy.url", env_module._settings.db_url)
+    cfg.get_section.assert_called_once()
+    ctx.configure.assert_called_once()
+    assert ctx.run_migrations.called
+
+
+def test_env_dispatch_routes_to_offline(monkeypatch):
+    """env._dispatch routes to ``run_migrations_offline`` when
+    ``is_offline_mode()`` returns ``True``.
+    """
+    import migrations.env as env_module
+
+    ctx = MagicMock()
+    ctx.is_offline_mode.return_value = True
+    monkeypatch.setattr(env_module, "_alembic_context", lambda: ctx)
+
+    offline_calls = MagicMock()
+    online_calls = MagicMock()
+    monkeypatch.setattr(env_module, "run_migrations_offline", offline_calls)
+    monkeypatch.setattr(env_module, "run_migrations_online", online_calls)
+
+    env_module._dispatch()
+
+    offline_calls.assert_called_once_with()
+    online_calls.assert_not_called()
+
+
+def test_env_dispatch_routes_to_online(monkeypatch):
+    """env._dispatch routes to ``run_migrations_online`` when
+    ``is_offline_mode()`` returns ``False``.
+    """
+    import migrations.env as env_module
+
+    ctx = MagicMock()
+    ctx.is_offline_mode.return_value = False
+    monkeypatch.setattr(env_module, "_alembic_context", lambda: ctx)
+
+    offline_calls = MagicMock()
+    online_calls = MagicMock()
+    monkeypatch.setattr(env_module, "run_migrations_offline", offline_calls)
+    monkeypatch.setattr(env_module, "run_migrations_online", online_calls)
+
+    env_module._dispatch()
+
+    online_calls.assert_called_once_with()
+    offline_calls.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# Direct coverage tests for ``migrations.versions._shared``.
+#
+# These call the helpers directly so coverage tracks the function bodies
+# (subprocess alembic invocations do not surface coverage here either).
+# ---------------------------------------------------------------------------
+
+
+def test_shared_task_id_column_shape():
+    """``_shared.task_id_column`` returns a non-nullable FK column
+    referencing ``tasks.id``. Attach the column to a Table so the FK
+    can resolve its parent column.
+    """
+    import sqlalchemy as sa
+
+    from migrations.versions._shared import task_id_column
+
+    col = task_id_column()
+    assert isinstance(col, sa.Column)
+    assert col.name == "task_id"
+    assert col.nullable is False
+    assert len(list(col.foreign_keys)) == 1
+    # The FK must target the canonical ``tasks.id`` column.
+    fk = list(col.foreign_keys)[0]
+    assert fk.target_fullname == "tasks.id"
+
+    # Round-trip: attach the column to a Table, create it on an engine,
+    # and inspect the FK metadata using the SAME engine (a fresh
+    # :memory: engine would not have the table).
+    meta = sa.MetaData()
+    tasks = sa.Table("tasks", meta, sa.Column("id", sa.String(length=36), primary_key=True))
+    sa.Table(
+        "results", meta,
+        col,
+    )
+    engine = _create_mem_engine()
+    meta.create_all(engine)
+    insp = sa.inspect(engine)
+    fk_cols = insp.get_foreign_keys("results")
+    assert len(fk_cols) == 1
+    assert fk_cols[0]["referred_table"] == "tasks"
+    assert fk_cols[0]["referred_columns"] == ["id"]
+
+
+def test_shared_utc_now_default_name():
+    """``_shared.utc_now`` returns a non-nullable ``DateTime(timezone=True)``
+    column with a server default (default name ``created_at``).
+    """
+    import sqlalchemy as sa
+
+    from migrations.versions._shared import utc_now
+
+    col = utc_now()
+    assert isinstance(col, sa.Column)
+    assert col.name == "created_at"
+    assert col.nullable is False
+    assert type(col.type) is sa.DateTime
+    assert col.type.timezone is True
+    assert col.server_default is not None
+
+
+def test_shared_utc_now_custom_name():
+    """``_shared.utc_now(name=...)`` honours the explicit column name."""
+    from migrations.versions._shared import utc_now
+
+    col = utc_now(name="updated_at")
+    assert col.name == "updated_at"
+
+
+def test_shared_copy_rows_with_rowcount(tmp_path):
+    """``_shared.copy_rows`` returns ``result.rowcount`` when the
+    underlying DBAPI driver exposes it (SQLite via SQLAlchemy does).
+    """
+    import sqlalchemy as sa
+    from sqlalchemy import create_engine
+
+    from migrations.versions._shared import copy_rows
+
+    engine = create_engine(f"sqlite:///{tmp_path}/copy.db", future=True)
+    meta = sa.MetaData()
+    src = sa.Table(
+        "src", meta,
+        sa.Column("id", sa.Integer, primary_key=True),
+        sa.Column("val", sa.String),
+    )
+    tgt = sa.Table(
+        "tgt", meta,
+        sa.Column("id", sa.Integer, primary_key=True),
+        sa.Column("val", sa.String),
+    )
+    meta.create_all(engine)
+
+    with engine.begin() as conn:
+        conn.execute(src.insert().values(id=1, val="a"))
+        conn.execute(src.insert().values(id=2, val="b"))
+        conn.execute(src.insert().values(id=3, val="c"))
+
+    # ``engine.begin()`` auto-commits so the copy is visible to a
+    # subsequent connection. ``engine.connect()`` leaves an open
+    # transaction whose writes are invisible until commit.
+    with engine.begin() as conn:
+        n = copy_rows(
+            conn,
+            source_table=src,
+            target_table=tgt,
+            column_map={"id": "id", "val": "val"},
+        )
+
+    assert n == 3
+
+    with engine.connect() as conn:
+        rows = conn.execute(sa.select(tgt.c.id, tgt.c.val).order_by(tgt.c.id)).all()
+    assert [(r[0], r[1]) for r in rows] == [(1, "a"), (2, "b"), (3, "c")]
+
+
+def test_shared_copy_rows_fallback_count_when_no_rowcount(tmp_path, monkeypatch):
+    """``_shared.copy_rows`` falls back to a COUNT(*) on the target
+    table when ``result.rowcount`` is ``None`` (the branch at the end
+    of the helper).
+    """
+    import sqlalchemy as sa
+    from sqlalchemy import create_engine
+
+    from migrations.versions._shared import copy_rows
+
+    engine = create_engine(f"sqlite:///{tmp_path}/copy_norc.db", future=True)
+    meta = sa.MetaData()
+    src = sa.Table(
+        "src", meta,
+        sa.Column("id", sa.Integer, primary_key=True),
+        sa.Column("val", sa.String),
+    )
+    tgt = sa.Table(
+        "tgt", meta,
+        sa.Column("id", sa.Integer, primary_key=True),
+        sa.Column("val", sa.String),
+    )
+    meta.create_all(engine)
+
+    with engine.begin() as conn:
+        conn.execute(src.insert().values(id=1, val="x"))
+        conn.execute(src.insert().values(id=2, val="y"))
+
+    # Patch the SA insert result so ``rowcount`` is None — exercises the
+    # fallback path (line ~96 of _shared/__init__.py).
+    import sqlalchemy.sql.dml as _dml
+    real_insert = _dml.Insert.from_select
+
+    def fake_from_select(self, cols, select):
+        stmt = real_insert(self, cols, select)
+        return stmt
+
+    with engine.connect() as conn:
+        with monkeypatch.context() as m:
+            # Override ``bind.execute`` to wrap the Insert result.
+            original_execute = conn.execute
+
+            def wrapped_execute(stmt, *args, **kwargs):
+                result = original_execute(stmt, *args, **kwargs)
+                if isinstance(stmt, sa.Insert):
+                    class _NoRowcountResult:
+                        def __init__(self, inner):
+                            self._inner = inner
+
+                        @property
+                        def rowcount(self):
+                            return None
+
+                        def fetchall(self):
+                            return self._inner.fetchall()
+
+                        def fetchone(self):
+                            return self._inner.fetchone()
+
+                        def scalar(self):
+                            return self._inner.scalar()
+
+                        def first(self):
+                            return self._inner.first()
+
+                    return _NoRowcountResult(result)
+
+                return result
+
+            m.setattr(conn, "execute", wrapped_execute)
+            n = copy_rows(
+                conn,
+                source_table=src,
+                target_table=tgt,
+                column_map={"id": "id", "val": "val"},
+            )
+
+    # Fallback counts the target table — should still be 2.
+    assert n == 2
+
+
+def test_shared_json_loads_safe_valid_dict():
+    """``_shared.json_loads_safe`` parses a valid JSON dict."""
+    from migrations.versions._shared import json_loads_safe
+
+    assert json_loads_safe('{"a": 1, "b": "two"}') == {"a": 1, "b": "two"}
+
+
+def test_shared_json_loads_safe_invalid_returns_none():
+    """``_shared.json_loads_safe`` returns ``None`` on malformed JSON."""
+    from migrations.versions._shared import json_loads_safe
+
+    assert json_loads_safe("not json at all") is None
+
+
+def test_shared_json_loads_safe_empty_returns_none():
+    """``_shared.json_loads_safe`` returns ``None`` on empty string."""
+    from migrations.versions._shared import json_loads_safe
+
+    assert json_loads_safe("") is None
+
+
+def test_shared_json_loads_safe_none_input():
+    """``_shared.json_loads_safe`` returns ``None`` on ``None`` input."""
+    from migrations.versions._shared import json_loads_safe
+
+    assert json_loads_safe(None) is None
+
+
+def test_shared_json_loads_safe_non_dict_returns_none():
+    """``_shared.json_loads_safe`` returns ``None`` when the JSON parses
+    to a non-dict (e.g. an array).
+    """
+    from migrations.versions._shared import json_loads_safe
+
+    assert json_loads_safe("[1, 2, 3]") is None
+
+
+# ---------------------------------------------------------------------------
+# Direct coverage tests for the revision scripts.
+#
+# Like env.py, the alembic subprocess runs the migration scripts in a
+# child process — coverage on the parent does not see them. We call
+# ``upgrade()`` / ``downgrade()`` directly here, patching the module's
+# ``op`` proxy with a SQLAlchemy-backed ``alembic.operations.Operations``
+# bound to a fresh in-process SQLite engine.
+# ---------------------------------------------------------------------------
+
+
+def _fresh_operations(engine):
+    """Return a fresh ``alembic.operations.Operations`` bound to ``engine``."""
+    from alembic.operations import Operations
+    from alembic.runtime.migration import MigrationContext
+
+    with engine.connect() as _conn:
+        ctx = MigrationContext.configure(_conn)
+    # Return a fresh operations; subsequent calls reuse the same connection
+    # pattern via the engine's connection-pool.
+    return ctx, Operations
+
+
+def _create_mem_engine():
+    """Helper: fresh in-memory SQLite engine for FK introspection."""
+    from sqlalchemy import create_engine
+
+    return create_engine("sqlite:///:memory:", future=True)
+
+
+def test_v1_initial_upgrade_creates_tables(tmp_path):
+    """v1_initial.upgrade() creates ``tasks`` and ``api_keys`` with the
+    expected columns; the unique ``api_keys.key_hash`` index is present.
+    """
+    from alembic.operations import Operations
+    from alembic.runtime.migration import MigrationContext
+    from sqlalchemy import create_engine, inspect
+
+    import migrations.versions.v1_initial as v1
+
+    engine = create_engine(f"sqlite:///{tmp_path}/v1.db", future=True)
+    with engine.connect() as conn:
+        ctx = MigrationContext.configure(conn)
+        op = Operations(ctx)
+        # ``v1_initial.op`` is the module-level proxy ``from alembic import op``;
+        # we monkey-patch it to the bound Operations for this test.
+        original_op = v1.op
+        v1.op = op
+        try:
+            v1.upgrade()
+        finally:
+            v1.op = original_op
+
+    insp = inspect(engine)
+    tables = sorted(insp.get_table_names())
+    assert "api_keys" in tables
+    assert "tasks" in tables
+    task_cols = {c["name"] for c in insp.get_columns("tasks")}
+    assert {"id", "name", "command", "status", "created_at", "result_json"} <= task_cols
+    api_cols = {c["name"] for c in insp.get_columns("api_keys")}
+    assert {"id", "key_hash", "scope", "created_at", "revoked_at"} <= api_cols
+
+    # UNIQUE index on ``api_keys.key_hash`` (the v1 surface that the
+    # AC-7.1 downgrade contract relies on).
+    indexes = insp.get_indexes("api_keys")
+    assert any(
+        idx["name"] == "ix_api_keys_key_hash" and idx.get("unique", False)
+        for idx in indexes
+    )
+
+
+def test_v1_initial_downgrade_drops_tables(tmp_path):
+    """v1_initial.downgrade() drops both ``tasks`` and ``api_keys`` and
+    the unique ``api_keys.key_hash`` index.
+    """
+    from alembic.operations import Operations
+    from alembic.runtime.migration import MigrationContext
+    from sqlalchemy import create_engine, inspect
+
+    import migrations.versions.v1_initial as v1
+
+    engine = create_engine(f"sqlite:///{tmp_path}/v1_dn.db", future=True)
+    with engine.connect() as conn:
+        ctx = MigrationContext.configure(conn)
+        op = Operations(ctx)
+        original_op = v1.op
+        v1.op = op
+        try:
+            v1.upgrade()
+        finally:
+            v1.op = original_op
+
+    # Now downgrade on a fresh connection.
+    with engine.connect() as conn:
+        ctx = MigrationContext.configure(conn)
+        op = Operations(ctx)
+        original_op = v1.op
+        v1.op = op
+        try:
+            v1.downgrade()
+        finally:
+            v1.op = original_op
+
+    insp = inspect(engine)
+    tables = insp.get_table_names()
+    assert "tasks" not in tables
+    assert "api_keys" not in tables
+
+
+def test_v2_tags_upgrade_creates_tags_task_tags_and_unique(tmp_path):
+    """v2_tags.upgrade() adds ``tags``, ``task_tags`` and a UNIQUE index
+    on ``tasks.name`` (the FR-01 duplicate-name guard).
+    """
+    from alembic.operations import Operations
+    from alembic.runtime.migration import MigrationContext
+    from sqlalchemy import create_engine, inspect
+
+    import migrations.versions.v1_initial as v1
+    import migrations.versions.v2_tags as v2
+
+    engine = create_engine(f"sqlite:///{tmp_path}/v2.db", future=True)
+
+    # First apply v1 (FK target for task_tags.task_id must exist).
+    with engine.connect() as conn:
+        ctx = MigrationContext.configure(conn)
+        op = Operations(ctx)
+        original_op = v1.op
+        v1.op = op
+        try:
+            v1.upgrade()
+        finally:
+            v1.op = original_op
+
+    # Then apply v2.
+    with engine.connect() as conn:
+        ctx = MigrationContext.configure(conn)
+        op = Operations(ctx)
+        original_op = v2.op
+        v2.op = op
+        try:
+            v2.upgrade()
+        finally:
+            v2.op = original_op
+
+    insp = inspect(engine)
+    tables = sorted(insp.get_table_names())
+    assert {"tags", "task_tags"} <= set(tables)
+
+    # Unique index on tasks.name
+    task_indexes = insp.get_indexes("tasks")
+    assert any(
+        idx["name"] == "uq_tasks_name" and idx.get("unique", False)
+        for idx in task_indexes
+    )
+
+    # UniqueConstraint on tags.name
+    tag_unique = insp.get_unique_constraints("tags")
+    assert any(uc["name"] == "uq_tags_name" for uc in tag_unique)
+
+
+def test_v2_tags_downgrade_drops_v2_only(tmp_path):
+    """v2_tags.downgrade() drops the UNIQUE index, ``task_tags`` and
+    ``tags`` — leaving the v1 ``tasks`` / ``api_keys`` rows intact.
+    """
+    from alembic.operations import Operations
+    from alembic.runtime.migration import MigrationContext
+    from sqlalchemy import create_engine, inspect, text
+
+    import migrations.versions.v1_initial as v1
+    import migrations.versions.v2_tags as v2
+
+    engine = create_engine(f"sqlite:///{tmp_path}/v2_dn.db", future=True)
+
+    # Apply v1 + v2 with a seeded tasks row.
+    with engine.connect() as conn:
+        ctx = MigrationContext.configure(conn)
+        op = Operations(ctx)
+        original_op = v1.op
+        v1.op = op
+        try:
+            v1.upgrade()
+        finally:
+            v1.op = original_op
+
+    with engine.connect() as conn:
+        ctx = MigrationContext.configure(conn)
+        op = Operations(ctx)
+        original_op = v2.op
+        v2.op = op
+        try:
+            v2.upgrade()
+        finally:
+            v2.op = original_op
+
+    with engine.begin() as conn:
+        conn.execute(text(
+            "INSERT INTO tasks (id, name, command, status) "
+            "VALUES ('task-keep', 'kept', 'echo hi', 'pending')"
+        ))
+
+    # Downgrade v2 only.
+    with engine.connect() as conn:
+        ctx = MigrationContext.configure(conn)
+        op = Operations(ctx)
+        original_op = v2.op
+        v2.op = op
+        try:
+            v2.downgrade()
+        finally:
+            v2.op = original_op
+
+    insp = inspect(engine)
+    tables = insp.get_table_names()
+    assert "tags" not in tables
+    assert "task_tags" not in tables
+    assert "tasks" in tables  # v1 surface intact
+
+    with engine.connect() as conn:
+        row = conn.execute(text(
+            "SELECT name FROM tasks WHERE id = 'task-keep'"
+        )).first()
+    assert row is not None and row[0] == "kept"
+
+
+def test_v3_split_results_upgrade_splits_and_copies(tmp_path):
+    """v3_split_results.upgrade() creates ``task_results``, copies every
+    ``tasks.result_json`` row into it (splitting the JSON blob into the
+    v3 column set), then drops ``tasks.result_json``.
+    """
+    import json as _json
+    from alembic.operations import Operations
+    from alembic.runtime.migration import MigrationContext
+    from sqlalchemy import create_engine, inspect, text
+
+    import migrations.versions.v1_initial as v1
+    import migrations.versions.v2_tags as v2
+    import migrations.versions.v3_split_results as v3
+
+    engine = create_engine(f"sqlite:///{tmp_path}/v3.db", future=True)
+
+    # ``engine.begin()`` is required so the migration DDL / DML commits
+    # before the next block runs — ``engine.connect()`` leaves an open
+    # transaction whose DDL is rolled back when the block exits.
+    with engine.begin() as conn:
+        ctx = MigrationContext.configure(conn)
+        op = Operations(ctx)
+        original_v1_op = v1.op
+        v1.op = op
+        try:
+            v1.upgrade()
+        finally:
+            v1.op = original_v1_op
+
+    with engine.begin() as conn:
+        ctx = MigrationContext.configure(conn)
+        op = Operations(ctx)
+        original_v2_op = v2.op
+        v2.op = op
+        try:
+            v2.upgrade()
+        finally:
+            v2.op = original_v2_op
+
+    # Build the v1-shaped result_json payloads via ``json.dumps`` and
+    # bind them as SQL parameters — avoids the ``:0`` / ``:1`` bind-param
+    # trap when JSON literals are interpolated directly into SQL strings.
+    single_payload = _json.dumps({
+        "exit_code": 0,
+        "stdout_tail": "a",
+        "stderr_tail": "",
+        "duration_ms": 1,
+        "finished_at": "2026-09-02T00:00:00+00:00",
+    })
+    runs_payload = _json.dumps({
+        "runs": [
+            {
+                "exit_code": 1, "stdout_tail": "b1", "stderr_tail": "e1",
+                "duration_ms": 2, "finished_at": "2026-09-02T00:00:01+00:00",
+            },
+            {
+                "exit_code": 2, "stdout_tail": "b2", "stderr_tail": "e2",
+                "duration_ms": 3, "finished_at": "2026-09-02T00:00:02+00:00",
+            },
+        ],
+    })
+
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO tasks (id, name, command, status, result_json) "
+                "VALUES (:id1, :n1, :c1, :s1, :rj1), "
+                "       (:id2, :n2, :c2, :s2, :rj2)"
+            ),
+            {
+                "id1": "t-single", "n1": "single", "c1": "echo a",
+                "s1": "pending", "rj1": single_payload,
+                "id2": "t-runs", "n2": "runs", "c2": "echo b",
+                "s2": "pending", "rj2": runs_payload,
+            },
+        )
+
+    # Apply v3 (online mode) — ``engine.begin()`` auto-commits the DDL
+    # (create_table / drop_column) AND the data migration DML.
+    with engine.begin() as conn:
+        ctx = MigrationContext.configure(conn)
+        op = Operations(ctx)
+        original_v3_op = v3.op
+        original_offline = v3.is_offline_mode
+        v3.op = op
+        v3.is_offline_mode = lambda: False
+        try:
+            v3.upgrade()
+        finally:
+            v3.op = original_v3_op
+            v3.is_offline_mode = original_offline
+
+    insp = inspect(engine)
+    assert "task_results" in insp.get_table_names()
+    # ``tasks.result_json`` is dropped after the data migration.
+    task_cols = {c["name"] for c in insp.get_columns("tasks")}
+    assert "result_json" not in task_cols
+
+    with engine.connect() as conn:
+        single_rows = conn.execute(text(
+            "SELECT exit_code, stdout_tail, stderr_tail, duration_ms "
+            "FROM task_results WHERE task_id = 't-single'"
+        )).all()
+        runs_rows = conn.execute(text(
+            "SELECT exit_code, stdout_tail, stderr_tail, duration_ms "
+            "FROM task_results WHERE task_id = 't-runs' ORDER BY exit_code"
+        )).all()
+
+    # single payload produced one row.
+    assert len(single_rows) == 1
+    assert single_rows[0][0] == 0
+    assert single_rows[0][1] == "a"
+
+    # {"runs": [...]} produced one row per entry.
+    assert len(runs_rows) == 2
+    assert {(r[0], r[1]) for r in runs_rows} == {(1, "b1"), (2, "b2")}
+
+
+def test_v3_split_results_upgrade_skips_payloadless_rows(tmp_path):
+    """v3_split_results.upgrade() skips rows whose ``result_json`` is
+    ``NULL`` (the v1 schema allowed NULL; the migration must not crash
+    on these rows — AC-7.5 robustness).
+    """
+    from alembic.operations import Operations
+    from alembic.runtime.migration import MigrationContext
+    from sqlalchemy import create_engine, text
+
+    import migrations.versions.v1_initial as v1
+    import migrations.versions.v2_tags as v2
+    import migrations.versions.v3_split_results as v3
+
+    engine = create_engine(f"sqlite:///{tmp_path}/v3_null.db", future=True)
+
+    with engine.begin() as conn:
+        ctx = MigrationContext.configure(conn)
+        op = Operations(ctx)
+        original_v1_op = v1.op
+        v1.op = op
+        try:
+            v1.upgrade()
+        finally:
+            v1.op = original_v1_op
+
+    with engine.begin() as conn:
+        ctx = MigrationContext.configure(conn)
+        op = Operations(ctx)
+        original_v2_op = v2.op
+        v2.op = op
+        try:
+            v2.upgrade()
+        finally:
+            v2.op = original_v2_op
+
+    with engine.begin() as conn:
+        conn.execute(text(
+            "INSERT INTO tasks (id, name, command, status) "
+            "VALUES ('t-null', 'no-result', 'echo x', 'pending')"
+        ))
+
+    with engine.begin() as conn:
+        ctx = MigrationContext.configure(conn)
+        op = Operations(ctx)
+        original_v3_op = v3.op
+        original_offline = v3.is_offline_mode
+        v3.op = op
+        v3.is_offline_mode = lambda: False
+        try:
+            v3.upgrade()
+        finally:
+            v3.op = original_v3_op
+            v3.is_offline_mode = original_offline
+
+    with engine.connect() as conn:
+        cnt = conn.execute(text(
+            "SELECT COUNT(*) FROM task_results WHERE task_id = 't-null'"
+        )).scalar_one()
+    assert cnt == 0
+
+
+def test_v3_split_results_downgrade_merges_back(tmp_path):
+    """v3_split_results.downgrade() re-adds ``tasks.result_json``,
+    merges every ``task_results`` row back into the parent task's JSON
+    blob (a single dict when one row, a ``{"runs": [...]}`` array when
+    multiple), then drops ``task_results``.
+    """
+    from alembic.operations import Operations
+    from alembic.runtime.migration import MigrationContext
+    from sqlalchemy import create_engine, inspect, text
+
+    import migrations.versions.v1_initial as v1
+    import migrations.versions.v2_tags as v2
+    import migrations.versions.v3_split_results as v3
+
+    engine = create_engine(f"sqlite:///{tmp_path}/v3_dn.db", future=True)
+
+    with engine.begin() as conn:
+        ctx = MigrationContext.configure(conn)
+        op = Operations(ctx)
+        original_v1_op = v1.op
+        v1.op = op
+        try:
+            v1.upgrade()
+        finally:
+            v1.op = original_v1_op
+
+    with engine.begin() as conn:
+        ctx = MigrationContext.configure(conn)
+        op = Operations(ctx)
+        original_v2_op = v2.op
+        v2.op = op
+        try:
+            v2.upgrade()
+        finally:
+            v2.op = original_v2_op
+
+    with engine.begin() as conn:
+        conn.execute(text(
+            "INSERT INTO tasks (id, name, command, status) "
+            "VALUES "
+            "('t-single', 'single', 'echo a', 'pending'), "
+            "('t-multi', 'multi', 'echo b', 'pending')"
+        ))
+
+    with engine.begin() as conn:
+        ctx = MigrationContext.configure(conn)
+        op = Operations(ctx)
+        original_v3_op = v3.op
+        original_offline = v3.is_offline_mode
+        v3.op = op
+        v3.is_offline_mode = lambda: False
+        try:
+            v3.upgrade()
+        finally:
+            v3.op = original_v3_op
+            v3.is_offline_mode = original_offline
+
+    # Seed: one row on t-single, two rows on t-multi.
+    with engine.begin() as conn:
+        conn.execute(text(
+            "INSERT INTO task_results "
+            "(task_id, exit_code, stdout_tail, stderr_tail, "
+            "duration_ms, finished_at) "
+            "VALUES ('t-single', 0, 'A', '', 1, '2026-09-02 00:00:00'), "
+            "('t-multi', 1, 'B1', 'e1', 2, '2026-09-02 00:00:01'), "
+            "('t-multi', 2, 'B2', 'e2', 3, '2026-09-02 00:00:02')"
+        ))
+
+    with engine.begin() as conn:
+        ctx = MigrationContext.configure(conn)
+        op = Operations(ctx)
+        original_v3_op = v3.op
+        original_offline = v3.is_offline_mode
+        v3.op = op
+        v3.is_offline_mode = lambda: False
+        try:
+            v3.downgrade()
+        finally:
+            v3.op = original_v3_op
+            v3.is_offline_mode = original_offline
+
+    insp = inspect(engine)
+    assert "task_results" not in insp.get_table_names()
+    # tasks.result_json is restored.
+    task_cols = {c["name"] for c in insp.get_columns("tasks")}
+    assert "result_json" in task_cols
+
+    import json as _json
+    with engine.connect() as conn:
+        single_blob = conn.execute(text(
+            "SELECT result_json FROM tasks WHERE id = 't-single'"
+        )).scalar_one()
+        multi_blob = conn.execute(text(
+            "SELECT result_json FROM tasks WHERE id = 't-multi'"
+        )).scalar_one()
+
+    # Single row -> single dict.
+    single_obj = _json.loads(single_blob)
+    assert isinstance(single_obj, dict)
+    assert single_obj["stdout_tail"] == "A"
+    assert "runs" not in single_obj
+
+    # Multiple rows -> {"runs": [...]}.
+    multi_obj = _json.loads(multi_blob)
+    assert "runs" in multi_obj
+    assert {(r["exit_code"], r["stdout_tail"]) for r in multi_obj["runs"]} == \
+           {(1, "B1"), (2, "B2")}
+
+
+def test_v3_split_results_upgrade_offline_mode_emits_ddl_only(tmp_path):
+    """v3_split_results.upgrade() in offline mode emits DDL only —
+    no data copy, no crash (AC-7.7).
+    """
+    from alembic.operations import Operations
+    from alembic.runtime.migration import MigrationContext
+    from sqlalchemy import create_engine, inspect
+
+    import migrations.versions.v1_initial as v1
+    import migrations.versions.v2_tags as v2
+    import migrations.versions.v3_split_results as v3
+
+    engine = create_engine(f"sqlite:///{tmp_path}/v3_offline.db", future=True)
+
+    with engine.begin() as conn:
+        ctx = MigrationContext.configure(conn)
+        op = Operations(ctx)
+        original_v1_op = v1.op
+        v1.op = op
+        try:
+            v1.upgrade()
+        finally:
+            v1.op = original_v1_op
+
+    with engine.begin() as conn:
+        ctx = MigrationContext.configure(conn)
+        op = Operations(ctx)
+        original_v2_op = v2.op
+        v2.op = op
+        try:
+            v2.upgrade()
+        finally:
+            v2.op = original_v2_op
+
+    with engine.begin() as conn:
+        ctx = MigrationContext.configure(conn)
+        op = Operations(ctx)
+        original_v3_op = v3.op
+        original_offline = v3.is_offline_mode
+        v3.op = op
+        v3.is_offline_mode = lambda: True
+        try:
+            v3.upgrade()
+        finally:
+            v3.op = original_v3_op
+            v3.is_offline_mode = original_offline
+
+    insp = inspect(engine)
+    assert "task_results" in insp.get_table_names()
+    # Offline mode dropped the column without copying any data.
+    task_cols = {c["name"] for c in insp.get_columns("tasks")}
+    assert "result_json" not in task_cols
+
+
+def test_v3_split_results_downgrade_offline_mode_emits_ddl_only(tmp_path):
+    """v3_split_results.downgrade() in offline mode emits DDL only.
+    """
+    from alembic.operations import Operations
+    from alembic.runtime.migration import MigrationContext
+    from sqlalchemy import create_engine, inspect
+
+    import migrations.versions.v1_initial as v1
+    import migrations.versions.v2_tags as v2
+    import migrations.versions.v3_split_results as v3
+
+    engine = create_engine(f"sqlite:///{tmp_path}/v3_offline_dn.db", future=True)
+
+    with engine.begin() as conn:
+        ctx = MigrationContext.configure(conn)
+        op = Operations(ctx)
+        original_v1_op = v1.op
+        v1.op = op
+        try:
+            v1.upgrade()
+        finally:
+            v1.op = original_v1_op
+
+    with engine.begin() as conn:
+        ctx = MigrationContext.configure(conn)
+        op = Operations(ctx)
+        original_v2_op = v2.op
+        v2.op = op
+        try:
+            v2.upgrade()
+        finally:
+            v2.op = original_v2_op
+
+    with engine.begin() as conn:
+        ctx = MigrationContext.configure(conn)
+        op = Operations(ctx)
+        original_v3_op = v3.op
+        original_offline = v3.is_offline_mode
+        v3.op = op
+        v3.is_offline_mode = lambda: True
+        try:
+            v3.upgrade()
+        finally:
+            v3.op = original_v3_op
+            v3.is_offline_mode = original_offline
+
+    with engine.begin() as conn:
+        ctx = MigrationContext.configure(conn)
+        op = Operations(ctx)
+        original_v3_op = v3.op
+        original_offline = v3.is_offline_mode
+        v3.op = op
+        v3.is_offline_mode = lambda: True
+        try:
+            v3.downgrade()
+        finally:
+            v3.op = original_v3_op
+            v3.is_offline_mode = original_offline
+
+    insp = inspect(engine)
+    # task_results table dropped, tasks.result_json restored.
+    assert "task_results" not in insp.get_table_names()
+    task_cols = {c["name"] for c in insp.get_columns("tasks")}
+    assert "result_json" in task_cols
+
+
+# ---------------------------------------------------------------------------
+# Direct coverage tests for the v3 helper coercion functions
+# (``_now_or_default`` / ``_isoformat_or_none``).
+# ---------------------------------------------------------------------------
+
+
+def test_v3_now_or_default_when_none_returns_now():
+    """v3._now_or_default(None) returns ``datetime.now(tz=utc)``."""
+    from datetime import datetime, timezone
+
+    from migrations.versions.v3_split_results import _now_or_default
+
+    result = _now_or_default(None)
+    assert isinstance(result, datetime)
+    assert result.tzinfo is not None
+
+
+def test_v3_now_or_default_when_datetime_naive_adds_tz():
+    """v3._now_or_default(naive_datetime) attaches UTC tzinfo."""
+    from datetime import datetime, timezone
+
+    from migrations.versions.v3_split_results import _now_or_default
+
+    naive = datetime(2026, 9, 2, 12, 0, 0)
+    result = _now_or_default(naive)
+    assert isinstance(result, datetime)
+    assert result.tzinfo is timezone.utc
+
+
+def test_v3_now_or_default_when_datetime_aware_passthrough():
+    """v3._now_or_default(aware_datetime) returns it unchanged."""
+    from datetime import datetime, timezone
+
+    from migrations.versions.v3_split_results import _now_or_default
+
+    aware = datetime(2026, 9, 2, 12, 0, 0, tzinfo=timezone.utc)
+    result = _now_or_default(aware)
+    assert result is aware
+
+
+def test_v3_now_or_default_when_string_iso_parses():
+    """v3._now_or_default(iso_string) parses the ISO format."""
+    from datetime import datetime, timezone
+
+    from migrations.versions.v3_split_results import _now_or_default
+
+    result = _now_or_default("2026-09-02T12:00:00+00:00")
+    assert isinstance(result, datetime)
+    assert result.tzinfo is not None
+
+
+def test_v3_now_or_default_when_string_invalid_returns_now():
+    """v3._now_or_default(non-iso string) falls back to ``datetime.now``."""
+    from datetime import datetime, timezone
+
+    from migrations.versions.v3_split_results import _now_or_default
+
+    result = _now_or_default("not-an-iso-date")
+    assert isinstance(result, datetime)
+    assert result.tzinfo is not None
+
+
+def test_v3_isoformat_or_none_when_none():
+    """v3._isoformat_or_none(None) returns ``None``."""
+    from migrations.versions.v3_split_results import _isoformat_or_none
+
+    assert _isoformat_or_none(None) is None
+
+
+def test_v3_isoformat_or_none_when_datetime():
+    """v3._isoformat_or_none(datetime) returns the ISO string."""
+    from datetime import datetime, timezone
+
+    from migrations.versions.v3_split_results import _isoformat_or_none
+
+    dt = datetime(2026, 9, 2, 12, 0, 0, tzinfo=timezone.utc)
+    result = _isoformat_or_none(dt)
+    assert isinstance(result, str)
+    assert "2026-09-02" in result
+
+
+def test_v3_isoformat_or_none_when_non_datetime_string():
+    """v3._isoformat_or_none(non-datetime, non-None) returns ``str(value)``."""
+    from migrations.versions.v3_split_results import _isoformat_or_none
+
+    assert _isoformat_or_none("plain string") == "plain string"
