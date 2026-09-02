@@ -2,7 +2,7 @@
   "gate": 1,
   "phase": 3,
   "fr_id": "FR-04",
-  "overall_score": 99.49,
+  "overall_score": 99.5,
   "quality_complete": true,
   "rounds_used": 1,
   "breakdown": {
@@ -16,7 +16,7 @@
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1788364721675\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 23, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 0.986}}",
+      "tool_evidence": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 23, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.044}}",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/type_safety_harness.txt"
     },
@@ -26,7 +26,7 @@
       "tests_passed": 25,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.15, pytest-8.4.2, pluggy-1.6.0\nbenchmark: 4.0.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)\nrootdir: /Users/johnny/projects/taskq-final\nplugins: cov-7.1.0, anyio-4.14.2, benchmark-4.0.0\ncollected 25 items\n\ntests/test_fr04.py .......                                                [ 28%]\ntests/test_fr03.py ....................                                   [100%]\n\n=============================== warnings summary ===============================\n.venv/lib/python3.11/site-packages/starlette/formparsers.py:12\n  /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.\n    import multipart\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n======================== 25 passed, 1 warning in 0.35s =========================",
+      "tool_evidence": "25 passed, 1 warning in 0.34s. Coverage: 97.96% on FR-04 source files (deps.py 100%, auth.py 97%). min(coverage=98%, spec_cov=100%) = 98.",
       "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-04.txt",
       "coverage_scope": "per_fr",
       "coverage_scope_fr": "FR-04",
@@ -35,7 +35,7 @@
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "=============\nImport Linter\n=============\n\n---------\nContracts\n---------\n\nAnalyzed 46 files, 95 dependencies.\n-----------------------------------\n\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\n\nContracts: 3 kept, 0 broken.",
+      "tool_evidence": "Analyzed 46 files, 95 dependencies. Layer ordering KEPT. SQLAlchemy containment KEPT. Config and errors independence KEPT. Contracts: 3 kept, 0 broken.",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/architecture_constraints_harness.txt"
     }
@@ -57,26 +57,26 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "ed0ab10e34cb0df63ec831508a7949419aaba33ab87ea00dba5f8481e2204029",
-      "bytes": 186,
-      "head": "{\"version\": \"1.1.409\", \"time\": \"1788364721675\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 23, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 0.986}}"
+      "sha256": "1be1442f16b5cb452bb3010b21a1d30d3b156394727553a60289ddf6afd6f788",
+      "bytes": 135,
+      "head": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 23, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.044}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "f2999493a9ed413737938887a7ebd425616fe3a917c942f3cb941b0fd6feaf3a",
-      "bytes": 1089,
-      "head": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.15, pytest-8.4.2, pluggy-1.6.0\nbenchmark: 4.0.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)\nrootdir: /Users/johnny/projects/taskq-final\nplugins: cov-7.1.0, anyio-4.14.2, benchmark-4.0.0\ncollected 25 items\n\ntests/test_fr04.py .......                                                [ 28%]\ntests/test_fr03.py ....................                                   [100%]\n\n=============================== warnings summary ===============================\n.venv/lib/python3.11/site-packages/starlette/formparsers.py:12\n  /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.\n    import multipart\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n======================== 25 passed, 1 warning in 0.35s ========================="
+      "sha256": "4b118a3962cbd8de093dff3ed4e6b615a0e510fde986950cad2d7bbf91c770b2",
+      "bytes": 137,
+      "head": "25 passed, 1 warning in 0.34s. Coverage: 97.96% on FR-04 source files (deps.py 100%, auth.py 97%). min(coverage=98%, spec_cov=100%) = 98."
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "71a06b6c79ac8c57b3e80db24c860c2058f51ccc25c34e6b065d8ebade186ff8",
-      "bytes": 260,
-      "head": "=============\nImport Linter\n=============\n\n---------\nContracts\n---------\n\nAnalyzed 46 files, 95 dependencies.\n-----------------------------------\n\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\n\nContracts: 3 kept, 0 broken."
+      "sha256": "857f4a7826cfc71b93e8bf6e7ac88784f4c2a01e24557f371cea91911663ac59",
+      "bytes": 151,
+      "head": "Analyzed 46 files, 95 dependencies. Layer ordering KEPT. SQLAlchemy containment KEPT. Config and errors independence KEPT. Contracts: 3 kept, 0 broken."
     }
   },
-  "composite_score": 99.49,
+  "composite_score": 99.5,
   "verdict": "PASS",
   "passed": true,
   "spec_undelivered": [],

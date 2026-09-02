@@ -2,8 +2,8 @@
 # returncode: 0
 # agent_score: 98.0 | threshold: 80.0
 
-[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[33m                 [100%][0m
-[33m=============================== warnings summary ===============================[0m
+........................................................                 [100%]
+=============================== warnings summary ===============================
 .venv/lib/python3.11/site-packages/starlette/formparsers.py:12
   /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
     import multipart
@@ -38,4 +38,4 @@ Name                                                   Stmts   Miss  Cover   Mis
 03-development/src/taskq_api/service/tasks.py             29      0   100%
 ------------------------------------------------------------------------------------
 TOTAL                                                    680     53    92%
-[33m[32m56 passed[0m, [33m[1m1 warning[0m[33m in 0.53s[0m[0m
+56 passed, 1 warning in 0.55s
