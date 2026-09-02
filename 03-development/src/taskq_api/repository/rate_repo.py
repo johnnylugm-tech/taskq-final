@@ -95,28 +95,46 @@ class RateBucketRepository:
         now = _utc_now()
 
         with transaction() as session:
-            # ``with_for_update=True`` renders ``SELECT ... FOR UPDATE`` on
-            # engines that support it (Postgres); SQLite serializes writers
-            # on the transaction itself.
-            row = session.get(RateBucket, key_id, with_for_update=True)
-            if row is None:
-                row = RateBucket(key_id=key_id, tokens=capacity, last_refill=now)
-                session.add(row)
-            else:
-                tokens, last_refill = _refill(
-                    tokens=int(row.tokens),
-                    last_refill=_as_utc(row.last_refill),
-                    now=now,
-                    capacity=capacity,
-                    rate=rate,
-                )
-                row.tokens = tokens
-                row.last_refill = last_refill
-
+            row = self._load_or_refill(session, key_id, capacity, rate, now)
             if int(row.tokens) >= cost:
                 row.tokens = int(row.tokens) - cost
                 return True, 0.0
             return False, _wait_seconds(int(row.tokens), cost, rate)
+
+    def _load_or_refill(
+        self,
+        session,
+        key_id: str,
+        capacity: int,
+        rate: float,
+        now: datetime,
+    ) -> RateBucket:
+        """[FR-05 AC-5.3] Fetch the bucket row under a row-level lock, or
+        seed a fresh one.
+
+        ``session.get(..., with_for_update=True)`` renders ``SELECT ...
+        FOR UPDATE`` on engines that support it (Postgres); SQLite
+        serializes writers on the transaction itself, so the same call
+        path covers both backends without branching. A missing row is
+        seeded at full capacity — the first request from a new principal
+        starts with a full bucket, exactly like every other request up
+        to the burst limit.
+        """
+        row = session.get(RateBucket, key_id, with_for_update=True)
+        if row is None:
+            row = RateBucket(key_id=key_id, tokens=capacity, last_refill=now)
+            session.add(row)
+            return row
+        tokens, last_refill = _refill(
+            tokens=int(row.tokens),
+            last_refill=_as_utc(row.last_refill),
+            now=now,
+            capacity=capacity,
+            rate=rate,
+        )
+        row.tokens = tokens
+        row.last_refill = last_refill
+        return row
 
     def get_tokens(self, key_id: str) -> int:
         """[FR-05] Return the bucket's stored token count (0 if no row yet).

@@ -10,8 +10,8 @@ Import Linter
 Contracts
 ---------
 
-Analyzed 46 files, 95 dependencies.
------------------------------------
+Analyzed 49 files, 107 dependencies.
+------------------------------------
 
 Layer ordering KEPT
 SQLAlchemy containment KEPT
