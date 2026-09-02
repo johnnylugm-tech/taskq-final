@@ -7,17 +7,19 @@ The lifespan context manager wires the FR-08 graceful drain on shutdown
 
 Citations:
     - SPEC.md §3 FR-08 (drain on shutdown)
-    - SPEC.md §3 FR-10 (problem+json error contract)
+    - SPEC.md §3 FR-10 (problem+json error contract, sanitized 500, correlation_id)
     - SAD.md §2.9 (composition root), §3.2
 """
 
 from __future__ import annotations
 
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from taskq_api.api.health import router as health_router
 from taskq_api.api.metrics import router as metrics_router
@@ -25,8 +27,16 @@ from taskq_api.api.tasks import router as tasks_router
 from taskq_api.config import get_settings
 from taskq_api.errors import (
     Problem,
+    new_correlation_id,
     problem_body,
 )
+
+# Module-level audit logger — every request emits one INFO record carrying
+# the correlation_id so an operator can grep logs to stitch a request's
+# lifecycle (FR-10 AC-10.4). The logger is named explicitly (not via
+# ``getLogger(__name__)``) so the FR-10 AC-10.4 contract on the
+# ``audit`` logger name is stable across module renames.
+_audit_logger = logging.getLogger("audit")
 
 
 def _problem_response(problem: Problem) -> JSONResponse:
@@ -35,6 +45,11 @@ def _problem_response(problem: Problem) -> JSONResponse:
     A ``retry_after`` on the problem (set by the FR-05 rate limiter) is
     emitted as the ``Retry-After`` header in RFC 9110 §10.2.3 delay-seconds
     form — SPEC.md line 118 requires it on every 429.
+
+    Citations:
+        - SPEC.md line 118 (429 + ``Retry-After`` seconds)
+        - SPEC.md line 163 (AC-10.1 problem+json wire shape)
+        - SPEC.md line 166 (AC-10.4 ``X-Correlation-Id`` header)
     """
     headers = {"X-Correlation-Id": problem.correlation_id}
     retry_after = getattr(problem, "retry_after", None)
@@ -46,6 +61,35 @@ def _problem_response(problem: Problem) -> JSONResponse:
         media_type="application/problem+json",
         headers=headers,
     )
+
+
+class _CorrelationIdMiddleware(BaseHTTPMiddleware):
+    """[FR-10 AC-10.4] Stamp every response with ``X-Correlation-Id``.
+
+    Reuses the inbound ``X-Correlation-Id`` when the caller supplied one
+    (so a request that already carries an upstream trace id keeps it);
+    otherwise mints a fresh UUID4 hex via
+    :func:`taskq_api.errors.new_correlation_id`. The same id is emitted
+    on the ``audit`` logger so caplog / file log lines and the response
+    header carry the same token.
+
+    The middleware runs AFTER FastAPI's exception handlers resolve an
+    exception into a response, so the header is stamped on every wire
+    response — success or error.
+    """
+
+    async def dispatch(self, request, call_next):  # type: ignore[no-untyped-def]
+        correlation_id = (
+            request.headers.get("X-Correlation-Id") or new_correlation_id()
+        )
+        request.state.correlation_id = correlation_id
+        _audit_logger.info(
+            "request correlation_id=%s method=%s path=%s",
+            correlation_id, request.method, request.url.path,
+        )
+        response = await call_next(request)
+        response.headers["X-Correlation-Id"] = correlation_id
+        return response
 
 
 @asynccontextmanager
@@ -86,6 +130,8 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    application.add_middleware(_CorrelationIdMiddleware)
+
     application.include_router(health_router)
     application.include_router(tasks_router)
     application.include_router(metrics_router)
@@ -96,12 +142,42 @@ def create_app() -> FastAPI:
 
     @application.exception_handler(RequestValidationError)
     async def _handle_validation(
-        _: Request, exc: RequestValidationError,
+        request: Request, exc: RequestValidationError,
     ) -> JSONResponse:
-        from taskq_api.errors import ValidationProblem, new_correlation_id
+        from taskq_api.errors import ValidationProblem
 
         problem = ValidationProblem(detail=str(exc.errors()))
-        problem.correlation_id = new_correlation_id()
+        # Reuse the middleware-set correlation_id so the response header
+        # and the audit-log record carry the same token (AC-10.4).
+        problem.correlation_id = (
+            getattr(request.state, "correlation_id", None)
+            or new_correlation_id()
+        )
+        return _problem_response(problem)
+
+    @application.exception_handler(Exception)
+    async def _handle_exception(
+        request: Request, exc: Exception,
+    ) -> JSONResponse:
+        # FR-10 AC-10.3 — sanitized 500. The wire body MUST NOT carry
+        # the traceback, filesystem path, or any internal fragment.
+        # The exception type is logged to the audit logger (so operators
+        # can grep for it) but ``detail`` is the generic
+        # ``internal server error`` message and ``type`` is the canonical
+        # ``/errors/internal`` URI (SPEC.md line 167).
+        _audit_logger.exception(
+            "unhandled exception: %s", type(exc).__name__,
+        )
+        problem = Problem(
+            type_="/errors/internal",
+            title="Internal Server Error",
+            status=500,
+            detail="internal server error",
+        )
+        problem.correlation_id = (
+            getattr(request.state, "correlation_id", None)
+            or new_correlation_id()
+        )
         return _problem_response(problem)
 
     @application.get("/", include_in_schema=False)

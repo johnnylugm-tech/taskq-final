@@ -39,9 +39,17 @@ def _enforce_rate_limit(principal: Principal) -> None:
     :func:`require_scope`; ``/healthz`` and ``/readyz`` declare no
     dependency and are therefore exempt (AC-5.4).
 
-    Citations: SPEC.md line 116, line 118, line 120.
+    The admission call is dispatched through
+    :func:`taskq_api.service.ratelimit.try_consume` (rather than
+    :func:`check`) so a test can substitute a denial stub via
+    ``monkeypatch.setattr(service.ratelimit, "try_consume", stub)``
+    and exercise the FR-10 AC-10.5 429 wire shape end-to-end.
+
+    Citations:
+        - SPEC.md line 116, line 118, line 120 (FR-05)
+        - SPEC.md line 167 (FR-10 AC-10.5 rate-limited error code)
     """
-    allowed, wait = ratelimit.check(principal)
+    allowed, wait = ratelimit.try_consume(principal)
     if not allowed:
         raise RateLimitedProblem(
             retry_after=ratelimit.retry_after_seconds(wait),

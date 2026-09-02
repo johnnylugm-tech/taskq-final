@@ -73,6 +73,31 @@ def consume(principal: Principal, cost: int = 1) -> bool:
     return check(principal, cost=cost)[0]
 
 
+def try_consume(principal: Principal, cost: int = 1) -> tuple[bool, float]:
+    """[FR-05 AC-5.1, AC-5.2] Charge ``cost`` tokens; return the decision.
+
+    Named to match the FR-10 AC-10.5 contract — the API layer calls this
+    name so a test can substitute a denial stub via
+    ``monkeypatch.setattr(service.ratelimit, "try_consume", stub)`` and
+    exercise the 429 + ``Retry-After`` wire shape without standing up a
+    full DB-backed bucket. The implementation delegates to
+    :func:`check` so the real production path is unchanged.
+
+    Args:
+        principal: the authenticated caller — its ``key_id`` keys the bucket.
+        cost: tokens this request consumes.
+
+    Returns:
+        ``(allowed, retry_after_seconds)`` — same tuple :func:`check` returns.
+
+    Citations:
+        - SPEC.md line 116 (capacity ``TASKQ_RATE_BURST``, refill ``TASKQ_RATE_PER_SEC``)
+        - SPEC.md line 118 (429 + problem+json + ``Retry-After`` seconds)
+        - SPEC.md line 167 (AC-10.5 429 error-code map)
+    """
+    return check(principal, cost=cost)
+
+
 def retry_after_seconds(wait: float) -> int:
     """[FR-05 AC-5.2] Render a float wait as the ``Retry-After`` header value.
 
@@ -97,4 +122,5 @@ __all__ = [
     "check",
     "consume",
     "retry_after_seconds",
+    "try_consume",
 ]
