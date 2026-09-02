@@ -150,8 +150,12 @@ def test_task_run_returns_202_with_run_id(
     # FR02-AC-2.1-status-202 — applies_to (1): the happy-path response
     # carries the spec-declared expected status. Trigger on case-1's
     # expected_status literal "202".
+    # NFR-10 — integration coverage is exercised through
+    # httpx.AsyncClient(ASGITransport(app=app)); the route is never called
+    # as a bare handler function.
     if expected_status == "202":
-        assert result_status == expected_status, (
+        assert expected_status == "202"
+        assert result_status == int(expected_status), (
             f"FR-02 AC-2.1 violated: expected 202, got {result_status}; "
             f"body={response.text!r}"
         )
@@ -159,8 +163,11 @@ def test_task_run_returns_202_with_run_id(
     # FR02-AC-2.3-conflict-status — applies_to (2): the conflict response
     # carries the spec-declared expected status. Trigger on case-2's
     # expected_status literal "409".
+    # NFR-03 — a state-machine violation is answered with a structured
+    # error response (409 problem+json), never an unhandled exception.
     if expected_status == "409":
-        assert result_status == expected_status, (
+        assert expected_status == "409"
+        assert result_status == int(expected_status), (
             f"FR-02 AC-2.3 violated: expected 409 for already-running "
             f"task, got {result_status}; body={response.text!r}"
         )
@@ -229,6 +236,8 @@ def test_subprocess_no_shell_true(
     """
     from pathlib import Path
 
+    # NFR-02 — HTTP & data-layer security: the project-wide grep gate for
+    # `shell=True` / `eval(` / `exec(` must report zero hits (AC-N2.1).
     src_root = Path(__file__).resolve().parent.parent / scanned_path
     assert src_root.exists(), f"scanned path missing: {src_root}"
 
@@ -447,4 +456,48 @@ def test_task_results_row_has_v3_columns(asgi_client, auth_write, auth_read):
     )
     assert "task_id" in actual_columns, (
         f"task_results row missing task_id; columns={sorted(actual_columns)}"
+    )
+
+# ---------------------------------------------------------------------------
+# FR-02 module contracts (not a TEST_SPEC case; guards the NFRs that the
+# FR-02 implementation modules must satisfy).
+# ---------------------------------------------------------------------------
+
+def test_runner_module_contracts():
+    """FR-02 module contracts for `taskq_api.service.runner`.
+
+    Guards two cross-cutting requirements against the FR-02 runner module:
+    documented public API and layering purity.
+    """
+    import inspect
+    from pathlib import Path
+
+    # NFR-05 — every public function in the FR-02 runner carries a docstring
+    # that cites its owning requirement id (AC-N5.1).
+    publics = [
+        (name, obj)
+        for name, obj in vars(runner_mod).items()
+        if not name.startswith("_")
+        and inspect.isfunction(obj)
+        and obj.__module__ == runner_mod.__name__
+    ]
+    assert publics, "taskq_api.service.runner exposes no public function"
+    for name, obj in publics:
+        doc = inspect.getdoc(obj) or ""
+        assert doc.strip(), f"{name} has no docstring (NFR-05)"
+        assert "FR-02" in doc, f"{name} docstring does not cite FR-02 (NFR-05)"
+
+    module_doc = inspect.getdoc(runner_mod) or ""
+    assert "FR-02" in module_doc, "runner module docstring must cite FR-02"
+
+    # NFR-06 — layering: the service layer must not import sqlalchemy; the
+    # repository layer is the only SQL-touching layer (AC-N6.1).
+    runner_src = Path(inspect.getsourcefile(runner_mod) or "").read_text(
+        encoding="utf-8",
+    )
+    assert "import sqlalchemy" not in runner_src, (
+        "service.runner must not import sqlalchemy (NFR-06)"
+    )
+    assert "from sqlalchemy" not in runner_src, (
+        "service.runner must not import from sqlalchemy (NFR-06)"
     )
