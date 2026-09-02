@@ -154,16 +154,17 @@ def test_write_key_admin_endpoint_returns_403_no_disclosure(
     scenario additionally verifies that the body does NOT disclose
     whether the targeted task exists (NFR-02 / SPEC.md line 112).
 
-    NFR annotations:
-      - NFR-02 (HTTP & data-layer security): a 403 response body must
-        not disclose the existence of the requested resource (the
-        canonical security-disclosure vector for scope-rejection
-        endpoints).
-      - NFR-06 (architecture layering): the scope check is centralised
-        in ``taskq_api.api.deps`` / ``taskq_api.service.auth.verify_scope``;
-        per-route guards (``_assert_scope`` in api/tasks) delegate to
-        that single chokepoint, not the other way around.
-    """
+    # NFR-02 — HTTP & data-layer security: a 403 response body must not
+    # disclose the existence of the requested resource (the canonical
+    # security-disclosure vector for scope-rejection endpoints). The
+    # DELETE parametrisation enforces this directly; the metrics case
+    # asserts the same generic-forbidden contract.
+    #
+    # NFR-06 — architecture layering: the scope check is centralised in
+    # ``taskq_api.api.deps`` / ``taskq_api.service.auth.verify_scope``;
+    # per-route guards (``_require_scope`` in api/tasks) delegate to that
+    # single chokepoint, not the other way around.
+
     # Drive the request via the method-appropriate ``asgi_client`` call.
     if method == "GET":
         response = _run(asgi_client.get(target_endpoint, headers=auth_write))
@@ -243,6 +244,13 @@ def test_write_key_admin_endpoint_returns_403_no_disclosure(
 
 def test_all_v1_routes_use_single_dependency():
     """FR-04 AC-4.3 — every ``/v1/*`` route depends on
+    ``taskq_api.api.deps.require_scope`` (the single chokepoint for
+    authentication + scope authorisation).
+
+    # NFR-06 — architecture layering: a single dependency chokepoint is
+    what makes the audit-log story tractable (one place to wire
+    correlation ids, rate limit, and the scope assertion) and what keeps
+    the per-handler scope constant declarative.
     ``taskq_api.api.deps.require_scope`` (the single chokepoint for
     authentication + scope authorisation).
 
@@ -340,6 +348,11 @@ def test_verify_scope_strict_admin_requires_admin():
     """FR-04 AC-4.1 — strict-order scope check: only ``admin`` principal
     satisfies ``required == "admin"``. The ``presented >= required``
     relation must reject ``write`` and ``read`` on an admin-gated route.
+
+    # NFR-05 — documentation coverage: this test pins the spec-cited
+    behaviour and lives in a file whose public functions carry
+    docstrings with `[FR-04]` references (see api/deps.py,
+    service/auth.py).
     """
     admin = Principal(key_id="a" * 16, scope="admin")
     write = Principal(key_id="b" * 16, scope="write")
