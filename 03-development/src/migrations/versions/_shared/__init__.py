@@ -81,11 +81,6 @@ def copy_rows(
     Returns:
         Number of rows inserted into ``target_table``.
     """
-    src_cols = ", ".join(
-        sa.sql.column(src if isinstance(src, str) else src)
-        for src in column_map.values()
-    )
-    tgt_cols = ", ".join(sa.sql.column(t) for t in column_map)
     select_stmt = sa.select(*[
         sa.sql.column(src if isinstance(src, str) else src)
         for src in column_map.values()
