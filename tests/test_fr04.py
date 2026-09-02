@@ -153,6 +153,7 @@ def test_write_key_admin_endpoint_returns_403_no_disclosure(
     problem+json with ``type == "/errors/forbidden"``. The DELETE
     scenario additionally verifies that the body does NOT disclose
     whether the targeted task exists (NFR-02 / SPEC.md line 112).
+    """
 
     # NFR-02 — HTTP & data-layer security: a 403 response body must not
     # disclose the existence of the requested resource (the canonical
