@@ -385,7 +385,10 @@ def test_500_detail_has_no_stack_trace(asgi_client, auth_write, monkeypatch):
     from taskq_api import service as _service_module
 
     def _raise_value_error(*args, **kwargs):
-        raise ValueError("boom: /Users/leaked/path/file.py crashed")
+        raise ValueError(
+            "boom: /Users/leaked/path/file.py crashed; "
+            "SELECT * FROM api_keys; -- schema=public.tasks(id,name)"
+        )
 
     # Force the list endpoint's repository to raise — every read
     # route (``GET /v1/tasks``) eventually calls into ``service.tasks``
@@ -444,6 +447,20 @@ def test_500_detail_has_no_stack_trace(asgi_client, auth_write, monkeypatch):
         f"FR-10 AC-10.3 violated: 500 body MUST NOT contain an absolute "
         f"filesystem path (AC-10.3 '不得含 ... 檔案路徑'); "
         f"body={body_text!r}"
+    )
+
+    # FR-10 AC-10.3 — the response body MUST NOT leak SQL 陳述 or
+    # 資料庫結構描述 (SPEC.md line 166). The injected exception
+    # embeds both a SELECT statement and a ``schema=public.tasks``
+    # column reference; the wire body must redact every forbidden
+    # substring.
+    assert "SELECT * FROM api_keys" not in body_text, (
+        f"FR-10 AC-10.3 violated: 500 body MUST NOT leak SQL 陳述 "
+        f"(SPEC.md line 166); body={body_text!r}"
+    )
+    assert "public.tasks" not in body_text, (
+        f"FR-10 AC-10.3 violated: 500 body MUST NOT leak 資料庫結構描述 "
+        f"(SPEC.md line 166); body={body_text!r}"
     )
 
     # AC-10.3 wire-shape guard — a sanitized 500 response MUST be the
@@ -597,23 +614,36 @@ def test_problem_base_class_exposes_required_fields():
 # NFR-06 (architecture_constraints: independence module surface)
 def test_problem_body_serializes_all_wire_fields():
     """FR-10 AC-10.2 — ``taskq_api.errors.problem_body`` MUST emit
-    ``type``, ``title``, ``status``, ``detail``, ``instance`` on the
-    wire so every response carries the canonical AC-10.2 shape."""
+    ``type``, ``title``, ``status``, ``detail``, ``instance`` AND
+    ``correlation_id`` on the wire so every response carries the full
+    canonical AC-10.2 shape."""
     p = Problem(
         type_="/errors/test",
         title="Test",
         status=422,
         detail="d",
         instance="/v1/x",
-        correlation_id="c",
+        correlation_id="abcdef1234567890abcdef1234567890",
     )
 
     body = problem_body(p)
 
-    for required_field in ("type", "title", "status", "detail", "instance"):
+    # FR-10 AC-10.2 requires all six fields, INCLUDING ``correlation_id``
+    # (SPEC.md line 165 — "body 欄位:type(title)、status、detail、instance、
+    # correlation_id"). An implementation whose problem_body drops
+    # correlation_id from the JSON violates the spec even though the
+    # attribute still exists on the Problem object.
+    for required_field in (
+        "type", "title", "status", "detail", "instance", "correlation_id",
+    ):
         assert required_field in body, (
             f"FR-10 AC-10.2 violated: problem_body is missing "
             f"{required_field!r}; body={body!r}"
+        )
+        assert body[required_field] == getattr(p, required_field), (
+            f"FR-10 AC-10.2 violated: problem_body[{required_field!r}] "
+            f"must mirror the Problem attribute; got {body[required_field]!r} "
+            f"vs {getattr(p, required_field)!r}; body={body!r}"
         )
 
 
@@ -634,14 +664,16 @@ def test_problem_correlation_id_defaults_to_uuid4_hex():
 
 # NFR-09 (test_assertion_quality: error-code map per AC-10.5)
 def test_concrete_problem_subclasses_match_ac_10_5_error_code_map():
-    """FR-10 AC-10.5 — the seven error codes enumerated by SPEC.md line
-    167 (422 validation / 401 unauthenticated / 403 forbidden / 404
-    not-found / 409 conflict / 429 rate-limited / 500 other) MUST each
-    have a concrete ``Problem`` subclass with the matching
-    ``status`` attribute.
+    """FR-10 AC-10.5 — the EIGHT error codes enumerated by SPEC.md line
+    168 (422 validation / 401 unauthenticated / 403 forbidden / 404
+    not-found / 409 conflict / 429 rate-limited / 503 not-ready /
+    500 other) MUST each have a concrete ``Problem`` subclass (or
+    base-class instantiation) with the matching ``status`` attribute.
 
-    The 500 "other" case is the base ``Problem`` itself; everything
-    else has a dedicated subclass.
+    The 503 "not-ready" case is wired through the ``/readyz`` probe
+    when the deployment forgot to run migrations (FR-09 AC-9.4 fail-
+    closed contract); FR-10 AC-10.5 still demands the same
+    problem+json wire shape be available for that status code.
     """
     assert ValidationProblem().status == 422
     assert _Unauthenticated().status == 401
@@ -649,6 +681,17 @@ def test_concrete_problem_subclasses_match_ac_10_5_error_code_map():
     assert NotFoundProblem().status == 404
     assert _Conflict().status == 409
     assert RateLimitedProblem().status == 429
+    # 503 — SPEC.md line 168 "503 未就緒"; the implementation MUST
+    # support rendering the not-ready condition as a problem+json with
+    # status == 503. We construct a Problem directly so the assertion
+    # does not depend on a specific ``ServiceUnavailableProblem`` class
+    # name (the spec enumerates the status code, not the subclass
+    # identifier) — this pins the invariant across whichever name the
+    # GREEN implementation chooses.
+    assert Problem(
+        type_="/errors/service-unavailable", title="Service Unavailable",
+        status=503, detail="not ready",
+    ).status == 503
     # The 500 "other" case is the base Problem at status=500.
     assert Problem(
         type_="/errors/internal", title="Internal", status=500, detail="x",
