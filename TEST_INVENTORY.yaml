@@ -1,0 +1,87 @@
+# TEST_INVENTORY.yaml — P1 Naming Authority
+# Maps every FR to expected test function names. These are the AUTHORITATIVE names
+# that derive_test_cases.md preserves in TEST_SPEC.md (P2 single source of truth).
+# Specified per FR and per test category (unit/integration/cross_cutting).
+# If no name is specified for a category, derive_test_cases.md fills the gap with
+# names derived via the 7-Question Protocol.
+format_version: "1.1"
+
+# ── test_inventory ────────────────────────────────────────────────────────
+# Round 74 站5. The P1 prompt (scripts/workflowgen/spec_phase1.py) calls this
+# key REQUIRED — "Non-conforming schema fails the load step" — and this file,
+# which cli/project_cmds.py copies into every new project root on day one, did
+# not contain it. Nor did anything say what goes under it. Seven projects
+# invented four spellings of the same field (test_function, test_name,
+# test_function_name, none at all) and three different container shapes, and
+# the rule in cli/checks/specs.py that reads this block could see three of
+# nine of them.
+#
+# `tests:` is the enumerated 1:1 mapping with TRACEABILITY_MATRIX §1 the
+# prompt already describes; the summary blocks are the arithmetic it already
+# checks. Each entry carries:
+#
+#   tc_id          the matrix id, one entry per id — never a range
+#   fr / nfr       the requirement this test verifies (exactly one of them,
+#                  and the whole value is the id — a test that merely touches
+#                  another requirement says so in cross_ref_frs/cross_ref_nfrs)
+#   layer          unit | static | integration | e2e — what runs it, and the
+#                  field the NFR Layering Hard Rule reads
+#   test_function  the name, identical to TEST_SPEC.md's `Test Function` cell
+#   test_file      where it will live
+test_inventory:
+  tests:
+    - tc_id: TC-FR01-01
+      fr: FR-01
+      ac: AC-1.1
+      layer: integration
+      test_function: test_fr01_example_integration
+      test_file: tests/integration/test_fr01.py
+    - tc_id: TC-FR01-02
+      fr: FR-01
+      ac: AC-1.2
+      layer: unit
+      test_function: test_fr01_example_unit
+      test_file: tests/unit/test_fr01.py
+      cross_ref_nfrs: [NFR-02]
+    # An NFR whose verifier is a unit or static check belongs here with its
+    # layer, and in TEST_SPEC.md's "Deferred to Downstream Phases" section.
+    - tc_id: TC-N02-01
+      nfr: NFR-02
+      ac: AC-N2.1
+      layer: static
+      test_function: test_security_example
+      test_file: tests/static/test_nfr02.py
+    - tc_id: TC-N09-01
+      nfr: NFR-09
+      ac: AC-N9.1
+      layer: integration
+      test_function: test_deployment_example
+      test_file: tests/integration/test_nfr09.py
+  coverage_summary:
+    total_test_cases: 4
+    by_fr:
+      FR-01: {tc_count: 2}
+      NFR-02: {tc_count: 1}
+      NFR-09: {tc_count: 1}
+    by_layer:
+      integration: {count: 2}
+      unit: {count: 1}
+      static: {count: 1}
+
+# ── fr_tests / cross_cutting ──────────────────────────────────────────────
+# The name-only view, read by spec_coverage._flatten_test_names (P1 Naming
+# Authority) and required by the P1→P2 handoff validator. Every name here
+# must also appear as a `tests:` entry above; these lists carry no layer, so
+# they cannot answer which NFR tests are unit or static.
+fr_tests:
+  FR-01:
+    unit:
+      - test_fr01_example_unit
+    integration:
+      - test_fr01_example_integration
+
+cross_cutting:
+  security:
+    - test_security_example
+  deployment:
+    - test_deployment_example
