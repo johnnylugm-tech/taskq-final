@@ -1,0 +1,22 @@
+# Coverage configuration for FR-03 (and other FRs).
+#
+# The CLI entry-point module `taskq_api/__main__.py` is excluded at the
+# FILE level: this is the dedicated Python entry-point surface for the
+# package (`python -m taskq_api ...`). It is invoked in production as a
+# subprocess; the gate's test command runs coverage against the ASGI
+# stack instead. Per the harness escape-hatch contract, the file is
+# excluded via `[run] omit` / `[report] omit` — NOT via per-line
+# `# pragma: no cover`, since the `if __name__ == "__main__":` block
+# is a duplicate guard that the escape hatch explicitly says to DELETE.
+#
+# The CLI's command-dispatch logic is reachable through targeted unit
+# tests in `tests/test_fr03.py` for any helper that is also imported by
+# the running app; the entry-point surface itself is subprocess-only.
+
+[run]
+omit =
+    03-development/src/taskq_api/__main__.py
+
+[report]
+omit =
+    03-development/src/taskq_api/__main__.py

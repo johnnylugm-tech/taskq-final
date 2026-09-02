@@ -88,9 +88,4 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if args.command == "key" and args.key_command == "revoke":
         return _cmd_key_revoke(key_hash=args.key)
 
-    parser.error("unknown subcommand")
-    return 2  # unreachable; argparse exits before reaching here
-
-
-if __name__ == "__main__":  # pragma: no cover
-    raise SystemExit(main())
+    parser.error("unknown subcommand")  # argparse calls sys.exit; no return reachable

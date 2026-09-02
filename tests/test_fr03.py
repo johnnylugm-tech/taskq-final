@@ -111,6 +111,13 @@ def test_missing_api_key_returns_401(asgi_client):
       - FR03-AC-3.1-no-key-status        : result_status == "401"
       - FR03-AC-3.1-problem-content-type : content_type ==
                                           "application/problem+json"
+
+    NFR annotations:
+      - NFR-02 (HTTP & data-layer security): a request without
+        credentials must be rejected with 401, not 200/403.
+      - NFR-06 (architecture layering): the auth dependency lives in
+        ``taskq_api.api.deps`` and is the single chokepoint for /v1/*
+        routes (FR-04 AC-4.3 overlap).
     """
     header_value = ""            # case-1 input — empty / missing header
     expected_status = "401"      # case-1 input
@@ -194,6 +201,16 @@ def test_invalid_api_key_returns_401(
     The FR-03 AC-3.4 contract is the same for both scenarios; the
     distinction is whether the row exists at all (forged) or exists but
     has been retired (revoked).
+
+    NFR annotations:
+      - NFR-02 (HTTP & data-layer security): both an unknown-key row and
+        a retired-key row must produce 401; SHA-256 + hmac.compare_digest
+        is the only permitted comparison.
+      - NFR-04 (sensitive data redaction): a revoked-key row still must
+        not have its plaintext stored anywhere; only the hash survives.
+      - NFR-06 (architecture layering): the auth check sits in
+        ``taskq_api.service.auth.verify_key`` (service layer) — the
+        repository only stores, it never decides.
     """
     # Forged scenario — hit a /v1/* endpoint with a key that is not in
     # the api_keys table.
@@ -280,6 +297,17 @@ def test_api_keys_table_has_no_plaintext():
     NOT appear anywhere in the row's stored values, and (c) the
     canonical column name is ``key_hash`` (not ``key``, ``plaintext``,
     etc.).
+
+    NFR annotations:
+      - NFR-02 (HTTP & data-layer security): SHA-256 hex digest of the
+        plaintext is the only thing that hits disk; ``hmac.compare_digest``
+        is the only thing that ever compares.
+      - NFR-04 (sensitive data redaction): the plaintext key MUST NOT
+        appear anywhere in the row; AC-3.3 "plaintext emitted once at
+        key create" is the only legal point of exposure.
+      - NFR-06 (architecture layering): the SHA-256 hashing is the
+        repository's concern; the CLI's ``key create`` is the only
+        surface that ever sees plaintext.
     """
     from hashlib import sha256
 
@@ -364,6 +392,14 @@ def test_healthz_returns_200(asgi_client):
 
     Sub-assertions:
       - FR03-AC-3.5-healthz-no-auth : endpoint == "/healthz"
+
+    NFR annotations:
+      - NFR-05 (documentation): /healthz and /readyz are the two
+        documented exempt routes — every other /v1/* endpoint MUST
+        carry the auth dependency.
+      - NFR-06 (architecture layering): the auth dependency is mounted
+        ONLY on /v1/* routers (api.tasks), NOT on the health router —
+        this is what keeps probes anonymous.
     """
     endpoint = "/healthz"              # case-5 input
     auth_header_value = ""             # case-5 input — no auth header
@@ -386,3 +422,183 @@ def test_healthz_returns_200(asgi_client):
             f"FR-03 AC-3.5 violated: {endpoint} returned {result_status} "
             f"(expected {expected_status}); body={response.text!r}"
         )
+
+
+# ---------------------------------------------------------------------------
+# Coverage-completion unit tests for the FR-03 module bindings.
+#
+# The five TEST_SPEC.md cases above pin the acceptance-criteria contract;
+# the tests below exercise the remaining branches of the FR-03 modules
+# (``api.deps``, ``service.auth``, ``repository.key_repo``, ``__main__``)
+# so every reachable line of the FR-03 surface is executed.
+# ---------------------------------------------------------------------------
+
+
+def test_valid_api_key_returns_200(asgi_client):
+    """FR-03 AC-3.1 (positive path) — a known key authenticates.
+
+    Covers ``api.deps.require_auth``'s success return (the ``Principal``
+    hand-off to the handler) and ``service.auth.verify_key``'s
+    test-fixture branch, via the real ASGI stack (NFR-10).
+    """
+    response = _run(asgi_client.get(
+        "/v1/tasks",
+        headers={"X-API-Key": "test-read-key"},
+    ))
+
+    assert response.status_code == 200, (
+        f"FR-03 AC-3.1 violated: a valid read key must authenticate on "
+        f"GET /v1/tasks, got {response.status_code}; body={response.text!r}"
+    )
+
+
+def test_verify_key_returns_none_for_missing_key():
+    """FR-03 AC-3.1 — an empty / absent ``X-API-Key`` resolves to ``None``."""
+    assert verify_key(None) is None
+    assert verify_key("") is None
+
+
+def test_verify_key_resolves_fixture_key_scope():
+    """FR-03 — the in-process fixture keys map to their declared scopes."""
+    principal = verify_key("test-admin-key")
+
+    assert principal is not None
+    assert principal.scope == "admin"
+    assert len(principal.key_id) == 16
+
+
+def test_verify_key_resolves_db_backed_key():
+    """FR-03 AC-3.2 — an active DB row authenticates via SHA-256 +
+    ``hmac.compare_digest`` and yields the row's scope."""
+    from taskq_api.service.auth import hash_key
+
+    plaintext = "db-backed-active-key"
+    repo = KeyRepository()
+    repo.insert(key_hash=hash_key(plaintext), scope="write", revoked_at=None)
+
+    principal = verify_key(plaintext)
+
+    assert principal is not None
+    assert principal.scope == "write"
+
+
+def test_verify_key_returns_none_when_key_store_errors(monkeypatch):
+    """FR-03 / NFR-02 — a key-store failure must degrade to 401
+    (``None``), never surface server state to an unauthenticated caller."""
+    from taskq_api.repository import key_repo as key_repo_module
+
+    def _boom(self, key_hash):
+        raise RuntimeError("key store unavailable")
+
+    monkeypatch.setattr(
+        key_repo_module.KeyRepository, "find_active_by_hash", _boom,
+    )
+
+    assert verify_key("some-unknown-plaintext") is None
+
+
+def test_verify_scope_enforces_strict_order():
+    """FR-04 AC-4.1 (FR-03 overlap) — ``presented >= required`` only."""
+    from taskq_api.service.auth import Principal, verify_scope
+
+    admin = Principal(key_id="a" * 16, scope="admin")
+    write = Principal(key_id="b" * 16, scope="write")
+
+    assert verify_scope(admin, "write") is True
+    assert verify_scope(write, "admin") is False
+    assert verify_scope(None, "read") is False
+    assert verify_scope(Principal(key_id="c" * 16, scope="bogus"), "read") is False
+
+
+def test_api_key_row_exposes_dict_interface():
+    """FR-03 — ``ApiKeyRow`` supports the dict-like read interface the
+    plaintext-audit test relies on (``keys``/``values``/``get``/iteration)."""
+    from hashlib import sha256
+
+    repo = KeyRepository()
+    key_hash = sha256(b"row-interface-key").hexdigest()
+    row = repo.insert(key_hash=key_hash, scope="read", revoked_at=None)
+
+    assert list(iter(row)) == list(row.keys())
+    assert row.get("scope") == "read"
+    assert row.get("nonexistent-column", "fallback") == "fallback"
+    assert "key_hash" in row
+    assert row["key_hash"] == key_hash
+
+
+def test_revoked_key_is_not_found_as_active():
+    """FR-03 AC-3.4 — ``revoke`` retires a row; ``find_active_by_hash``
+    filters it out while ``find_by_hash(include_revoked=True)`` still sees it."""
+    from hashlib import sha256
+
+    repo = KeyRepository()
+    key_hash = sha256(b"to-be-revoked-key").hexdigest()
+    repo.insert(key_hash=key_hash, scope="read", revoked_at=None)
+
+    assert repo.find_active_by_hash(key_hash) is not None
+    assert repo.revoke(key_hash) is True
+    assert repo.find_active_by_hash(key_hash) is None
+
+    revoked_row = repo.find_by_hash(key_hash, include_revoked=True)
+    assert revoked_row is not None
+    assert revoked_row.revoked_at is not None
+
+
+def test_revoke_unknown_hash_returns_false():
+    """FR-03 AC-3.4 — revoking a hash that is not stored reports failure."""
+    repo = KeyRepository()
+
+    assert repo.revoke("0" * 64) is False
+
+
+def test_key_repo_now_returns_utc():
+    """FR-03 — the repository clock is timezone-aware UTC."""
+    from datetime import timezone
+
+    now = KeyRepository().now()
+
+    assert now.tzinfo is not None
+    assert now.utcoffset() == timezone.utc.utcoffset(now)
+
+
+def test_cli_key_create_emits_plaintext_once(capsys):
+    """FR-03 AC-3.3 / NFR-04 — ``key create`` prints the plaintext exactly
+    once and stores only its SHA-256 digest."""
+    from taskq_api.service.auth import hash_key
+
+    exit_code = cli_main(["key", "create", "--scope", "write"])
+    captured = capsys.readouterr().out
+
+    assert exit_code == 0
+    emitted = [line for line in captured.splitlines() if line.strip()]
+    assert len(emitted) == 1, (
+        f"FR-03 AC-3.3 violated: plaintext must be emitted exactly once, "
+        f"got {emitted!r}"
+    )
+
+    plaintext = emitted[0]
+    row = KeyRepository().find_by_hash(hash_key(plaintext))
+    assert row is not None
+    assert row.scope == "write"
+    assert plaintext not in " ".join(str(v) for v in row.values())
+
+
+def test_cli_key_revoke_reports_status(capsys):
+    """FR-03 AC-3.4 — ``key revoke`` exits 0 for a stored hash and 1 for
+    an unknown one."""
+    from taskq_api.service.auth import hash_key
+
+    assert cli_main(["key", "create", "--scope", "read"]) == 0
+    plaintext = capsys.readouterr().out.strip()
+    key_hash = hash_key(plaintext)
+
+    assert cli_main(["key", "revoke", "--key", key_hash]) == 0
+    assert cli_main(["key", "revoke", "--key", "f" * 64]) == 1
+
+
+def test_cli_rejects_unknown_subcommand():
+    """FR-03 — argparse rejects an unknown subcommand with a non-zero exit."""
+    with pytest.raises(SystemExit) as excinfo:
+        cli_main(["not-a-command"])
+
+    assert excinfo.value.code != 0
