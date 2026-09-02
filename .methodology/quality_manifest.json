@@ -1,0 +1,198 @@
+{
+  "schema_version": "1.0",
+  "generated_at_phase": 2,
+  "fr_ids": [
+    "FR-01",
+    "FR-02",
+    "FR-03",
+    "FR-04",
+    "FR-05",
+    "FR-06",
+    "FR-07",
+    "FR-08",
+    "FR-09",
+    "FR-10"
+  ],
+  "nfr_dimension_mapping": {
+    "NFR-01": "performance",
+    "NFR-02": "security",
+    "NFR-03": "error_handling",
+    "NFR-04": "security",
+    "NFR-05": "documentation",
+    "NFR-06": "architecture_constraints",
+    "NFR-07": "license_compliance",
+    "NFR-08": "mutation_testing",
+    "NFR-09": "test_assertion_quality",
+    "NFR-10": "integration_coverage",
+    "NFR-11": "readability",
+    "NFR-12": "execute_verification_target"
+  },
+  "nfr_fr_mapping": {},
+  "nfr_traceability": {
+    "NFR-01": {
+      "type": "performance",
+      "dimension": "performance",
+      "target": "GET /v1/tasks/{id} p95 < 30ms and GET /v1/tasks?limit=50 p95 < 80ms at 10,000 rows; list endpoint SQL statement count constant (no N+1)",
+      "module": "taskq_api.repository.task_repo"
+    },
+    "NFR-02": {
+      "type": "security",
+      "dimension": "security",
+      "target": "bandit -r 03-development/src/: 0 HIGH and 0 MEDIUM; grep for shell=True / eval( / exec( / string-concatenated SQL: 0 hits",
+      "module": "taskq_api.api.deps"
+    },
+    "NFR-03": {
+      "type": "reliability",
+      "dimension": "error_handling",
+      "target": "0 bare except / except Exception: pass; CancelledError always re-raised; every request transaction commits or rolls back via context manager",
+      "module": "taskq_api.repository.session"
+    },
+    "NFR-04": {
+      "type": "security",
+      "dimension": "security",
+      "target": "100% of stdout_tail/stderr_tail/log/error-body lines matching the secret regex replaced with [REDACTED]; 0 occurrences of DB connection strings in logs, errors or /v1/metrics",
+      "module": "taskq_api.errors"
+    },
+    "NFR-05": {
+      "type": "documentation",
+      "dimension": "documentation",
+      "target": "100% of public functions/classes have a docstring citing [FR-XX] or [NFR-XX]; every API endpoint has summary and description in /openapi.json",
+      "module": "taskq_api.api.tasks"
+    },
+    "NFR-06": {
+      "type": "layering",
+      "dimension": "architecture_constraints",
+      "target": "lint-imports exit 0 with layers api > service > repository > models; sqlalchemy imported only by repository",
+      "module": "taskq_api.repository.session"
+    },
+    "NFR-07": {
+      "type": "licensing",
+      "dimension": "license_compliance",
+      "target": "100% of direct and transitive dependencies pinned with == and licensed MIT/BSD-2-Clause/BSD-3-Clause/Apache-2.0/PSF; 08-config/SBOM.json lists name/version/license/direct|transitive for each",
+      "module": "taskq_api.config"
+    },
+    "NFR-08": {
+      "type": "mutation",
+      "dimension": "mutation_testing",
+      "target": ">=70 mutation score",
+      "module": "taskq_api.service.tasks",
+      "scope_layers": [
+        "service",
+        "repository"
+      ]
+    },
+    "NFR-09": {
+      "type": "testability",
+      "dimension": "test_assertion_quality",
+      "target": "pytest skipped count == 0, xfail == 0, zero_assert == 0; FR-07 migrations tested against a real file-backed SQLite database",
+      "module": "taskq_api.app"
+    },
+    "NFR-10": {
+      "type": "integration",
+      "dimension": "integration_coverage",
+      "target": ">=80 line coverage from 03-development/tests/integration driven only via httpx.AsyncClient(ASGITransport)",
+      "module": "taskq_api.app"
+    },
+    "NFR-11": {
+      "type": "maintainability",
+      "dimension": "readability",
+      "target": ">=80 maintainability index (LLOC-weighted); function CC <= 10; file <= 400 lines; directory <= 15 files; API handler <= 40 lines",
+      "module": "taskq_api.api.tasks"
+    },
+    "NFR-12": {
+      "type": "verifiability",
+      "dimension": "execute_verification_target",
+      "target": "make verify-system exits 0 and prints 'verify-system: PASS' after migration upgrade, full tests, health/ready smoke, and downgrade base + upgrade head round trip",
+      "module": "taskq_api.app"
+    }
+  },
+  "quality_targets": {
+    "max_complexity": 10,
+    "min_coverage": 80,
+    "max_coupling": 0.3
+  },
+  "fr_module_traceability": {
+    "FR-01": [
+      "taskq_api.api.tasks",
+      "taskq_api.service.tasks",
+      "taskq_api.service.common",
+      "taskq_api.repository.task_repo",
+      "taskq_api.models.schemas",
+      "taskq_api.models.orm"
+    ],
+    "FR-02": [
+      "taskq_api.api.tasks",
+      "taskq_api.service.runner",
+      "taskq_api.repository.task_repo"
+    ],
+    "FR-03": [
+      "taskq_api.api.deps",
+      "taskq_api.service.auth",
+      "taskq_api.repository.key_repo",
+      "taskq_api.__main__"
+    ],
+    "FR-04": [
+      "taskq_api.api.deps",
+      "taskq_api.service.auth"
+    ],
+    "FR-05": [
+      "taskq_api.api.deps",
+      "taskq_api.service.ratelimit",
+      "taskq_api.repository.rate_repo"
+    ],
+    "FR-06": [
+      "taskq_api.repository.session",
+      "taskq_api.repository.task_repo",
+      "taskq_api.repository.key_repo",
+      "taskq_api.repository.rate_repo"
+    ],
+    "FR-07": [
+      "migrations.env",
+      "migrations.versions.v1_initial",
+      "migrations.versions.v2_tags",
+      "migrations.versions.v3_split_results",
+      "migrations.versions._shared"
+    ],
+    "FR-08": [
+      "taskq_api.service.runner",
+      "taskq_api.app"
+    ],
+    "FR-09": [
+      "taskq_api.api.health",
+      "taskq_api.repository.session"
+    ],
+    "FR-10": [
+      "taskq_api.errors",
+      "taskq_api.app"
+    ]
+  },
+  "architecture_constraints": [
+    "no_circular_dependencies"
+  ],
+  "high_risk_modules": [
+    "taskq_api.service.runner",
+    "taskq_api.service.auth",
+    "taskq_api.repository.session",
+    "migrations.versions.v3_split_results"
+  ],
+  "gate_score_overrides": {
+    "performance": 75.0,
+    "security": 80.0,
+    "error_handling": 80.0,
+    "documentation": 75.0,
+    "architecture_constraints": 100.0,
+    "license_compliance": 100.0,
+    "mutation_testing": 70.0,
+    "test_assertion_quality": 70.0,
+    "integration_coverage": 80.0,
+    "readability": 80.0,
+    "execute_verification_target": 100.0,
+    "test_coverage": 80.0
+  },
+  "gate_results": {
+    "gate1": {},
+    "gate2": null,
+    "gate3": null,
+    "gate4": null
+  }
+}
