@@ -25,7 +25,8 @@
         "taskq_api.service.runner",
         "taskq_api.service.auth",
         "taskq_api.service.ratelimit",
-        "taskq_api.service"
+        "taskq_api.service",
+        "taskq_api.service.health"
       ],
       "allowed_dependencies": [
         "repository",
