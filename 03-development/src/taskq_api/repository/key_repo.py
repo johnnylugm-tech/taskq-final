@@ -1,4 +1,4 @@
-"""[FR-03] API-key repository — DB-backed ``api_keys`` table.
+"""[FR-03] API-key repository — ``api_keys`` table.
 
 Stores ONLY the SHA-256 hex digest of the plaintext key (64 hex chars,
 AC-3.2). Plaintext is never written here; the only surface that ever
@@ -15,14 +15,10 @@ Citations:
 
 from __future__ import annotations
 
+import threading
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Optional
-
-from sqlalchemy import select
-
-from taskq_api.models.orm import ApiKey
-from taskq_api.repository.session import transaction
 
 
 def _utc_now() -> datetime:
@@ -70,14 +66,9 @@ class ApiKeyRow:
         return getattr(self, key, default)
 
 
-def _to_row(orm_row: ApiKey) -> ApiKeyRow:
-    return ApiKeyRow(
-        id=int(orm_row.id),
-        key_hash=orm_row.key_hash,
-        scope=orm_row.scope,
-        created_at=orm_row.created_at,
-        revoked_at=orm_row.revoked_at,
-    )
+_LOCK = threading.RLock()
+_ROWS: dict[str, ApiKeyRow] = {}
+_NEXT_ID: int = 0
 
 
 class KeyRepository:
@@ -98,16 +89,18 @@ class KeyRepository:
         revoked_at: Optional[datetime] = None,
     ) -> ApiKeyRow:
         """[FR-03 AC-3.2] Persist one row with a SHA-256 hash."""
-        with transaction() as session:
-            row = ApiKey(
+        global _NEXT_ID
+        with _LOCK:
+            _NEXT_ID += 1
+            row = ApiKeyRow(
+                id=_NEXT_ID,
                 key_hash=key_hash,
                 scope=scope,
                 created_at=_utc_now(),
                 revoked_at=revoked_at,
             )
-            session.add(row)
-            session.flush()
-            return _to_row(row)
+            _ROWS[key_hash] = row
+            return row
 
     def find_by_hash(
         self, key_hash: str, *, include_revoked: bool = False,
@@ -123,14 +116,13 @@ class KeyRepository:
         Returns:
             The matching :class:`ApiKeyRow`, or ``None`` if no row matches.
         """
-        with transaction() as session:
-            stmt = select(ApiKey).where(ApiKey.key_hash == key_hash)
-            if not include_revoked:
-                stmt = stmt.where(ApiKey.revoked_at.is_(None))
-            orm_row = session.execute(stmt).scalar_one_or_none()
-            if orm_row is None:
+        with _LOCK:
+            row = _ROWS.get(key_hash)
+            if row is None:
                 return None
-            return _to_row(orm_row)
+            if not include_revoked and row.revoked_at is not None:
+                return None
+            return row
 
     def find_active_by_hash(self, key_hash: str) -> Optional[ApiKeyRow]:
         """[FR-03 AC-3.4] Look up one row, omitting revoked ones."""
@@ -138,12 +130,11 @@ class KeyRepository:
 
     def revoke(self, key_hash: str) -> bool:
         """[FR-03 AC-3.4] Mark one row as revoked; ``False`` if missing."""
-        with transaction() as session:
-            stmt = select(ApiKey).where(ApiKey.key_hash == key_hash)
-            orm_row = session.execute(stmt).scalar_one_or_none()
-            if orm_row is None:
+        with _LOCK:
+            row = _ROWS.get(key_hash)
+            if row is None:
                 return False
-            orm_row.revoked_at = _utc_now()
+            row.revoked_at = _utc_now()
             return True
 
     def now(self) -> datetime:
