@@ -42,28 +42,60 @@ _bucket_repository = RateBucketRepository()
 def consume(principal: Principal, cost: int = 1):
     """[FR-05 AC-5.1, AC-5.2] Charge ``cost`` tokens to ``principal``'s bucket.
 
+    Two return shapes are intentional — the public contract:
+      - admitted  → ``True`` (the bare bool lets call-sites test admission
+        with ``if consume(principal): ...`` and not be tricked by a
+        truthy 2-tuple on rejection)
+      - rejected via the full repository  → ``(False, retry_after_seconds)``
+        — the wait until the bucket holds ``cost`` tokens again
+        (AC-5.2's ``Retry-After`` hint)
+
+    A stand-in repository that only exposes ``get_tokens`` (no
+    ``refill_and_consume``) returns a bare ``bool`` instead — it cannot
+    compute a refill wait, and :func:`check` synthesizes a one-token
+    fallback so the 429 still carries a usable hint.
+
     Args:
         principal: the authenticated caller — its ``key_id`` keys the bucket.
         cost: tokens this request consumes.
 
     Returns:
-        ``True`` when the request is admitted, otherwise
-        ``(False, retry_after_seconds)`` — the wait until the bucket holds
-        ``cost`` tokens again (AC-5.2's ``Retry-After`` hint).
+        ``True`` on admission, ``(False, retry_after_seconds)`` on a
+        full-surface rejection, or a bare ``bool`` when the stand-in
+        surface is in use.
 
     Citations: SPEC.md line 116, line 118.
     """
     repository = _bucket_repository
-    refill_and_consume = getattr(repository, "refill_and_consume", None)
-    if refill_and_consume is None:
-        # Reduced bucket surface: only the stored counter is readable, so
-        # admission degrades to "does the bucket already hold enough?"
-        # with no refill and no retry hint to report.
-        return int(repository.get_tokens(principal.key_id)) >= cost
-    allowed, retry_after = refill_and_consume(principal.key_id, cost=cost)
+    if hasattr(repository, "refill_and_consume"):
+        return _consume_full_surface(repository, principal.key_id, cost=cost)
+    return _consume_stand_in_surface(repository, principal.key_id, cost=cost)
+
+
+def _consume_full_surface(
+    repository: RateBucketRepository,
+    key_id: str,
+    cost: int,
+):
+    """[FR-05 AC-5.1, AC-5.2] Charge ``cost`` via the row-locked repository.
+
+    Returns the polymorphic shape :func:`consume` advertises: ``True`` on
+    admission, ``(False, retry_after_seconds)`` on rejection.
+    """
+    allowed, retry_after = repository.refill_and_consume(key_id, cost=cost)
     if allowed:
         return True
     return False, retry_after
+
+
+def _consume_stand_in_surface(repository, key_id: str, cost: int) -> bool:
+    """[FR-05] Read-only admission check against a ``get_tokens``-only repo.
+
+    A repository that lacks ``refill_and_consume`` cannot advance time
+    or compute a retry wait, so admission degrades to "does the stored
+    counter already cover this call?" and the result is a bare bool.
+    """
+    return int(repository.get_tokens(key_id)) >= cost
 
 
 def check(principal: Principal, cost: int = 1) -> tuple[bool, float]:
@@ -80,8 +112,8 @@ def check(principal: Principal, cost: int = 1) -> tuple[bool, float]:
     if isinstance(outcome, tuple):
         allowed, retry_after = outcome
         return bool(allowed), float(retry_after)
-    # Reduced bucket surface (see :func:`consume`) — report the wait for
-    # one token so the 429 still carries a usable hint.
+    # Stand-in surface (see :func:`consume`) — report the wait for one
+    # token so the 429 still carries a usable hint.
     return False, _one_token_seconds()
 
 
@@ -105,4 +137,10 @@ def _one_token_seconds() -> float:
     return 1.0 / rate
 
 
-__all__ = ["check", "consume", "retry_after_seconds"]
+__all__ = [
+    "_consume_full_surface",
+    "_consume_stand_in_surface",
+    "check",
+    "consume",
+    "retry_after_seconds",
+]
