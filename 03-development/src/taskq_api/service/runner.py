@@ -146,12 +146,35 @@ class TimeoutResult:
     result: Any = None
 
 
+def _classify_state(task: asyncio.Task) -> tuple[str, bool, bool]:
+    """[FR-08 AC-8.1, AC-8.4] Classify a finished task's terminal state.
+
+    Returns a 3-tuple ``(status, is_drained, is_interrupted)`` shared by
+    :meth:`_TaskHandle._on_done` and :func:`drain`'s tally loop — keeping
+    the two call sites in lock-step so the drain tally can never drift
+    from the per-handle status stamped on task completion.
+
+    Mutually exclusive flags: ``is_drained`` and ``is_interrupted`` are
+    never both ``True``. A task that raised a non-cancellation exception
+    is reported as ``"failed"`` with both flags ``False`` — it is the
+    caller's responsibility to decide whether the failure counts against
+    the drain budget (it does not — only cancellation does).
+    """
+    if task.cancelled():
+        return "interrupted", False, True
+    if task.done() and task.exception() is not None:
+        return "failed", False, False
+    return "done", True, False
+
+
 class _TaskHandle:
     """[FR-02, FR-08] Handle to a task submitted via :func:`submit`.
 
-    Exposes ``.status``, :meth:`cancel`, and :meth:`wait` so callers can
-    observe task state without poking at the underlying
-    :class:`asyncio.Task` directly.
+    Exposes ``.status``, :attr:`asyncio_task`, :meth:`cancel`, and
+    :meth:`wait` so callers can observe task state without poking at the
+    underlying :class:`asyncio.Task` directly. The ``asyncio_task``
+    property is read-only and used by :func:`drain` to drive
+    :func:`asyncio.wait` without reaching into a private slot.
     """
 
     __slots__ = ("_task", "status")
@@ -161,14 +184,14 @@ class _TaskHandle:
         self.status = "pending"
         self._task.add_done_callback(self._on_done)
 
+    @property
+    def asyncio_task(self) -> asyncio.Task:
+        """[FR-08 AC-8.1] Read-only view onto the underlying :class:`asyncio.Task`."""
+        return self._task
+
     def _on_done(self, task: asyncio.Task) -> None:
         """[FR-02, FR-08 AC-8.1, AC-8.4] Stamp final status when the task ends."""
-        if task.cancelled():
-            self.status = "interrupted"
-        elif task.exception() is not None:
-            self.status = "failed"
-        else:
-            self.status = "done"
+        self.status, _, _ = _classify_state(task)
 
     def cancel(self) -> bool:
         """[FR-02, FR-08 AC-8.4] Cancel the underlying :class:`asyncio.Task`.
@@ -258,11 +281,11 @@ async def drain(timeout: float) -> DrainResult:
 
     # Snapshot the currently-pending handles (those whose task has not
     # already finished).
-    pending = [h for h in list(_handles) if not h._task.done()]
+    pending = [h for h in list(_handles) if not h.asyncio_task.done()]
     if not pending:
         return DrainResult(drained_count="0", interrupted_count="0")
 
-    tasks = [h._task for h in pending]
+    tasks = [h.asyncio_task for h in pending]
     done, still_pending = await asyncio.wait(tasks, timeout=timeout_s)
 
     # Cancel any task that exceeded the budget, then await the
@@ -278,20 +301,17 @@ async def drain(timeout: float) -> DrainResult:
             # about the final state, not the exception that surfaced.
             pass
 
-    # Tally — compute status directly from the task state so we don't
-    # depend on the order in which ``add_done_callback`` callbacks fire
-    # relative to ``asyncio.wait`` returning.
+    # Tally — compute status directly from the task state via the shared
+    # classifier so this stays in lock-step with :meth:`_TaskHandle._on_done`.
     drained = 0
     interrupted = 0
     for h in pending:
-        if h._task.cancelled():
-            h.status = "interrupted"
-            interrupted += 1
-        elif h._task.done() and h._task.exception() is None:
-            h.status = "done"
+        status, is_drained, is_interrupted = _classify_state(h.asyncio_task)
+        h.status = status
+        if is_drained:
             drained += 1
-        elif h._task.done():
-            h.status = "failed"
+        elif is_interrupted:
+            interrupted += 1
 
     return DrainResult(
         drained_count=str(drained),
@@ -312,9 +332,9 @@ async def run_with_timeout(coro, timeout: float) -> TimeoutResult:
     """
     try:
         result = await asyncio.wait_for(coro, timeout=float(timeout))
-        return TimeoutResult(status="done", result=result, orphan_pids=[])
     except asyncio.TimeoutError:
-        return TimeoutResult(status="timeout", orphan_pids=[])
+        return TimeoutResult(status="timeout")
+    return TimeoutResult(status="done", result=result)
 
 
 def _tail(raw: bytes) -> str:
