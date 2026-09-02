@@ -1,34 +1,34 @@
 {
   "review_status": "APPROVE",
-  "reason": "All 4 normative requirements of FR-05 map to meaningful assertions: capacity TASKQ_RATE_BURST (tests/test_fr05.py:288 first 429 at request 21; line 432 success ceiling), 429+Retry-After+problem+json (tests/test_fr05.py:321, 331, 343, 348), DB row-level lock via behavioral proof (tests/test_fr05.py:432 no-overdraft under contention; line 488 DB row exists; line 501 tokens in valid range), /healthz+/readyz exempt (tests/test_fr05.py:571, 591, 759, 784).",
+  "reason": "Req 1 (per-token bucket: capacity TASKQ_RATE_BURST, refill TASKQ_RATE_PER_SEC) pinned by tests/test_fr05.py:311 (first-429-at-21 boundary proves burst=20) and :402 (elapsed*rate arithmetic proves 5 tokens/s refill). Req 2 (429 + problem+json + Retry-After) pinned by :344-345 (Retry-After header present), :354/:358 (positive integer seconds), :366 (content-type application/problem+json), :371 (body type /errors/rate-limited). Req 3 (DB-persisted bucket, single-transaction row-level lock) pinned by :543 (rate_buckets row must exist in DB after concurrent firing), :556 (tokens within [0, burst]), :585-586 (Session.get must be called with with_for_update). Req 4 (/healthz, /readyz exempt) pinned by :657 (healthz always 200), :677 (readyz never 429), :847 (healthz still 200 after bucket drained), :872 (readyz still not 429 after bucket drained).",
   "citations": [
+    "SPEC.md:115",
     "SPEC.md:117",
     "SPEC.md:118",
     "SPEC.md:119",
     "SPEC.md:120",
-    "tests/test_fr05.py:288",
-    "tests/test_fr05.py:321",
-    "tests/test_fr05.py:343",
-    "tests/test_fr05.py:432",
-    "tests/test_fr05.py:488",
-    "tests/test_fr05.py:501",
-    "tests/test_fr05.py:571",
-    "tests/test_fr05.py:591",
-    "tests/test_fr05.py:759",
-    "tests/test_fr05.py:784"
+    "tests/test_fr05.py:311",
+    "tests/test_fr05.py:344",
+    "tests/test_fr05.py:345",
+    "tests/test_fr05.py:354",
+    "tests/test_fr05.py:358",
+    "tests/test_fr05.py:366",
+    "tests/test_fr05.py:371",
+    "tests/test_fr05.py:402",
+    "tests/test_fr05.py:487",
+    "tests/test_fr05.py:543",
+    "tests/test_fr05.py:556",
+    "tests/test_fr05.py:585",
+    "tests/test_fr05.py:586",
+    "tests/test_fr05.py:657",
+    "tests/test_fr05.py:677",
+    "tests/test_fr05.py:847",
+    "tests/test_fr05.py:872"
   ],
   "docs_embedded": [
     "SPEC.md"
   ],
-  "gaps": [
-    {
-      "severity": "medium",
-      "evidence_type": "methodology_artifact",
-      "canonical_ref": "tests/test_fr05.py:842",
-      "message": "Refill rate TASKQ_RATE_PER_SEC is only weakly tested: test_consume_uses_rate_per_sec_for_retry_after monkey-patches the repo to return a hardcoded 1.0/5.0 and asserts only retry_after_seconds > 0, which is true for any positive number. The capacity boundary test (line 288) would catch fast/infinite refill (all 25 succeed → no first 429 at 21) but would NOT catch a zero or very slow refill (still first 429 at 21). The actual env-driven rate TASKQ_RATE_PER_SEC is not directly asserted against any rate-specific computation.",
-      "fr_id": "FR-05"
-    }
-  ],
+  "gaps": [],
   "criteria_review": {
     "requirement_path": "SPEC.md",
     "declared_tests": [
@@ -38,8 +38,8 @@
     ],
     "assertion_digests": {
       "test_healthz_returns_200": "8e09ba30116dfd06ffd9a3e9401bdb539ae15e84ca7aa5d6aa75b6fcb8a215ea",
-      "test_rate_bucket_concurrent_no_overdraft": "008f3e5f08d63600626cc5c811bd678ff356d31db10f30dff81f15178f92aabd",
-      "test_rate_limit_burst_returns_429_with_retry_after": "6809b08e6e7b7809040764a3124266342f7f34f1d26e1f58f971fe58ce3f9ec1"
+      "test_rate_bucket_concurrent_no_overdraft": "78275d85aea5fdd6db03e466f779cf7134217d487bcfbcaa5ea86bc8cbf1a18f",
+      "test_rate_limit_burst_returns_429_with_retry_after": "488714958ae36f6ec9b3ce04dd3c0363768306c6491a54ef243b2b02035e531c"
     },
     "test_files": [
       "tests/test_fr05.py"
