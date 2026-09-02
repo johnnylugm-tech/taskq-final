@@ -9,7 +9,8 @@
       "modules": [
         "taskq_api.api.deps",
         "taskq_api.api.tasks",
-        "taskq_api.api.health"
+        "taskq_api.api.health",
+        "taskq_api.api"
       ],
       "allowed_dependencies": [
         "service",
@@ -23,7 +24,8 @@
         "taskq_api.service.tasks",
         "taskq_api.service.runner",
         "taskq_api.service.auth",
-        "taskq_api.service.ratelimit"
+        "taskq_api.service.ratelimit",
+        "taskq_api.service"
       ],
       "allowed_dependencies": [
         "repository",
@@ -36,7 +38,8 @@
         "taskq_api.repository.session",
         "taskq_api.repository.task_repo",
         "taskq_api.repository.key_repo",
-        "taskq_api.repository.rate_repo"
+        "taskq_api.repository.rate_repo",
+        "taskq_api.repository"
       ],
       "allowed_dependencies": [
         "models",
@@ -47,7 +50,8 @@
       "name": "models",
       "modules": [
         "taskq_api.models.orm",
-        "taskq_api.models.schemas"
+        "taskq_api.models.schemas",
+        "taskq_api.models"
       ],
       "allowed_dependencies": [
         "support"
@@ -70,7 +74,8 @@
         "migrations.versions.v1_initial",
         "migrations.versions.v2_tags",
         "migrations.versions.v3_split_results",
-        "migrations.versions._shared"
+        "migrations.versions._shared",
+        "taskq_api"
       ],
       "allowed_dependencies": []
     }
