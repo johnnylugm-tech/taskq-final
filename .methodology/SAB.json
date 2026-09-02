@@ -10,7 +10,8 @@
         "taskq_api.api.deps",
         "taskq_api.api.tasks",
         "taskq_api.api.health",
-        "taskq_api.api"
+        "taskq_api.api",
+        "taskq_api.api.metrics"
       ],
       "allowed_dependencies": [
         "service",
