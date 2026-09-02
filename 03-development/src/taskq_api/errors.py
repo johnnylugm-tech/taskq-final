@@ -114,15 +114,25 @@ class ConflictProblem(Problem):
 
 
 class RateLimitedProblem(Problem):
-    """[FR-10, FR-05] 429 — bucket exhausted."""
+    """[FR-10, FR-05] 429 — bucket exhausted.
 
-    def __init__(self, detail: str = "rate limit exceeded") -> None:
+    ``retry_after`` is the integer-second hint the transport layer renders
+    as the ``Retry-After`` header (SPEC.md line 118); ``None`` means the
+    caller did not resolve a wait and no header is emitted.
+    """
+
+    def __init__(
+        self,
+        detail: str = "rate limit exceeded",
+        retry_after: Optional[int] = None,
+    ) -> None:
         super().__init__(
             type_="/errors/rate-limited",
             title="Too Many Requests",
             status=429,
             detail=detail,
         )
+        self.retry_after = retry_after
 
 
 def problem_body(problem: Problem) -> dict:

@@ -25,8 +25,16 @@ from taskq_api.errors import (
 
 
 def _problem_response(problem: Problem) -> JSONResponse:
-    """[FR-10] Render a :class:`Problem` as a ``problem+json`` response."""
+    """[FR-10, FR-05] Render a :class:`Problem` as a ``problem+json`` response.
+
+    A ``retry_after`` on the problem (set by the FR-05 rate limiter) is
+    emitted as the ``Retry-After`` header in RFC 9110 §10.2.3 delay-seconds
+    form — SPEC.md line 118 requires it on every 429.
+    """
     headers = {"X-Correlation-Id": problem.correlation_id}
+    retry_after = getattr(problem, "retry_after", None)
+    if retry_after is not None:
+        headers["Retry-After"] = str(int(retry_after))
     return JSONResponse(
         status_code=problem.status,
         content=problem_body(problem),

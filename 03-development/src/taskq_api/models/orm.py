@@ -104,10 +104,19 @@ class Tag(Base):
 
 
 class RateBucket(Base):
-    """[FR-05] Per-key token-bucket state (row-locked refill)."""
+    """[FR-05] Per-key token-bucket state (row-locked refill).
+
+    ``key_id`` is the principal's SHA-256 hash prefix (the value
+    :class:`taskq_api.service.auth.Principal` carries), not the
+    ``api_keys.id`` surrogate — the auth chokepoint resolves a principal,
+    so the hash prefix is the identifier available where the bucket is
+    consulted.
+
+    Citations: SPEC.md line 119 (bucket state in the DB), SPEC.md line 313.
+    """
 
     __tablename__ = "rate_buckets"
 
-    key_id = Column(Integer, primary_key=True)
+    key_id = Column(String(64), primary_key=True)
     tokens = Column(Integer, nullable=False, default=0)
     last_refill = Column(DateTime(timezone=True), nullable=False)

@@ -25,14 +25,33 @@ from typing import Optional
 
 from fastapi import Header
 
-from taskq_api.errors import UnauthenticatedProblem
+from taskq_api.errors import RateLimitedProblem, UnauthenticatedProblem
+from taskq_api.service import ratelimit
 from taskq_api.service.auth import Principal, verify_key
+
+
+def _enforce_rate_limit(principal: Principal) -> None:
+    """[FR-05 AC-5.1, AC-5.2] Charge one token to the caller's bucket.
+
+    Raises :class:`RateLimitedProblem` (→ 429 + problem+json +
+    ``Retry-After``) when the per-key bucket is empty. Only ``/v1/*``
+    routes reach this function — they are the routes that depend on
+    :func:`require_scope`; ``/healthz`` and ``/readyz`` declare no
+    dependency and are therefore exempt (AC-5.4).
+
+    Citations: SPEC.md line 116, line 118, line 120.
+    """
+    allowed, wait = ratelimit.check(principal)
+    if not allowed:
+        raise RateLimitedProblem(
+            retry_after=ratelimit.retry_after_seconds(wait),
+        )
 
 
 async def require_auth(
     x_api_key: Optional[str] = Header(default=None, alias="X-API-Key"),
 ) -> Principal:
-    """[FR-03 AC-3.1] Authenticate the request — return a :class:`Principal`.
+    """[FR-03 AC-3.1, FR-05 AC-5.1] Authenticate, then charge the bucket.
 
     Raises :class:`UnauthenticatedProblem` (→ 401) for missing / unknown
     keys. Per-route scope authorization is done inline in the handler
@@ -40,10 +59,17 @@ async def require_auth(
     declare its own required scope while the response body stays
     generic — ``ForbiddenProblem``'s default detail is
     ``"insufficient scope"``, never a resource identifier (NFR-02).
+
+    Rate limiting runs as its own layer inside this chokepoint, AFTER the
+    key resolves to a :class:`Principal` (the bucket is per principal, so
+    it cannot be charged before the caller is known) and BEFORE the
+    handler's scope check — an over-limit caller never reaches the handler
+    (FR-05 AC-5.1 / AC-5.2).
     """
     principal = verify_key(x_api_key)
     if principal is None:
         raise UnauthenticatedProblem()
+    _enforce_rate_limit(principal)
     return principal
 
 
