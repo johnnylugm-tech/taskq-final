@@ -1,0 +1,21 @@
+# taskq-api pinned dependencies (NFR-07)
+#
+# Every direct dependency is pinned with `==`. The full transitive tree
+# (with licenses) is mirrored in 08-config/SBOM.json. To regenerate:
+#
+#   pip-compile --output-file=requirements.lock requirements.txt
+#
+# WARNING: this file is shipped as a required artifact per the SAB;
+# changes to requirements.txt MUST be reflected here.
+
+uvicorn==0.30.0
+fastapi==0.111.0
+pydantic==2.7.0
+pydantic-settings==2.2.1
+sqlalchemy==2.0.30
+alembic==1.13.0
+httpx==0.27.0
+import-linter==2.0
+mutmut==2.4.0
+pytest-benchmark==4.0.0
+pip-licenses==4.5.0
