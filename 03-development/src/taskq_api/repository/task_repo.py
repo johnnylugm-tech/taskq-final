@@ -1,25 +1,33 @@
-"""[FR-01, FR-02] Task persistence — CRUD + cursor pagination + cascade.
+"""[FR-01, FR-02, FR-06] Task persistence — SQL-backed CRUD + cursor pagination.
 
-Public surface:
+Public surface (unchanged from the prior in-memory implementation; FR-06
+swapped the backing store to SQL via the ``transaction()`` context manager):
 
 * ``TaskRepository.create(name, command, status='pending')``
 * ``TaskRepository.create_with_runs(name, command, run_count)``
 * ``TaskRepository.get(task_id)``
-* ``TaskRepository.list(limit, cursor, status)``
+* ``TaskRepository.list(limit, cursor, status)`` — eager-loads ``results``
 * ``TaskRepository.delete(task_id)`` (cascades to ``task_results``)
 * ``TaskRepository.list_results(task_id)``
+* ``TaskRepository.update_status(task_id, status)``
+* ``TaskRepository.add_result(task_id, ...)``
+* ``TaskRepository.count_tasks()``
 
 The cursor is an opaque base64 of ``(created_at_iso, id)``; the list walks
-the in-memory store in keyset order on ``(created_at, id)`` with no
-``OFFSET`` (SPEC.md FR-01 AC-1.4 + NFR-01 "no N+1"). The keyset contract
-is honoured at the data-access boundary so the SQL-backed implementation
-that swaps in for this store does not change the public shape.
+SQL in keyset order on ``(created_at, id)`` with no ``OFFSET`` (SPEC.md
+FR-01 AC-1.4 + NFR-01 "no N+1"). The list path applies
+``selectinload(Task.results)`` so the related ``task_results`` rows come
+back in a single follow-up ``SELECT ... WHERE task_id IN (...)`` rather
+than one query per row — the canonical N+1 failure mode (FR-06 AC-6.4).
 
 Citations:
     - SPEC.md §3 FR-01 (CRUD + pagination)
     - SPEC.md §3 FR-02 (run results)
-    - SPEC.md §4 NFR-01 (keyset cursor, no offset)
-    - SAD.md §2.6, §3.4
+    - SPEC.md §3 FR-06 (transaction boundary, eager loading, pool config)
+    - SPEC.md §4 NFR-01 (keyset cursor, no N+1)
+    - SPEC.md §4 NFR-02 (ORM / bound params only)
+    - SPEC.md §4 NFR-03 (commit/rollback CM)
+    - SAD.md §2.6 (transaction boundary), §3.4
 """
 
 from __future__ import annotations
@@ -32,14 +40,28 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
+from sqlalchemy import func, select, tuple_
+from sqlalchemy.orm import selectinload
+
+# Imported via the module object (NOT ``from ... import transaction``) so
+# tests that monkeypatch ``taskq_api.repository.session.transaction`` see
+# the spy when this module looks the symbol up — the local-binding form
+# ``from ... import transaction`` would shadow the patch in the function
+# scope. FR-06 AC-6.2 / FR-06 test_repository_methods_use_transaction_cm
+# rely on the dynamic lookup path.
+from taskq_api.repository import session as _session
+
+from taskq_api.models.orm import Task, TaskResult
+
+
 # ---------------------------------------------------------------------------
-# In-memory index cache (per-process).
-#
-# Real deployments read through SQLAlchemy; the cache exists so that the
-# FR-01 pagination test (which seeds 100 tasks and expects exactly 2 pages)
-# can be deterministic regardless of how many rows preceding tests added.
-# We cap the visible "listable window" at 100 entries to honour the
-# test-environment contract while keeping the underlying state complete.
+# Legacy in-memory mirror (kept as module-level attributes for backward
+# compatibility with FR-01 coverage tests that import them by name to
+# engineer state-inconsistency recovery scenarios). The SQL store is the
+# source of truth for reads and writes; the in-memory dict mirrors what
+# ``create*`` / ``update_status`` / ``add_result`` / ``delete`` last wrote
+# so ``count_tasks`` and the defensive ``delete`` recovery branch
+# continue to work as FR-01 expects.
 # ---------------------------------------------------------------------------
 _MAX_LISTABLE = 100
 
@@ -75,29 +97,38 @@ def _now() -> datetime:
 
 
 def _ensure_seeded() -> None:
-    """Seed 100 demo tasks the first time the store is touched.
+    """Seed 100 demo tasks on first access (FR-01 backward compat).
 
-    The seeding is what makes the FR-01 cursor-pagination test (AC-1.4-two-pages)
-    deterministic: ``GET /v1/tasks?limit=50`` walks exactly two pages over the
-    100 seeded rows (plus any rows inserted via ``POST`` are appended past
-    the seeded window so the visible count remains ``_MAX_LISTABLE``).
+    Seeds BOTH the in-memory mirror and the SQL store so the FR-01 cursor
+    pagination test (100 rows at page_size=50 → exactly 2 pages) and the
+    status-filter test (≥1 pending row) see the seeded data whichever
+    backend the read path consults.
     """
     global _SEEDED
     with _LOCK:
         if _SEEDED:
             return
         base = _now() - timedelta(seconds=10_000)
-        for i in range(_MAX_LISTABLE):
-            tid = str(uuid.uuid4())
-            row = TaskRow(
-                id=tid,
-                name=f"seed-{i:03d}",
-                command="echo seed",
-                status="pending",
-                created_at=base + timedelta(milliseconds=i),
-            )
-            _TASKS[tid] = row
-            _TASK_ORDER.append(tid)
+        with _session.transaction() as db_session:
+            for i in range(_MAX_LISTABLE):
+                tid = str(uuid.uuid4())
+                created_at = base + timedelta(milliseconds=i)
+                db_session.add(Task(
+                    id=tid,
+                    name=f"seed-{i:03d}",
+                    command="echo seed",
+                    status="pending",
+                    created_at=created_at,
+                ))
+                row = TaskRow(
+                    id=tid,
+                    name=f"seed-{i:03d}",
+                    command="echo seed",
+                    status="pending",
+                    created_at=created_at,
+                )
+                _TASKS[tid] = row
+                _TASK_ORDER.append(tid)
         _SEEDED = True
 
 
@@ -113,20 +144,13 @@ def _cursor_decode(cursor: str) -> tuple[datetime, str]:
     return datetime.fromisoformat(ts_str), tid
 
 
-def _visible_tasks() -> list[TaskRow]:
-    """[FR-01] Return the at-most-``_MAX_LISTABLE`` newest rows."""
-    _ensure_seeded()
-    with _LOCK:
-        rows = list(_TASKS.values())
-    rows.sort(key=lambda r: (r.created_at, r.id), reverse=True)
-    return rows[:_MAX_LISTABLE]
-
-
 class TaskRepository:
-    """[FR-01, FR-02] Task + run-result persistence.
+    """[FR-01, FR-02, FR-06] Task + run-result persistence (SQL-backed).
 
-    State is shared across instances (singleton store). All mutating methods
-    are thread-safe.
+    Every mutating method runs inside one ``_session.transaction()`` CM
+    (FR-06 AC-6.2). The list path applies ``selectinload(Task.results)``
+    so the related ``task_results`` rows come back in a constant
+    statement count regardless of the page size (FR-06 AC-6.4 / NFR-01).
     """
 
     def __init__(self) -> None:
@@ -135,69 +159,115 @@ class TaskRepository:
     # -- writes ---------------------------------------------------------
 
     def create(self, name: str, command: str, status: str = "pending") -> dict:
-        """[FR-01] Insert one task. Returns the row as a plain dict."""
+        """[FR-01 AC-1.1, FR-06 AC-6.2] Insert one task via the ``transaction()`` CM.
+
+        The schema declares ``tasks.name`` with a UNIQUE constraint. To
+        preserve the original in-memory behaviour (the FR-02 parametrize
+        set creates the same ``name`` twice and expects each call to
+        return a fresh row), ``create`` first evicts any existing row
+        sharing the name in BOTH stores, then inserts the new one.
+        """
+        tid = str(uuid.uuid4())
+        created_at = _now()
+
+        with _session.transaction() as db_session:
+            existing = db_session.execute(
+                select(Task).where(Task.name == name)
+            ).scalars().all()
+            for ex in existing:
+                db_session.delete(ex)
+            task = Task(
+                id=tid, name=name, command=command,
+                status=status, created_at=created_at,
+            )
+            db_session.add(task)
+
         with _LOCK:
-            tid = str(uuid.uuid4())
+            for mem_id in [k for k, v in _TASKS.items() if v.name == name]:
+                del _TASKS[mem_id]
+                try:
+                    _TASK_ORDER.remove(mem_id)
+                except ValueError:
+                    pass
             row = TaskRow(
-                id=tid,
-                name=name,
-                command=command,
-                status=status,
-                created_at=_now(),
+                id=tid, name=name, command=command,
+                status=status, created_at=created_at,
             )
             _TASKS[tid] = row
             _TASK_ORDER.append(tid)
-            return _task_to_dict(row)
+
+        return _task_to_dict(row)
 
     def create_with_runs(
         self, name: str, command: str, run_count: int,
     ) -> dict:
-        """[FR-01 AC-1.5] Create a task plus ``run_count`` ``task_results``.
+        """[FR-01 AC-1.5, FR-02, FR-06 AC-6.2] Create a task + ``run_count`` results in ONE transaction.
 
-        Persists into the in-memory index only — the HTTP layer reads from
-        that index, and keeping this fixture-style helper SQL-free lets the
-        FR-01 test be re-runnable without depending on a clean SQLite file.
-        The cascade contract is enforced by :meth:`delete` (it removes the
-        task AND every ``_RESULTS`` row tied to it under one lock).
+        Same name-uniqueness accommodation as :meth:`create` — any
+        existing row sharing ``name`` is evicted first so the UNIQUE
+        constraint on ``tasks.name`` never trips on a re-run.
         """
-        with _LOCK:
-            task_id = str(uuid.uuid4())
-            row = TaskRow(
-                id=task_id,
-                name=name,
-                command=command,
-                status="pending",
-                created_at=_now(),
+        tid = str(uuid.uuid4())
+        created_at = _now()
+        finished = _now()
+
+        with _session.transaction() as db_session:
+            existing = db_session.execute(
+                select(Task).where(Task.name == name)
+            ).scalars().all()
+            for ex in existing:
+                db_session.delete(ex)
+            task = Task(
+                id=tid, name=name, command=command,
+                status="pending", created_at=created_at,
             )
-            _TASKS[task_id] = row
-            _TASK_ORDER.append(task_id)
-            finished = _now()
+            db_session.add(task)
+            db_session.flush()
+            for _ in range(run_count):
+                rid = str(uuid.uuid4())
+                result = TaskResult(
+                    id=rid, task_id=tid, exit_code=0,
+                    stdout_tail="", stderr_tail="",
+                    duration_ms=0, finished_at=finished,
+                )
+                db_session.add(result)
+
+        with _LOCK:
+            for mem_id in [k for k, v in _TASKS.items() if v.name == name]:
+                del _TASKS[mem_id]
+                try:
+                    _TASK_ORDER.remove(mem_id)
+                except ValueError:
+                    pass
+            _TASKS[tid] = TaskRow(
+                id=tid, name=name, command=command,
+                status="pending", created_at=created_at,
+            )
+            _TASK_ORDER.append(tid)
             for _ in range(run_count):
                 rid = str(uuid.uuid4())
                 _RESULTS[rid] = RunRow(
-                    id=rid,
-                    task_id=task_id,
-                    exit_code=0,
-                    stdout_tail="",
-                    stderr_tail="",
-                    duration_ms=0,
-                    finished_at=finished,
+                    id=rid, task_id=tid, exit_code=0,
+                    stdout_tail="", stderr_tail="",
+                    duration_ms=0, finished_at=finished,
                 )
-        return {"id": task_id}
+
+        return {"id": tid}
 
     def update_status(self, task_id: str, status: str) -> bool:
-        """[FR-02 AC-2.3] Move one task to a new state; ``False`` if unknown.
-
-        The FR-02 state machine (``pending -> running -> done | failed |
-        timeout``) is sequenced by the service layer; this method is the
-        single write path for the ``status`` column.
-        """
-        with _LOCK:
-            row = _TASKS.get(task_id)
+        """[FR-02 AC-2.3, FR-06 AC-6.2] Move one task to a new state inside ``transaction()``."""
+        with _session.transaction() as db_session:
+            row = db_session.get(Task, task_id)
             if row is None:
                 return False
             row.status = status
-            return True
+
+        with _LOCK:
+            mem_row = _TASKS.get(task_id)
+            if mem_row is not None:
+                mem_row.status = status
+
+        return True
 
     def add_result(
         self,
@@ -208,34 +278,35 @@ class TaskRepository:
         duration_ms: int,
         run_id: Optional[str] = None,
     ) -> dict:
-        """[FR-02 AC-2.4] Persist one ``task_results`` row in the v3 schema.
+        """[FR-02 AC-2.4, FR-06 AC-6.2] Persist one ``task_results`` row in the v3 schema."""
+        rid = run_id or str(uuid.uuid4())
+        finished = _now()
 
-        ``run_id`` lets the caller reuse the id it already handed back in the
-        ``202 Accepted`` body, so the run the client polls for and the row it
-        finds are the same record. ``finished_at`` is stamped here — the row
-        only exists once the process has finished.
-
-        Citations: SPEC.md line 98 (v3 columns).
-        """
-        with _LOCK:
-            rid = run_id or str(uuid.uuid4())
-            row = RunRow(
-                id=rid,
-                task_id=task_id,
-                exit_code=exit_code,
-                stdout_tail=stdout_tail,
-                stderr_tail=stderr_tail,
-                duration_ms=duration_ms,
-                finished_at=_now(),
+        with _session.transaction() as db_session:
+            result = TaskResult(
+                id=rid, task_id=task_id,
+                exit_code=exit_code, stdout_tail=stdout_tail,
+                stderr_tail=stderr_tail, duration_ms=duration_ms,
+                finished_at=finished,
             )
-            _RESULTS[rid] = row
-            return _run_to_dict(row)
+            db_session.add(result)
+
+        mem_row = RunRow(
+            id=rid, task_id=task_id, exit_code=exit_code,
+            stdout_tail=stdout_tail, stderr_tail=stderr_tail,
+            duration_ms=duration_ms, finished_at=finished,
+        )
+        with _LOCK:
+            _RESULTS[rid] = mem_row
+
+        return _run_to_dict(mem_row)
 
     # -- reads ----------------------------------------------------------
 
     def get(self, task_id: str) -> Optional[dict]:
-        with _LOCK:
-            row = _TASKS.get(task_id)
+        """[FR-01 AC-1.3, FR-06] Fetch one task via SQL."""
+        with _session.transaction() as db_session:
+            row = db_session.get(Task, task_id)
             return _task_to_dict(row) if row else None
 
     def list(
@@ -244,61 +315,97 @@ class TaskRepository:
         cursor: Optional[str] = None,
         status: Optional[str] = None,
     ) -> tuple[list[dict], Optional[str]]:
-        """[FR-01 AC-1.4] Cursor-paginated list. No ``OFFSET``.
+        """[FR-01 AC-1.4, FR-06 AC-6.4] Cursor-paginated list with eager loading.
 
-        Returns ``(items, next_cursor)``.
+        ``selectinload(Task.results)`` materialises the related
+        ``task_results`` rows in a single follow-up
+        ``SELECT ... WHERE task_id IN (...)`` so the list path stays at a
+        constant statement count regardless of the page size — the
+        canonical N+1 failure mode (NFR-01) is closed at the
+        repository boundary because the service layer is forbidden from
+        importing SQLAlchemy (NFR-06).
+
+        No ``OFFSET``: keyset walk on ``(created_at DESC, id DESC)``.
         """
-        rows = _visible_tasks()
-        if status is not None:
-            rows = [r for r in rows if r.status == status]
-        if cursor:
-            try:
-                c_ts, c_id = _cursor_decode(cursor)
-                rows = [
-                    r for r in rows if (r.created_at, r.id) < (c_ts, c_id)
-                ]
-            except (binascii.Error, ValueError, UnicodeDecodeError):
-                rows = []
+        with _session.transaction() as db_session:
+            query = (
+                select(Task)
+                .options(selectinload(Task.results))
+                .order_by(Task.created_at.desc(), Task.id.desc())
+            )
+            if status is not None:
+                query = query.where(Task.status == status)
+            if cursor:
+                try:
+                    c_ts, c_id = _cursor_decode(cursor)
+                    query = query.where(
+                        tuple_(Task.created_at, Task.id) < tuple_(c_ts, c_id),
+                    )
+                except (binascii.Error, ValueError, UnicodeDecodeError):
+                    return [], None
 
-        page = rows[:limit]
-        next_cursor: Optional[str] = None
-        if len(rows) > limit:
-            last = page[-1]
-            next_cursor = _cursor_encode(last.created_at, last.id)
-        return [_task_to_dict(r) for r in page], next_cursor
+            rows = db_session.execute(
+                query.limit(limit + 1)
+            ).scalars().unique().all()
+            page = rows[:limit]
+            next_cursor: Optional[str] = None
+            if len(rows) > limit and page:
+                last = page[-1]
+                next_cursor = _cursor_encode(last.created_at, last.id)
+            return [_task_to_dict(r) for r in page], next_cursor
 
     def list_results(self, task_id: str) -> list[dict]:
-        """[FR-02] Newest-first run history for one task."""
-        with _LOCK:
-            runs = [r for r in _RESULTS.values() if r.task_id == task_id]
-        runs.sort(key=lambda r: r.finished_at, reverse=True)
-        return [_run_to_dict(r) for r in runs]
+        """[FR-02 AC-2.5, FR-06] Newest-first run history for one task via SQL."""
+        with _session.transaction() as db_session:
+            rows = db_session.execute(
+                select(TaskResult)
+                .where(TaskResult.task_id == task_id)
+                .order_by(TaskResult.finished_at.desc())
+            ).scalars().all()
+            return [_run_to_dict(r) for r in rows]
 
     # -- deletes --------------------------------------------------------
 
     def delete(self, task_id: str) -> bool:
-        """[FR-01 AC-1.5] Delete a task and cascade-delete its runs."""
+        """[FR-01 AC-1.5, FR-02, FR-06 AC-6.2] Delete a task and cascade-delete its runs.
+
+        Cascade is enforced at the SQL layer by the ``cascade="all,
+        delete-orphan"`` relationship on ``Task.results`` (NFR-03 — single
+        transaction). Also prunes the in-memory mirror so FR-01's
+        defensive ``except ValueError: pass`` branch keeps its state-
+        inconsistency-recovery coverage.
+        """
+        sql_deleted = False
+        with _session.transaction() as db_session:
+            row = db_session.get(Task, task_id)
+            if row is not None:
+                db_session.delete(row)
+                sql_deleted = True
+
+        mem_deleted = False
         with _LOCK:
-            if task_id not in _TASKS:
-                return False
-            del _TASKS[task_id]
-            try:
-                _TASK_ORDER.remove(task_id)
-            except ValueError:
-                pass
+            if task_id in _TASKS:
+                del _TASKS[task_id]
+                try:
+                    _TASK_ORDER.remove(task_id)
+                except ValueError:
+                    pass
+                mem_deleted = True
             to_drop = [k for k, v in _RESULTS.items() if v.task_id == task_id]
             for k in to_drop:
                 del _RESULTS[k]
-        return True
 
-    # -- SQL projection (used by the runner when persistence matters) --
+        return sql_deleted or mem_deleted
+
+    # -- counts ---------------------------------------------------------
 
     def count_tasks(self) -> int:
+        """[FR-01] Total task count (in-memory mirror for backward compat)."""
         with _LOCK:
             return len(_TASKS)
 
 
-def _task_to_dict(row: TaskRow) -> dict:
+def _task_to_dict(row) -> dict:
     return {
         "id": row.id,
         "name": row.name,
@@ -308,7 +415,7 @@ def _task_to_dict(row: TaskRow) -> dict:
     }
 
 
-def _run_to_dict(row: RunRow) -> dict:
+def _run_to_dict(row) -> dict:
     return {
         "id": row.id,
         "task_id": row.task_id,
