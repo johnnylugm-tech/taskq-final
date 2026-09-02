@@ -41,7 +41,8 @@
         "taskq_api.repository.task_repo",
         "taskq_api.repository.key_repo",
         "taskq_api.repository.rate_repo",
-        "taskq_api.repository"
+        "taskq_api.repository",
+        "taskq_api.repository._time"
       ],
       "allowed_dependencies": [
         "models",
