@@ -16,6 +16,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from taskq_api.api.health import router as health_router
+from taskq_api.api.metrics import router as metrics_router
 from taskq_api.api.tasks import router as tasks_router
 from taskq_api.errors import (
     Problem,
@@ -47,6 +48,7 @@ def create_app() -> FastAPI:
 
     application.include_router(health_router)
     application.include_router(tasks_router)
+    application.include_router(metrics_router)
 
     @application.exception_handler(Problem)
     async def _handle_problem(_: Request, exc: Problem) -> JSONResponse:
