@@ -31,7 +31,7 @@ import shlex
 import threading
 import time
 import uuid
-from typing import Optional
+from typing import NamedTuple, Optional
 
 from taskq_api.config import get_settings
 from taskq_api.errors import ConflictProblem, NotFoundProblem, redact_secrets
@@ -41,6 +41,19 @@ from taskq_api.repository.task_repo import TaskRepository
 # text so a chatty command cannot balloon a task_results row.
 _TAIL_LIMIT = 4096
 
+# Terminal states of the FR-02 state machine (SPEC.md line 97). Kept as
+# module-level constants so a typo at one call site never silently shifts
+# a task into a state the rest of the system does not recognise.
+_STATE_DONE = "done"
+_STATE_FAILED = "failed"
+_STATE_TIMEOUT = "timeout"
+_STATE_RUNNING = "running"
+
+# Sentinel exit code used when the process never even spawned (e.g. unknown
+# binary, shlex.split failure). The row still satisfies the v3 column
+# contract — the failure is conveyed via the ``state`` field instead.
+_SPAWN_FAILURE_EXIT_CODE = -1
+
 # Bound alias for ``asyncio.create_subprocess_exec``. Referenced as a module
 # attribute rather than called through its dotted name because the AC-2.2
 # source scan counts the token ``exec`` immediately followed by ``(``, which
@@ -49,13 +62,75 @@ _TAIL_LIMIT = 4096
 _CREATE_SUBPROCESS = asyncio.create_subprocess_exec
 
 
+class RunOutcome(NamedTuple):
+    """[FR-02 AC-2.4] Persisted-shape result of a single task execution.
+
+    Mirrors the v3 ``task_results`` columns (``exit_code`` /
+    ``stdout_tail`` / ``stderr_tail`` / ``duration_ms``) plus the terminal
+    ``state`` (``done`` / ``failed`` / ``timeout``) used to drive the
+    task's own ``status`` field.
+    """
+    exit_code: int
+    stdout_tail: str
+    stderr_tail: str
+    duration_ms: int
+    state: str
+
+
 def _tail(raw: bytes) -> str:
     """[FR-02 AC-2.4, NFR-04] Decode captured output, redact, keep the tail."""
     text = raw.decode("utf-8", errors="replace")
     return redact_secrets(text)[-_TAIL_LIMIT:]
 
 
-async def run_subprocess(command: str, timeout: Optional[float] = None) -> dict:
+def _failed_outcome(exc: BaseException) -> RunOutcome:
+    """[FR-02 AC-2.3] Build a terminal ``failed`` outcome for a spawn-time
+    exception (unknown binary, unsplittable command, etc.).
+
+    Recording the failure rather than letting it propagate is what keeps
+    the task from being stranded in ``running`` — the SPEC.md line 97
+    state machine has no terminal state for "never finished".
+    """
+    return RunOutcome(
+        exit_code=_SPAWN_FAILURE_EXIT_CODE,
+        stdout_tail="",
+        stderr_tail=redact_secrets(str(exc))[-_TAIL_LIMIT:],
+        duration_ms=0,
+        state=_STATE_FAILED,
+    )
+
+
+async def _communicate_with_timeout(
+    proc: asyncio.subprocess.Process, limit: float,
+) -> tuple[bytes, bytes, bool]:
+    """[FR-02 AC-2.2] Await process completion, enforcing ``limit`` seconds.
+
+    On timeout the process is killed and the partial output is drained so
+    the caller can still report the captured tail. The returned ``timed_out``
+    flag distinguishes the timeout path from the normal completion path so
+    the caller can stamp the right terminal state.
+    """
+    try:
+        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=limit)
+        return stdout, stderr, False
+    except asyncio.TimeoutError:
+        proc.kill()
+        stdout, stderr = await proc.communicate()
+        return stdout, stderr, True
+
+
+def _classify_exit(timed_out: bool, returncode: int) -> str:
+    """[FR-02 AC-2.3] Map a process outcome to its terminal ``state``."""
+    if timed_out:
+        return _STATE_TIMEOUT
+    if returncode != 0:
+        return _STATE_FAILED
+    return _STATE_DONE
+
+
+async def run_subprocess(
+    command: str, timeout: Optional[float] = None,
+) -> RunOutcome:
     """[FR-02 AC-2.2] Execute ``command`` as an argv list, bounded by a timeout.
 
     ``command`` is split with :func:`shlex.split` and its members are passed
@@ -64,9 +139,8 @@ async def run_subprocess(command: str, timeout: Optional[float] = None) -> dict:
     defaults to ``TASKQ_TASK_TIMEOUT`` (``Settings.task_timeout``, 10.0s);
     exceeding it kills the process and yields the ``timeout`` state.
 
-    Returns the v3 result shape plus the terminal ``state``:
-    ``exit_code`` / ``stdout_tail`` / ``stderr_tail`` / ``duration_ms`` /
-    ``state`` where state is one of ``done`` / ``failed`` / ``timeout``.
+    Returns a :class:`RunOutcome` with the v3 result columns plus the
+    terminal ``state`` (``done`` / ``failed`` / ``timeout``).
 
     Citations: SPEC.md line 96 (runner contract), line 97 (terminal states).
     """
@@ -79,26 +153,17 @@ async def run_subprocess(command: str, timeout: Optional[float] = None) -> dict:
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
-    state = "done"
-    try:
-        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=limit)
-    except asyncio.TimeoutError:
-        proc.kill()
-        stdout, stderr = await proc.communicate()
-        state = "timeout"
-
+    stdout, stderr, timed_out = await _communicate_with_timeout(proc, limit)
     duration_ms = int((time.perf_counter() - started) * 1000)
-    exit_code = proc.returncode
-    if state == "done" and exit_code != 0:
-        state = "failed"
+    state = _classify_exit(timed_out, proc.returncode)
 
-    return {
-        "exit_code": exit_code,
-        "stdout_tail": _tail(stdout),
-        "stderr_tail": _tail(stderr),
-        "duration_ms": duration_ms,
-        "state": state,
-    }
+    return RunOutcome(
+        exit_code=proc.returncode,
+        stdout_tail=_tail(stdout),
+        stderr_tail=_tail(stderr),
+        duration_ms=duration_ms,
+        state=state,
+    )
 
 
 def _drive_run(task_id: str, command: str, run_id: str) -> None:
@@ -112,26 +177,20 @@ def _drive_run(task_id: str, command: str, run_id: str) -> None:
     have no terminal state.
     """
     try:
-        result = asyncio.run(run_subprocess(command))
+        outcome = asyncio.run(run_subprocess(command))
     except Exception as exc:  # noqa: BLE001 — terminal state is mandatory
-        result = {
-            "exit_code": -1,
-            "stdout_tail": "",
-            "stderr_tail": redact_secrets(str(exc))[-_TAIL_LIMIT:],
-            "duration_ms": 0,
-            "state": "failed",
-        }
+        outcome = _failed_outcome(exc)
 
     repo = TaskRepository()
     repo.add_result(
         task_id=task_id,
-        exit_code=result["exit_code"],
-        stdout_tail=result["stdout_tail"],
-        stderr_tail=result["stderr_tail"],
-        duration_ms=result["duration_ms"],
+        exit_code=outcome.exit_code,
+        stdout_tail=outcome.stdout_tail,
+        stderr_tail=outcome.stderr_tail,
+        duration_ms=outcome.duration_ms,
         run_id=run_id,
     )
-    repo.update_status(task_id, result["state"])
+    repo.update_status(task_id, outcome.state)
 
 
 def start_run(task_id: str) -> str:
@@ -153,11 +212,11 @@ def start_run(task_id: str) -> str:
     task = repo.get(task_id)
     if task is None:
         raise NotFoundProblem()
-    if task["status"] == "running":
+    if task["status"] == _STATE_RUNNING:
         raise ConflictProblem("task is already running")
 
     run_id = str(uuid.uuid4())
-    repo.update_status(task_id, "running")
+    repo.update_status(task_id, _STATE_RUNNING)
     threading.Thread(
         target=_drive_run,
         args=(task_id, task["command"], run_id),
