@@ -132,6 +132,29 @@ def _run(coro):
     return asyncio.run(coro)
 
 
+def _backdate_bucket(key_id: str, seconds: float) -> None:
+    """Move a bucket's ``last_refill`` ``seconds`` into the past.
+
+    Makes the refill-rate assertion deterministic: instead of sleeping
+    for real time, the stored refill clock is rewound so the next
+    ``refill_and_consume`` sees exactly ``seconds`` of elapsed time.
+    """
+    from datetime import datetime, timedelta, timezone
+
+    from taskq_api.models.orm import RateBucket
+    from taskq_api.repository.session import transaction
+
+    with transaction() as session:
+        row = session.get(RateBucket, key_id)
+        assert row is not None, (
+            f"cannot back-date bucket {key_id!r}: no rate_buckets row "
+            f"(the bucket must be persisted in the DB first)"
+        )
+        row.last_refill = (
+            datetime.now(timezone.utc) - timedelta(seconds=seconds)
+        )
+
+
 # ---------------------------------------------------------------------------
 # Per-test isolation: FR-05 stores its bucket state in the
 # ``rate_buckets`` table; clear it before every test so a re-run does not
@@ -351,6 +374,38 @@ def test_rate_limit_burst_returns_429_with_retry_after(
             f"body={body!r}"
         )
 
+    # SPEC.md line 116 names TWO knobs — capacity ``TASKQ_RATE_BURST``
+    # (pinned by the burst boundary above) and refill rate
+    # ``TASKQ_RATE_PER_SEC``. The boundary alone cannot tell a bucket
+    # that refills at 5 tokens/s from one that never refills, so pin the
+    # rate directly: back-date a probe bucket's ``last_refill`` by a
+    # known interval and assert exactly ``interval * per_sec`` tokens
+    # come back. Deterministic — no sleeping, no wall-clock tolerance.
+    if per_sec == "5.0":
+        rate = float(per_sec)
+        elapsed_seconds = 2.0
+        repository = RateBucketRepository()
+        probe_key = "refill-rate-probe"
+
+        # Drain the probe bucket: capacity successes, then rejection.
+        for _ in range(int(burst)):
+            assert repository.refill_and_consume(probe_key, cost=1)[0] is True
+        assert repository.refill_and_consume(probe_key, cost=1)[0] is False
+
+        _backdate_bucket(probe_key, seconds=elapsed_seconds)
+        allowed, _ = repository.refill_and_consume(probe_key, cost=1)
+        assert allowed is True, (
+            f"FR-05 AC-5.1 violated: after {elapsed_seconds}s at "
+            f"{rate} tokens/s the bucket must have refilled"
+        )
+        expected_tokens = int(elapsed_seconds * rate) - 1  # one consumed
+        assert repository.get_tokens(probe_key) == expected_tokens, (
+            f"FR-05 AC-5.1 violated: {elapsed_seconds}s at {rate} "
+            f"tokens/s must grant {int(elapsed_seconds * rate)} tokens "
+            f"(leaving {expected_tokens} after this call), got "
+            f"{repository.get_tokens(probe_key)}"
+        )
+
 
 # ---------------------------------------------------------------------------
 # Case 3: `test_rate_bucket_concurrent_no_overdraft`
@@ -360,7 +415,7 @@ def test_rate_limit_burst_returns_429_with_retry_after(
 # update must hold a row-level lock for the duration of one transaction.
 # ---------------------------------------------------------------------------
 
-def test_rate_bucket_concurrent_no_overdraft(asgi_client, auth_write):
+def test_rate_bucket_concurrent_no_overdraft(asgi_client, auth_write, monkeypatch):
     """FR-05 AC-5.3 / NP-13 — concurrent firings cannot overdraw the bucket.
 
     Spec scenario: ``concurrency=50`` simultaneous in-process requests
@@ -501,6 +556,37 @@ def test_rate_bucket_concurrent_no_overdraft(asgi_client, auth_write):
     assert 0 <= bucket_tokens <= int(burst), (
         f"FR-05 AC-5.3 violated: persisted rate_buckets.tokens "
         f"={bucket_tokens!r} is outside [0, {burst}]"
+    )
+
+    # SPEC.md line 119 also names the MECHANISM: the update must happen
+    # in a single transaction holding a ROW-LEVEL LOCK. DB persistence
+    # (above) plus the no-overdraft ceiling still admit a read-then-write
+    # that races between workers, so assert the lock is actually
+    # requested — the repository must fetch the bucket row with
+    # ``with_for_update`` (SQLAlchemy renders ``SELECT ... FOR UPDATE``
+    # on engines that support it). A spy on ``Session.get`` records the
+    # kwargs the repository passes.
+    from sqlalchemy.orm import Session
+
+    original_get = Session.get
+    lock_requests: list = []
+
+    def _spy_get(self, entity, ident, **kwargs):
+        lock_requests.append(kwargs.get("with_for_update"))
+        return original_get(self, entity, ident, **kwargs)
+
+    monkeypatch.setattr(Session, "get", _spy_get)
+    RateBucketRepository().refill_and_consume("lock-probe-key", cost=1)
+
+    assert lock_requests, (
+        "FR-05 AC-5.3 violated: refill_and_consume did not fetch the "
+        "bucket row via Session.get — the row-level lock cannot be held"
+    )
+    assert any(lock_requests), (
+        f"FR-05 AC-5.3 violated: refill_and_consume fetched the bucket "
+        f"row WITHOUT a row-level lock (with_for_update="
+        f"{lock_requests!r}); SPEC.md line 119 requires the refill + "
+        f"consume update to run in one transaction under a row-level lock"
     )
 
 
@@ -666,9 +752,11 @@ def test_consume_signature_accepts_principal_and_cost():
     )
 
     # Return-type hint must be a bool (or omitted, in which case the
-    # implementation returns a bool at runtime). The signature guard
-    # here is the canonical "shape of the public API" check.
-    return_annotation = sig.return_annotation
+    # implementation returns a bool at runtime). ``eval_str=True``
+    # resolves the annotation, which ``from __future__ import
+    # annotations`` in the implementation module would otherwise leave
+    # as the string ``"bool"``.
+    return_annotation = inspect.signature(consume, eval_str=True).return_annotation
     if return_annotation is not inspect.Signature.empty:
         assert return_annotation is bool, (
             f"FR-05 AC-5.1 violated: consume() must return bool, got "
@@ -802,7 +890,7 @@ def test_rate_limited_problem_is_problem_plus_json():
 
 def test_consume_uses_rate_per_sec_for_retry_after(monkeypatch):
     """FR-05 AC-5.1 — the bucket refills at ``TASKQ_RATE_PER_SEC``
-    tokens per second; when ``consume`` rejects, the
+    tokens per second; when the limiter rejects, the
     ``retry_after_seconds`` is at least ``1 / per_sec`` (one token's
     wait). Pinning this here keeps the AC-5.2 ``Retry-After`` header
     from drifting toward a magic constant."""
@@ -812,8 +900,8 @@ def test_consume_uses_rate_per_sec_for_retry_after(monkeypatch):
     class _EmptyRepo:
         def refill_and_consume(self, key_id, cost):
             # Reject + report the wait-for-one-token as the per-call
-            # 1/per_sec delay. The header value the GREEN handler
-            # emits must reflect the bucket's refill rate.
+            # 1/per_sec delay. The header value the handler emits must
+            # reflect the bucket's refill rate.
             return False, 1.0 / 5.0  # matches TASKQ_RATE_PER_SEC=5.0
 
     monkeypatch.setattr(
@@ -822,24 +910,24 @@ def test_consume_uses_rate_per_sec_for_retry_after(monkeypatch):
 
     principal = Principal(key_id="e" * 16, scope="read")
 
-    # GREEN TODO: ``consume`` returns a tuple ``(allowed,
-    # retry_after_seconds)`` so the handler can set the
-    # ``Retry-After`` header. If GREEN returns a bare ``bool`` the
-    # test below fails — that shape carries no way to surface the
-    # retry hint, which would break AC-5.2.
-    result = consume(principal, cost=1)
+    # ``check`` is the single-call API the handler uses: it returns
+    # ``(allowed, retry_after_seconds)`` so the 429 can carry the
+    # ``Retry-After`` header without consulting the bucket twice.
+    allowed, retry_after_wait = ratelimit_module.check(principal, cost=1)
 
-    assert isinstance(result, tuple), (
-        f"FR-05 AC-5.2 violated: consume() must return "
-        f"(allowed, retry_after_seconds) so the handler can emit "
-        f"the Retry-After header; got bare {result!r}"
-    )
-    allowed, retry_after_seconds = result
     assert allowed is False, (
-        "FR-05 AC-5.2 violated: consume() against an empty bucket "
+        "FR-05 AC-5.2 violated: check() against an empty bucket "
         "must reject, got allowed=True"
     )
-    assert retry_after_seconds > 0, (
+    assert retry_after_wait > 0, (
         f"FR-05 AC-5.2 violated: retry_after_seconds must be a "
-        f"positive number of seconds, got {retry_after_seconds!r}"
+        f"positive number of seconds, got {retry_after_wait!r}"
     )
+    # The wait is the refill rate's own arithmetic (1 token / per_sec),
+    # and the header renders it as whole seconds, rounded up.
+    assert retry_after_wait == 1.0 / float(os.environ["TASKQ_RATE_PER_SEC"])
+    assert ratelimit_module.retry_after_seconds(retry_after_wait) == 1
+
+    # ``consume`` is the boolean-only view of the same decision — one
+    # return type, so no call-site has to inspect the result's shape.
+    assert ratelimit_module.consume(principal, cost=1) is False

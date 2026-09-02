@@ -1,21 +1,15 @@
 """[FR-05] Token-bucket admission control — the rate-limit kernel.
 
-``consume`` is the single entry point the API layer calls: it resolves the
+:func:`check` is the single entry point the API layer calls: it resolves the
 caller's bucket via :class:`taskq_api.repository.rate_repo.RateBucketRepository`
-and answers whether the request may proceed. Capacity and refill rate come
-from ``TASKQ_RATE_BURST`` / ``TASKQ_RATE_PER_SEC``; the bucket row itself
-lives in the database so throttling stays consistent across workers.
+and answers whether the request may proceed, together with the wait the 429's
+``Retry-After`` needs. Capacity and refill rate come from
+``TASKQ_RATE_BURST`` / ``TASKQ_RATE_PER_SEC``; the bucket row itself lives in
+the database so throttling stays consistent across workers.
 
-Return shape of :func:`consume`:
-
-    - admitted  → ``True``
-    - rejected  → ``(False, retry_after_seconds)``
-
-The rejected form carries the refill hint the 429 needs, so the caller can
-emit ``Retry-After`` without re-deriving the bucket's rate. Because a
-2-tuple is truthy, callers MUST NOT test the result for truthiness —
-:func:`check` normalizes both forms into ``(allowed, retry_after_seconds)``
-and is what the API layer consumes.
+:func:`consume` is the boolean-only view of the same decision for callers that
+do not need the retry hint. Both have ONE return type each — an admission
+decision never arrives as a value whose shape the caller has to inspect.
 
 Citations:
     - SPEC.md line 116 (capacity ``TASKQ_RATE_BURST``, refill ``TASKQ_RATE_PER_SEC``)
@@ -39,82 +33,44 @@ from taskq_api.service.auth import Principal
 _bucket_repository = RateBucketRepository()
 
 
-def consume(principal: Principal, cost: int = 1):
+def check(principal: Principal, cost: int = 1) -> tuple[bool, float]:
     """[FR-05 AC-5.1, AC-5.2] Charge ``cost`` tokens to ``principal``'s bucket.
-
-    Two return shapes are intentional — the public contract:
-      - admitted  → ``True`` (the bare bool lets call-sites test admission
-        with ``if consume(principal): ...`` and not be tricked by a
-        truthy 2-tuple on rejection)
-      - rejected via the full repository  → ``(False, retry_after_seconds)``
-        — the wait until the bucket holds ``cost`` tokens again
-        (AC-5.2's ``Retry-After`` hint)
-
-    A stand-in repository that only exposes ``get_tokens`` (no
-    ``refill_and_consume``) returns a bare ``bool`` instead — it cannot
-    compute a refill wait, and :func:`check` synthesizes a one-token
-    fallback so the 429 still carries a usable hint.
 
     Args:
         principal: the authenticated caller — its ``key_id`` keys the bucket.
         cost: tokens this request consumes.
 
     Returns:
-        ``True`` on admission, ``(False, retry_after_seconds)`` on a
-        full-surface rejection, or a bare ``bool`` when the stand-in
-        surface is in use.
+        ``(allowed, retry_after_seconds)``. ``retry_after_seconds`` is
+        ``0.0`` on admission and otherwise the wait until the bucket holds
+        ``cost`` tokens again (AC-5.2's ``Retry-After`` hint).
+
+    A stand-in repository that only exposes ``get_tokens`` (no
+    ``refill_and_consume``) cannot compute a refill wait, so the wait for
+    one token at ``TASKQ_RATE_PER_SEC`` is reported instead — the 429 still
+    carries a usable hint.
 
     Citations: SPEC.md line 116, line 118.
     """
     repository = _bucket_repository
-    if hasattr(repository, "refill_and_consume"):
-        return _consume_full_surface(repository, principal.key_id, cost=cost)
-    return _consume_stand_in_surface(repository, principal.key_id, cost=cost)
+    if not hasattr(repository, "refill_and_consume"):
+        allowed = int(repository.get_tokens(principal.key_id)) >= cost
+        return allowed, 0.0 if allowed else _one_token_seconds()
+    allowed, retry_after = repository.refill_and_consume(
+        principal.key_id, cost=cost,
+    )
+    return bool(allowed), float(retry_after)
 
 
-def _consume_full_surface(
-    repository: RateBucketRepository,
-    key_id: str,
-    cost: int,
-):
-    """[FR-05 AC-5.1, AC-5.2] Charge ``cost`` via the row-locked repository.
+def consume(principal: Principal, cost: int = 1) -> bool:
+    """[FR-05 AC-5.1] The admission half of :func:`check`.
 
-    Returns the polymorphic shape :func:`consume` advertises: ``True`` on
-    admission, ``(False, retry_after_seconds)`` on rejection.
+    For callers that only need the yes/no decision — the API layer uses
+    :func:`check` because a 429 also needs the ``Retry-After`` wait.
+
+    Citations: SPEC.md line 116.
     """
-    allowed, retry_after = repository.refill_and_consume(key_id, cost=cost)
-    if allowed:
-        return True
-    return False, retry_after
-
-
-def _consume_stand_in_surface(repository, key_id: str, cost: int) -> bool:
-    """[FR-05] Read-only admission check against a ``get_tokens``-only repo.
-
-    A repository that lacks ``refill_and_consume`` cannot advance time
-    or compute a retry wait, so admission degrades to "does the stored
-    counter already cover this call?" and the result is a bare bool.
-    """
-    return int(repository.get_tokens(key_id)) >= cost
-
-
-def check(principal: Principal, cost: int = 1) -> tuple[bool, float]:
-    """[FR-05 AC-5.2] :func:`consume` normalized to ``(allowed, retry_after)``.
-
-    The API layer calls this instead of :func:`consume` so the truthy
-    2-tuple of a rejection can never be mistaken for an admission.
-
-    Citations: SPEC.md line 118.
-    """
-    outcome = consume(principal, cost=cost)
-    if outcome is True:
-        return True, 0.0
-    if isinstance(outcome, tuple):
-        allowed, retry_after = outcome
-        return bool(allowed), float(retry_after)
-    # Stand-in surface (see :func:`consume`) — report the wait for one
-    # token so the 429 still carries a usable hint.
-    return False, _one_token_seconds()
+    return check(principal, cost=cost)[0]
 
 
 def retry_after_seconds(wait: float) -> int:
@@ -138,8 +94,6 @@ def _one_token_seconds() -> float:
 
 
 __all__ = [
-    "_consume_full_surface",
-    "_consume_stand_in_surface",
     "check",
     "consume",
     "retry_after_seconds",
