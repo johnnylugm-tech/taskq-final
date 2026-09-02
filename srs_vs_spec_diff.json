@@ -1,0 +1,1304 @@
+{
+  "deliverable": "/Users/johnny/projects/taskq-final/01-requirements/SRS.md",
+  "canonical": "/Users/johnny/projects/taskq-final/SPEC.md",
+  "mode": "srs_vs_spec",
+  "spec_present": true,
+  "summary": {
+    "total_ac": 118,
+    "verbatim_count": 13,
+    "interpreted_count": 71,
+    "invention_count": 34,
+    "over_spec_threshold": 0.7,
+    "high_score_count": 37
+  },
+  "fr_coverage": {
+    "in_spec_only": [],
+    "in_srs_only": [],
+    "in_both": [
+      "FR-01",
+      "FR-02",
+      "FR-03",
+      "FR-04",
+      "FR-05",
+      "FR-06",
+      "FR-07",
+      "FR-08",
+      "FR-09",
+      "FR-10"
+    ]
+  },
+  "config_keys": {
+    "declared": [
+      "TASKQ_CORS_ORIGINS",
+      "TASKQ_DB_POOL_SIZE",
+      "TASKQ_DB_URL",
+      "TASKQ_DRAIN_TIMEOUT",
+      "TASKQ_HOST",
+      "TASKQ_LOG_FORMAT",
+      "TASKQ_LOG_LEVEL",
+      "TASKQ_MAX_CONCURRENT",
+      "TASKQ_PORT",
+      "TASKQ_RATE_BURST",
+      "TASKQ_RATE_PER_SEC",
+      "TASKQ_TASK_TIMEOUT"
+    ],
+    "absent_from_srs": [
+      "TASKQ_DB_URL",
+      "TASKQ_HOST",
+      "TASKQ_LOG_FORMAT",
+      "TASKQ_LOG_LEVEL",
+      "TASKQ_PORT"
+    ]
+  },
+  "machine_block_parity": [
+    {
+      "id": "FR-01",
+      "terms_only_in_machine_block": [
+        "DELETE",
+        "cursor-based"
+      ]
+    },
+    {
+      "id": "FR-05",
+      "terms_only_in_machine_block": [
+        "per-token",
+        "row-level"
+      ]
+    },
+    {
+      "id": "FR-06",
+      "terms_only_in_machine_block": [
+        "per-request"
+      ]
+    },
+    {
+      "id": "FR-07",
+      "terms_only_in_machine_block": [
+        "round-trip"
+      ]
+    },
+    {
+      "id": "FR-08",
+      "terms_only_in_machine_block": [
+        "TASKQ_MAX_CONCURRENT"
+      ]
+    },
+    {
+      "id": "NFR-02",
+      "terms_only_in_machine_block": [
+        "MEDIUM",
+        "default-deny",
+        "resource-exists",
+        "string-concatenated"
+      ]
+    },
+    {
+      "id": "NFR-06",
+      "terms_only_in_machine_block": [
+        "lint-imports"
+      ]
+    },
+    {
+      "id": "NFR-09",
+      "terms_only_in_machine_block": [
+        "VERIFIED",
+        "anti-fake",
+        "zero-assert"
+      ]
+    },
+    {
+      "id": "NFR-10",
+      "terms_only_in_machine_block": [
+        "round-trip"
+      ]
+    },
+    {
+      "id": "NFR-12",
+      "terms_only_in_machine_block": [
+        "verify-system"
+      ]
+    }
+  ],
+  "per_ac": [
+    {
+      "label": "FR-01",
+      "fr_id": "FR-01",
+      "score": {
+        "over_spec_score": 0.933,
+        "best_match_ratio": 0.067,
+        "derived_present": true,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-1",
+      "fr_id": "FR-01",
+      "score": {
+        "over_spec_score": 0.583,
+        "best_match_ratio": 0.417,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "AC-1",
+      "fr_id": "FR-01",
+      "score": {
+        "over_spec_score": 0.467,
+        "best_match_ratio": 0.533,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-1",
+      "fr_id": "FR-01",
+      "score": {
+        "over_spec_score": 0.571,
+        "best_match_ratio": 0.429,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "AC-1",
+      "fr_id": "FR-01",
+      "score": {
+        "over_spec_score": 0.385,
+        "best_match_ratio": 0.615,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-1",
+      "fr_id": "FR-01",
+      "score": {
+        "over_spec_score": 0.444,
+        "best_match_ratio": 0.556,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "FR-02",
+      "fr_id": "FR-02",
+      "score": {
+        "over_spec_score": 0.933,
+        "best_match_ratio": 0.067,
+        "derived_present": true,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-2",
+      "fr_id": "FR-02",
+      "score": {
+        "over_spec_score": 0.5,
+        "best_match_ratio": 0.5,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-2",
+      "fr_id": "FR-02",
+      "score": {
+        "over_spec_score": 0.667,
+        "best_match_ratio": 0.333,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "AC-2",
+      "fr_id": "FR-02",
+      "score": {
+        "over_spec_score": 0.667,
+        "best_match_ratio": 0.333,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "AC-2",
+      "fr_id": "FR-02",
+      "score": {
+        "over_spec_score": 0.667,
+        "best_match_ratio": 0.333,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "AC-2",
+      "fr_id": "FR-02",
+      "score": {
+        "over_spec_score": 0.714,
+        "best_match_ratio": 0.286,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "FR-03",
+      "fr_id": "FR-03",
+      "score": {
+        "over_spec_score": 0.933,
+        "best_match_ratio": 0.067,
+        "derived_present": true,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-3",
+      "fr_id": "FR-03",
+      "score": {
+        "over_spec_score": 0.429,
+        "best_match_ratio": 0.571,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-3",
+      "fr_id": "FR-03",
+      "score": {
+        "over_spec_score": 0.455,
+        "best_match_ratio": 0.545,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-3",
+      "fr_id": "FR-03",
+      "score": {
+        "over_spec_score": 0.375,
+        "best_match_ratio": 0.625,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-3",
+      "fr_id": "FR-03",
+      "score": {
+        "over_spec_score": 0.5,
+        "best_match_ratio": 0.5,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-3",
+      "fr_id": "FR-03",
+      "score": {
+        "over_spec_score": 0.667,
+        "best_match_ratio": 0.333,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "FR-04",
+      "fr_id": "FR-04",
+      "score": {
+        "over_spec_score": 0.933,
+        "best_match_ratio": 0.067,
+        "derived_present": true,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-4",
+      "fr_id": "FR-04",
+      "score": {
+        "over_spec_score": 0.556,
+        "best_match_ratio": 0.444,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "AC-4",
+      "fr_id": "FR-04",
+      "score": {
+        "over_spec_score": 0.167,
+        "best_match_ratio": 0.833,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-4",
+      "fr_id": "FR-04",
+      "score": {
+        "over_spec_score": 0.0,
+        "best_match_ratio": 1.0,
+        "derived_present": false,
+        "verdict": "verbatim"
+      }
+    },
+    {
+      "label": "FR-05",
+      "fr_id": "FR-05",
+      "score": {
+        "over_spec_score": 0.933,
+        "best_match_ratio": 0.067,
+        "derived_present": true,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-5",
+      "fr_id": "FR-05",
+      "score": {
+        "over_spec_score": 0.4,
+        "best_match_ratio": 0.6,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-5",
+      "fr_id": "FR-05",
+      "score": {
+        "over_spec_score": 0.5,
+        "best_match_ratio": 0.5,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-5",
+      "fr_id": "FR-05",
+      "score": {
+        "over_spec_score": 0.167,
+        "best_match_ratio": 0.833,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-5",
+      "fr_id": "FR-05",
+      "score": {
+        "over_spec_score": 1.0,
+        "best_match_ratio": 0.0,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "FR-06",
+      "fr_id": "FR-06",
+      "score": {
+        "over_spec_score": 0.933,
+        "best_match_ratio": 0.067,
+        "derived_present": true,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-6",
+      "fr_id": "FR-06",
+      "score": {
+        "over_spec_score": 0.5,
+        "best_match_ratio": 0.5,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-6",
+      "fr_id": "FR-06",
+      "score": {
+        "over_spec_score": 0.273,
+        "best_match_ratio": 0.727,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-6",
+      "fr_id": "FR-06",
+      "score": {
+        "over_spec_score": 0.222,
+        "best_match_ratio": 0.778,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-6",
+      "fr_id": "FR-06",
+      "score": {
+        "over_spec_score": 0.444,
+        "best_match_ratio": 0.556,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-6",
+      "fr_id": "FR-06",
+      "score": {
+        "over_spec_score": 0.8,
+        "best_match_ratio": 0.2,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "FR-07",
+      "fr_id": "FR-07",
+      "score": {
+        "over_spec_score": 0.933,
+        "best_match_ratio": 0.067,
+        "derived_present": true,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-7",
+      "fr_id": "FR-07",
+      "score": {
+        "over_spec_score": 0.4,
+        "best_match_ratio": 0.6,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-7",
+      "fr_id": "FR-07",
+      "score": {
+        "over_spec_score": 0.364,
+        "best_match_ratio": 0.636,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-7",
+      "fr_id": "FR-07",
+      "score": {
+        "over_spec_score": 0.273,
+        "best_match_ratio": 0.727,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-7",
+      "fr_id": "FR-07",
+      "score": {
+        "over_spec_score": 0.333,
+        "best_match_ratio": 0.667,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-7",
+      "fr_id": "FR-07",
+      "score": {
+        "over_spec_score": 0.2,
+        "best_match_ratio": 0.8,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-7",
+      "fr_id": "FR-07",
+      "score": {
+        "over_spec_score": 0.333,
+        "best_match_ratio": 0.667,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-7",
+      "fr_id": "FR-07",
+      "score": {
+        "over_spec_score": 0.25,
+        "best_match_ratio": 0.75,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "FR-08",
+      "fr_id": "FR-08",
+      "score": {
+        "over_spec_score": 0.933,
+        "best_match_ratio": 0.067,
+        "derived_present": true,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-8",
+      "fr_id": "FR-08",
+      "score": {
+        "over_spec_score": 0.385,
+        "best_match_ratio": 0.615,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-8",
+      "fr_id": "FR-08",
+      "score": {
+        "over_spec_score": 0.2,
+        "best_match_ratio": 0.8,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-8",
+      "fr_id": "FR-08",
+      "score": {
+        "over_spec_score": 0.5,
+        "best_match_ratio": 0.5,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-8",
+      "fr_id": "FR-08",
+      "score": {
+        "over_spec_score": 0.455,
+        "best_match_ratio": 0.545,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "FR-09",
+      "fr_id": "FR-09",
+      "score": {
+        "over_spec_score": 0.933,
+        "best_match_ratio": 0.067,
+        "derived_present": true,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-9",
+      "fr_id": "FR-09",
+      "score": {
+        "over_spec_score": 0.667,
+        "best_match_ratio": 0.333,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "AC-9",
+      "fr_id": "FR-09",
+      "score": {
+        "over_spec_score": 0.364,
+        "best_match_ratio": 0.636,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-9",
+      "fr_id": "FR-09",
+      "score": {
+        "over_spec_score": 0.333,
+        "best_match_ratio": 0.667,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-9",
+      "fr_id": "FR-09",
+      "score": {
+        "over_spec_score": 0.25,
+        "best_match_ratio": 0.75,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "FR-10",
+      "fr_id": "FR-10",
+      "score": {
+        "over_spec_score": 0.933,
+        "best_match_ratio": 0.067,
+        "derived_present": true,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-10",
+      "fr_id": "FR-10",
+      "score": {
+        "over_spec_score": 0.286,
+        "best_match_ratio": 0.714,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-10",
+      "fr_id": "FR-10",
+      "score": {
+        "over_spec_score": 0.625,
+        "best_match_ratio": 0.375,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "AC-10",
+      "fr_id": "FR-10",
+      "score": {
+        "over_spec_score": 0.0,
+        "best_match_ratio": 1.0,
+        "derived_present": false,
+        "verdict": "verbatim"
+      }
+    },
+    {
+      "label": "AC-10",
+      "fr_id": "FR-10",
+      "score": {
+        "over_spec_score": 0.333,
+        "best_match_ratio": 0.667,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-10",
+      "fr_id": "FR-10",
+      "score": {
+        "over_spec_score": 0.414,
+        "best_match_ratio": 0.586,
+        "derived_present": true,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "NFR-01",
+      "fr_id": "NFR-01",
+      "score": {
+        "over_spec_score": 0.833,
+        "best_match_ratio": 0.167,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "AC-N1",
+      "fr_id": "NFR-01",
+      "score": {
+        "over_spec_score": 0.333,
+        "best_match_ratio": 0.667,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-N1",
+      "fr_id": "NFR-01",
+      "score": {
+        "over_spec_score": 0.286,
+        "best_match_ratio": 0.714,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-N1",
+      "fr_id": "NFR-01",
+      "score": {
+        "over_spec_score": 0.0,
+        "best_match_ratio": 1.0,
+        "derived_present": false,
+        "verdict": "verbatim"
+      }
+    },
+    {
+      "label": "AC-N1",
+      "fr_id": "NFR-01",
+      "score": {
+        "over_spec_score": 0.857,
+        "best_match_ratio": 0.143,
+        "derived_present": true,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "NFR-02",
+      "fr_id": "NFR-02",
+      "score": {
+        "over_spec_score": 0.778,
+        "best_match_ratio": 0.222,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "AC-N2",
+      "fr_id": "NFR-02",
+      "score": {
+        "over_spec_score": 0.75,
+        "best_match_ratio": 0.25,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "AC-N2",
+      "fr_id": "NFR-02",
+      "score": {
+        "over_spec_score": 0.143,
+        "best_match_ratio": 0.857,
+        "derived_present": false,
+        "verdict": "verbatim"
+      }
+    },
+    {
+      "label": "AC-N2",
+      "fr_id": "NFR-02",
+      "score": {
+        "over_spec_score": 0.4,
+        "best_match_ratio": 0.6,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-N2",
+      "fr_id": "NFR-02",
+      "score": {
+        "over_spec_score": 0.333,
+        "best_match_ratio": 0.667,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-N2",
+      "fr_id": "NFR-02",
+      "score": {
+        "over_spec_score": 0.286,
+        "best_match_ratio": 0.714,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-N2",
+      "fr_id": "NFR-02",
+      "score": {
+        "over_spec_score": 0.429,
+        "best_match_ratio": 0.571,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-N2",
+      "fr_id": "NFR-02",
+      "score": {
+        "over_spec_score": 0.88,
+        "best_match_ratio": 0.12,
+        "derived_present": true,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "NFR-03",
+      "fr_id": "NFR-03",
+      "score": {
+        "over_spec_score": 0.778,
+        "best_match_ratio": 0.222,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "AC-N3",
+      "fr_id": "NFR-03",
+      "score": {
+        "over_spec_score": 0.222,
+        "best_match_ratio": 0.778,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-N3",
+      "fr_id": "NFR-03",
+      "score": {
+        "over_spec_score": 0.75,
+        "best_match_ratio": 0.25,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "AC-N3",
+      "fr_id": "NFR-03",
+      "score": {
+        "over_spec_score": 0.333,
+        "best_match_ratio": 0.667,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-N3",
+      "fr_id": "NFR-03",
+      "score": {
+        "over_spec_score": 0.2,
+        "best_match_ratio": 0.8,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-N3",
+      "fr_id": "NFR-03",
+      "score": {
+        "over_spec_score": 0.286,
+        "best_match_ratio": 0.714,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-N3",
+      "fr_id": "NFR-03",
+      "score": {
+        "over_spec_score": 0.758,
+        "best_match_ratio": 0.242,
+        "derived_present": true,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "NFR-04",
+      "fr_id": "NFR-04",
+      "score": {
+        "over_spec_score": 0.778,
+        "best_match_ratio": 0.222,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "AC-N4",
+      "fr_id": "NFR-04",
+      "score": {
+        "over_spec_score": 0.667,
+        "best_match_ratio": 0.333,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "AC-N4",
+      "fr_id": "NFR-04",
+      "score": {
+        "over_spec_score": 0.167,
+        "best_match_ratio": 0.833,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-N4",
+      "fr_id": "NFR-04",
+      "score": {
+        "over_spec_score": 0.684,
+        "best_match_ratio": 0.316,
+        "derived_present": true,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "NFR-05",
+      "fr_id": "NFR-05",
+      "score": {
+        "over_spec_score": 0.778,
+        "best_match_ratio": 0.222,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "AC-N5",
+      "fr_id": "NFR-05",
+      "score": {
+        "over_spec_score": 0.286,
+        "best_match_ratio": 0.714,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-N5",
+      "fr_id": "NFR-05",
+      "score": {
+        "over_spec_score": 0.718,
+        "best_match_ratio": 0.282,
+        "derived_present": true,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "NFR-06",
+      "fr_id": "NFR-06",
+      "score": {
+        "over_spec_score": 1.0,
+        "best_match_ratio": 0.231,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "AC-N6",
+      "fr_id": "NFR-06",
+      "score": {
+        "over_spec_score": 0.444,
+        "best_match_ratio": 0.556,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-N6",
+      "fr_id": "NFR-06",
+      "score": {
+        "over_spec_score": 0.143,
+        "best_match_ratio": 0.857,
+        "derived_present": false,
+        "verdict": "verbatim"
+      }
+    },
+    {
+      "label": "AC-N6",
+      "fr_id": "NFR-06",
+      "score": {
+        "over_spec_score": 0.5,
+        "best_match_ratio": 0.5,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-N6",
+      "fr_id": "NFR-06",
+      "score": {
+        "over_spec_score": 0.724,
+        "best_match_ratio": 0.276,
+        "derived_present": true,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "NFR-07",
+      "fr_id": "NFR-07",
+      "score": {
+        "over_spec_score": 0.778,
+        "best_match_ratio": 0.222,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "AC-N7",
+      "fr_id": "NFR-07",
+      "score": {
+        "over_spec_score": 0.125,
+        "best_match_ratio": 0.875,
+        "derived_present": false,
+        "verdict": "verbatim"
+      }
+    },
+    {
+      "label": "AC-N7",
+      "fr_id": "NFR-07",
+      "score": {
+        "over_spec_score": 0.0,
+        "best_match_ratio": 1.0,
+        "derived_present": false,
+        "verdict": "verbatim"
+      }
+    },
+    {
+      "label": "AC-N7",
+      "fr_id": "NFR-07",
+      "score": {
+        "over_spec_score": 0.429,
+        "best_match_ratio": 0.571,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-N7",
+      "fr_id": "NFR-07",
+      "score": {
+        "over_spec_score": 0.806,
+        "best_match_ratio": 0.194,
+        "derived_present": true,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "NFR-08",
+      "fr_id": "NFR-08",
+      "score": {
+        "over_spec_score": 0.778,
+        "best_match_ratio": 0.222,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "AC-N8",
+      "fr_id": "NFR-08",
+      "score": {
+        "over_spec_score": 0.833,
+        "best_match_ratio": 0.167,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "AC-N8",
+      "fr_id": "NFR-08",
+      "score": {
+        "over_spec_score": 0.0,
+        "best_match_ratio": 1.0,
+        "derived_present": false,
+        "verdict": "verbatim"
+      }
+    },
+    {
+      "label": "AC-N8",
+      "fr_id": "NFR-08",
+      "score": {
+        "over_spec_score": 0.806,
+        "best_match_ratio": 0.194,
+        "derived_present": true,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "NFR-09",
+      "fr_id": "NFR-09",
+      "score": {
+        "over_spec_score": 0.75,
+        "best_match_ratio": 0.25,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "AC-N9",
+      "fr_id": "NFR-09",
+      "score": {
+        "over_spec_score": 0.375,
+        "best_match_ratio": 0.625,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-N9",
+      "fr_id": "NFR-09",
+      "score": {
+        "over_spec_score": 0.6,
+        "best_match_ratio": 0.4,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "AC-N9",
+      "fr_id": "NFR-09",
+      "score": {
+        "over_spec_score": 0.667,
+        "best_match_ratio": 0.333,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "AC-N9",
+      "fr_id": "NFR-09",
+      "score": {
+        "over_spec_score": 0.571,
+        "best_match_ratio": 0.429,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "AC-N9",
+      "fr_id": "NFR-09",
+      "score": {
+        "over_spec_score": 0.0,
+        "best_match_ratio": 1.0,
+        "derived_present": false,
+        "verdict": "verbatim"
+      }
+    },
+    {
+      "label": "AC-N9",
+      "fr_id": "NFR-09",
+      "score": {
+        "over_spec_score": 0.906,
+        "best_match_ratio": 0.094,
+        "derived_present": true,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "NFR-10",
+      "fr_id": "NFR-10",
+      "score": {
+        "over_spec_score": 0.833,
+        "best_match_ratio": 0.167,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "AC-N10",
+      "fr_id": "NFR-10",
+      "score": {
+        "over_spec_score": 0.7,
+        "best_match_ratio": 0.3,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "AC-N10",
+      "fr_id": "NFR-10",
+      "score": {
+        "over_spec_score": 0.5,
+        "best_match_ratio": 0.5,
+        "derived_present": false,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "AC-N10",
+      "fr_id": "NFR-10",
+      "score": {
+        "over_spec_score": 0.568,
+        "best_match_ratio": 0.432,
+        "derived_present": true,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "NFR-11",
+      "fr_id": "NFR-11",
+      "score": {
+        "over_spec_score": 0.846,
+        "best_match_ratio": 0.154,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "AC-N11",
+      "fr_id": "NFR-11",
+      "score": {
+        "over_spec_score": 0.0,
+        "best_match_ratio": 1.0,
+        "derived_present": false,
+        "verdict": "verbatim"
+      }
+    },
+    {
+      "label": "AC-N11",
+      "fr_id": "NFR-11",
+      "score": {
+        "over_spec_score": 0.0,
+        "best_match_ratio": 1.0,
+        "derived_present": false,
+        "verdict": "verbatim"
+      }
+    },
+    {
+      "label": "AC-N11",
+      "fr_id": "NFR-11",
+      "score": {
+        "over_spec_score": 0.0,
+        "best_match_ratio": 1.0,
+        "derived_present": false,
+        "verdict": "verbatim"
+      }
+    },
+    {
+      "label": "AC-N11",
+      "fr_id": "NFR-11",
+      "score": {
+        "over_spec_score": 0.0,
+        "best_match_ratio": 1.0,
+        "derived_present": false,
+        "verdict": "verbatim"
+      }
+    },
+    {
+      "label": "AC-N11",
+      "fr_id": "NFR-11",
+      "score": {
+        "over_spec_score": 0.892,
+        "best_match_ratio": 0.108,
+        "derived_present": true,
+        "verdict": "interpreted"
+      }
+    },
+    {
+      "label": "NFR-12",
+      "fr_id": "NFR-12",
+      "score": {
+        "over_spec_score": 0.75,
+        "best_match_ratio": 0.25,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "AC-N12",
+      "fr_id": "NFR-12",
+      "score": {
+        "over_spec_score": 0.588,
+        "best_match_ratio": 0.412,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    },
+    {
+      "label": "AC-N12",
+      "fr_id": "NFR-12",
+      "score": {
+        "over_spec_score": 0.644,
+        "best_match_ratio": 0.356,
+        "derived_present": false,
+        "verdict": "invention"
+      }
+    }
+  ]
+}
