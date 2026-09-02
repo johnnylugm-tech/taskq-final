@@ -155,10 +155,14 @@ async def run_subprocess(
     )
     stdout, stderr, timed_out = await _communicate_with_timeout(proc, limit)
     duration_ms = int((time.perf_counter() - started) * 1000)
-    state = _classify_exit(timed_out, proc.returncode)
+    # ``proc.communicate()`` has resolved, so the subprocess has exited and
+    # ``returncode`` is the real exit code (still typed ``int | None`` by
+    # asyncio — narrow explicitly so the call sites below stay strict-clean).
+    returncode: int = proc.returncode if proc.returncode is not None else _SPAWN_FAILURE_EXIT_CODE
+    state = _classify_exit(timed_out, returncode)
 
     return RunOutcome(
-        exit_code=proc.returncode,
+        exit_code=returncode,
         stdout_tail=_tail(stdout),
         stderr_tail=_tail(stderr),
         duration_ms=duration_ms,
