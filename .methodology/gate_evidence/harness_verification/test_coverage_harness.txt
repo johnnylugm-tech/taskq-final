@@ -1,9 +1,10 @@
 # Harness-executed: pytest-cov
 # returncode: 0
-# agent_score: 82.7 | threshold: 80.0
+# agent_score: 100.0 | threshold: 80.0
 
-........................................................................ [ 51%]
-...................................................................      [100%]
+........................................................................ [ 47%]
+........................................................................ [ 94%]
+.........                                                                [100%]
 =============================== warnings summary ===============================
 .venv/lib/python3.11/site-packages/starlette/formparsers.py:12
   /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
@@ -25,12 +26,12 @@ Name                                                         Stmts   Miss  Cover
 03-development/src/taskq_api/__init__.py                         0      0   100%
 03-development/src/taskq_api/api/__init__.py                     0      0   100%
 03-development/src/taskq_api/api/deps.py                        17      0   100%
-03-development/src/taskq_api/api/health.py                      15      1    93%   91
-03-development/src/taskq_api/api/metrics.py                     11      1    91%   52
+03-development/src/taskq_api/api/health.py                      15      0   100%
+03-development/src/taskq_api/api/metrics.py                     11      0   100%
 03-development/src/taskq_api/api/tasks.py                       55      0   100%
-03-development/src/taskq_api/app.py                             47     11    77%   60-74, 109
+03-development/src/taskq_api/app.py                             66     11    83%   116-130, 189
 03-development/src/taskq_api/config.py                          33     11    67%   64-74
-03-development/src/taskq_api/errors.py                          41      0   100%
+03-development/src/taskq_api/errors.py                          39      0   100%
 03-development/src/taskq_api/models/__init__.py                  0      0   100%
 03-development/src/taskq_api/models/orm.py                      44      0   100%
 03-development/src/taskq_api/models/schemas.py                  38      0   100%
@@ -40,13 +41,13 @@ Name                                                         Stmts   Miss  Cover
 03-development/src/taskq_api/repository/rate_repo.py            56      0   100%
 03-development/src/taskq_api/repository/session.py              89     12    87%   183-185, 214, 222-223, 227, 232, 243-246
 03-development/src/taskq_api/repository/task_repo.py           201      0   100%
-03-development/src/taskq_api/service/__init__.py                 1      0   100%
+03-development/src/taskq_api/service/__init__.py                 3      0   100%
 03-development/src/taskq_api/service/auth.py                    38      1    97%   76
 03-development/src/taskq_api/service/common.py                  25      0   100%
 03-development/src/taskq_api/service/health.py                  14      0   100%
-03-development/src/taskq_api/service/ratelimit.py               23      1    96%   92
+03-development/src/taskq_api/service/ratelimit.py               25      1    96%   117
 03-development/src/taskq_api/service/runner.py                 157     13    92%   166, 286, 337, 354, 376-379, 385, 387, 445-446, 478
 03-development/src/taskq_api/service/tasks.py                   29      0   100%
 ------------------------------------------------------------------------------------------
-TOTAL                                                         1170     60    95%
-139 passed, 1 warning in 5.46s
+TOTAL                                                         1191     58    95%
+153 passed, 1 warning in 5.54s

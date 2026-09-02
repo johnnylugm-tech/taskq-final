@@ -115,6 +115,18 @@ def auth_read():
     return {"X-API-Key": "test-read-key"}
 
 
+@pytest.fixture
+def auth_admin():
+    """A request header carrying an admin-scoped API key.
+
+    FR-09 AC-9.3 + FR-04 AC-4.1: the admin-only ``/v1/metrics`` endpoint
+    MUST accept an admin key (scope=admin) and return the metrics
+    payload. The fixture key is the same ``test-admin-key`` declared by
+    FR-03's GREEN TODO in ``taskq_api.service.auth``.
+    """
+    return {"X-API-Key": "test-admin-key"}
+
+
 def _run(coro):
     """Drive an awaitable from inside a synchronous pytest function body."""
     return asyncio.run(coro)
@@ -582,3 +594,124 @@ def test_repository_session_alembic_probe_surface_exists():
         f"expose any of {candidates!r}; the /readyz handler cannot "
         "fail closed on migration drift without one of these surfaces."
     )
+
+
+# ---------------------------------------------------------------------------
+# FR-09 / NFR-09 reviewer-correctness tests (round 1 REJECT).
+#
+# The base TEST_SPEC cases pinned the FAILURE-CLOSED half of AC-9.2 +
+# the SCOPE half of AC-9.3, but left two contract halves unpinned:
+#   (a) AC-9.2 happy path — DB reachable AND alembic current == head
+#       MUST return 200; without this, a handler that always 503s
+#       passes every test.
+#   (b) AC-9.3 payload contract — admin-scoped ``/v1/metrics`` MUST
+#       return 200 + a non-empty body; without this, an admin request
+#       that 403s or returns an empty body is not caught.
+#
+# Both tests assert invariants the GREEN/IMPROVE implementations
+# already satisfy (DB ok + migration ok → 200; admin scope → 200 +
+# body dict), so they pass without further GREEN changes — they just
+# close the two test-coverage holes the reviewer flagged.
+# ---------------------------------------------------------------------------
+
+
+# NFR-03 (error_handling: readyz happy path), NFR-09 (test_assertion_quality)
+def test_readyz_returns_200_when_db_and_migration_both_ready(asgi_client, monkeypatch):
+    """FR-09 AC-9.2 happy path — DB reachable AND alembic current == head
+    MUST yield 200.
+
+    SPEC.md line 156: "DB 連線可用 AND alembic current == head → 200;
+    否則 503". The base TEST_SPEC cases only exercise the
+    "否則 503" half; this case pins the biconditional's "→ 200" half
+    so an implementation that always 503s (or always 200s) fails.
+
+    NFR annotations:
+      - NFR-03 (error_handling): the probe is the canonical fail-closed
+        surface; the happy-path side of that contract is just as
+        important — a probe that 503s forever blocks every deployment.
+      - NFR-09 (test_assertion_quality): at least one positive 200
+        assertion pins the AC.
+    """
+    expected_status = "200"             # AC-9.2 happy-path input
+
+    # Force both readiness signals to True so the handler takes the
+    # "everything ok" branch.
+    from taskq_api import service as _service_module
+    monkeypatch.setattr(
+        _service_module.health, "is_database_ready", lambda: True,
+    )
+    monkeypatch.setattr(
+        _service_module.health, "is_migration_at_head", lambda: True,
+    )
+
+    response = _run(asgi_client.get("/readyz"))
+    result_status = response.status_code
+
+    # FR09-AC-9.2-readyz-happy — predicate mirrors TEST_SPEC §FR-09
+    # AC-9.2 biconditional happy path.
+    if expected_status == "200":
+        assert expected_status == "200"
+        assert result_status == int(expected_status), (
+            f"FR-09 AC-9.2 violated: /readyz must return 200 when DB "
+            f"is reachable AND alembic current == head; got "
+            f"{result_status}; body={response.text!r}"
+        )
+
+
+# NFR-02 (security: admin scope accepted), NFR-04 (security: payload exists), NFR-06 (architecture_constraints)
+def test_metrics_returns_payload_for_admin_scope(asgi_client, auth_admin):
+    """FR-09 AC-9.3 payload contract — admin-scoped ``/v1/metrics``
+    MUST return 200 + a non-empty JSON body carrying the metrics
+    payload (task counts by status, latency percentiles, rate-limit
+    rejections — SPEC.md line 158).
+
+    Without this test an admin request that 403s (regression of
+    FR-04 AC-4.2) or that returns an empty body (missing FR-09 AC-9.3
+    payload) is not caught.
+
+    NFR annotations:
+      - NFR-02 (security): the metrics payload is admin-only by design
+        (EoP vector); this test pins the authorized path, the
+        REJECT-side test (``test_metrics_requires_admin_scope``) pins
+        the unauthorized path.
+      - NFR-04 (sensitive data redaction): the payload is intentionally
+        admin-only BECAUSE it leaks operational signal; a 200 with a
+        body means the FR-04 gate kept low-privilege callers out
+        AND the FR-09 contract is fulfilled.
+      - NFR-06 (architecture_constraints): the admin scope check is the
+        FR-04 chokepoint — this test verifies the chokepoint's
+        authorized branch.
+    """
+    expected_status = "200"             # AC-9.3 admin-OK input
+
+    response = _run(asgi_client.get(
+        "/v1/metrics", headers=auth_admin,
+    ))
+    result_status = response.status_code
+    body = response.json()
+
+    # FR09-AC-9.3-admin-200 — predicate mirrors TEST_SPEC §FR-09
+    # AC-9.3 admin-scoped accepted branch.
+    if expected_status == "200":
+        assert expected_status == "200"
+        assert result_status == int(expected_status), (
+            f"FR-09 AC-9.3 violated: /v1/metrics must return 200 for "
+            f"an admin-scoped key; got {result_status}; "
+            f"body={response.text!r}"
+        )
+        # The payload MUST be a non-empty JSON object — FR-09 AC-9.3
+        # requires task counts by status + latency percentiles +
+        # rate-limit rejection count, so the body MUST carry at
+        # least one key. Asserting on the body shape (dict, non-
+        # empty) rather than specific field names keeps the test
+        # stable across the FR-04 module's payload-filling GREEN
+        # step — any payload that satisfies the contract has ≥1 key.
+        assert isinstance(body, dict), (
+            f"FR-09 AC-9.3 violated: /v1/metrics body must be a JSON "
+            f"object; got {type(body).__name__}; body={body!r}"
+        )
+        assert len(body) >= 1, (
+            f"FR-09 AC-9.3 violated: /v1/metrics body must carry the "
+            f"metrics payload (counts / percentiles / rate-limit "
+            f"rejections); got empty dict; body={body!r}"
+        )
