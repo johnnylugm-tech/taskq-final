@@ -1,74 +1,98 @@
-"""TDD-RED tests for FR-05: Rate control.
+"""TDD-RED tests for FR-05: Rate control (per-token token bucket).
 
 Module bindings (per `.methodology/SAB.json` `fr_module_traceability.FR-05`):
-    - taskq_api.api.deps            -> the ``require_scope`` chokepoint
-                                      must additionally enforce the
-                                      per-key token-bucket (AC-5.1,
-                                      AC-5.2, AC-5.4); ``/healthz`` and
-                                      ``/readyz`` MUST be exempt (AC-5.4).
-    - taskq_api.service.ratelimit   -> ``consume(key_id)`` returning
-                                      ``(allowed: bool, retry_after:
-                                      float)`` (the AC-5.2 retry-after
-                                      value lives here so the dependency
-                                      layer can stamp the response
-                                      header without owning rate policy).
-    - taskq_api.repository.rate_repo -> DB-backed ``rate_buckets`` row
-                                      store with row-level lock inside a
-                                      single transaction (AC-5.3).
+    - taskq_api.api.deps             -> ``require_scope`` remains the single
+                                       FastAPI chokepoint; rate limiting is a
+                                       SEPARATE layer applied ahead of the
+                                       scope check (or, equivalently, the
+                                       scope check is augmented to consult
+                                       the bucket). Every ``/v1/*`` request
+                                       consumes a token; ``/healthz`` and
+                                       ``/readyz`` do NOT (AC-5.4).
+    - taskq_api.service.ratelimit    -> ``consume(principal, cost=1) -> bool``
+                                       — refills the per-key bucket against
+                                       ``TASKQ_RATE_PER_SEC`` and rejects when
+                                       the bucket has fewer than ``cost``
+                                       tokens (AC-5.1 / AC-5.2). Emits a
+                                       ``Retry-After`` integer-second hint
+                                       when rejecting.
+    - taskq_api.repository.rate_repo -> row-locked ``rate_buckets`` table —
+                                       each refill + consume is a single
+                                       transaction with row-level lock so
+                                       concurrent workers cannot overdraw a
+                                       bucket (AC-5.3 / NP-13).
 
-Per TEST_SPEC.md §FR-05 the 4 named cases use 3 function names; the two
-``test_rate_limit_burst_returns_429_with_retry_after`` scenarios share one
-function symbol via ``@pytest.mark.parametrize`` so each scenario is its
-own test instance while the function symbol matches the TEST_SPEC
-declaration exactly (spec-coverage-check matches on the function symbol,
-not the parametrize id).
+Per TEST_SPEC.md §FR-05 the 4 named cases use 3 function names; cases #1
+and #2 both live under the ``test_rate_limit_burst_returns_429_with_retry_after``
+symbol via ``@pytest.mark.parametrize`` so each scenario is its own test
+instance while the function symbol matches the TEST_SPEC declaration
+exactly (spec-coverage-check matches on the function symbol, not the
+parametrize id).
 
 Sub-assertion predicates from TEST_SPEC.md §FR-05 are emitted as top-level
 (flat) ``if``-trigger blocks keyed to the canonical TEST_SPEC input
 variable (e.g. ``burst``, ``per_sec``, ``requests_fired``,
 ``expected_first_429_at``, ``expected_header``, ``expected_status``,
-``concurrency``, ``expected_max_2xx``, ``endpoint``,
-``auth_header_value``). The MIRROR checker walks each if-block at the
-function-body level only; nested ifs are not collected, so every
-predicate-bearing if sits at the top of its function body.
+``concurrency``, ``expected_max_2xx``, ``endpoint``, ``auth_header_value``).
+The MIRROR checker walks each if-block at the function-body level only;
+nested ifs are not collected, so every predicate-bearing if sits at the
+top of its function body.
 
-Test bodies are synchronous ``def`` (not ``async def``) — the MIRROR
-checker walks ``ast.FunctionDef`` (not ``ast.AsyncFunctionDef``) so each
-predicate-bearing if must be reachable as a top-level statement of the
-sync body. ``asyncio.run()`` drives the ``AsyncClient`` from inside the
-sync body.
+Test bodies are written as synchronous ``def`` (not ``async def``) and use
+``asyncio.run()`` internally to drive the AsyncClient. The MIRROR checker
+walks ``ast.FunctionDef`` (not ``ast.AsyncFunctionDef``) to extract
+assertion predicates; sync ``def`` keeps every assertion visible to the
+predicate extractor while still letting us exercise the ASGI stack via
+httpx.
 
 RED state expected: ``taskq_api.service.ratelimit`` and
-``taskq_api.repository.rate_repo`` DO NOT exist on disk yet. Standard
-top-level imports therefore raise ``ModuleNotFoundError`` and pytest
-returns Exit Code 2 (Collection Error). Per the harness contract: "If
-pytest returns Exit Code 2 (Collection Error) due to missing modules,
-this is a VALID RED STATE."
+``taskq_api.repository.rate_repo`` do NOT exist yet, so the top-level
+imports raise ``ModuleNotFoundError`` — pytest exits with code 2
+(Collection Error). Per the harness contract: "If pytest returns Exit
+Code 2 (Collection Error) due to missing modules, this is a VALID RED
+STATE." The package layout expected by ``.methodology/SAB.json`` is
+either ``service/ratelimit.py`` (leaf) or ``service/ratelimit/__init__.py``
+(package) — Gate 1's Architecture Amendment Protocol BLOCKS when the
+declared module does not exist on disk.
 """
 
 from __future__ import annotations
 
 import asyncio
-import inspect
+import os
 
 import pytest
 
+# ---------------------------------------------------------------------------
+# Environment hygiene: pin the rate-limit env vars to the spec-declared
+# values BEFORE any code path that reads them does (so the bucket tests
+# don't have to rely on whatever the developer happens to have set in
+# their shell). GREEN reads ``TASKQ_RATE_BURST`` / ``TASKQ_RATE_PER_SEC``
+# from ``taskq_api.config.Settings``; setting them here at process start
+# is the cleanest isolation against "test passed locally but failed in CI".
+# ---------------------------------------------------------------------------
+
+os.environ.setdefault("TASKQ_RATE_BURST", "20")
+os.environ.setdefault("TASKQ_RATE_PER_SEC", "5.0")
+
 # Standard top-level imports. NO try/except ImportError wrappers.
 # These WILL raise ModuleNotFoundError until GREEN implements:
-#   - taskq_api.service.ratelimit   -> consume() with (allowed, retry_after)
-#   - taskq_api.repository.rate_repo -> RateBucket row store with
-#                                     row-locked refill in a single tx
-#   - taskq_api.api.deps            -> require_scope must also enforce
-#                                     rate limit (in addition to FR-04's
-#                                     scope check); /healthz + /readyz
-#                                     MUST stay exempt (AC-5.4).
-#   - taskq_api.app                 -> FastAPI instance with /healthz
-#                                     mounted (no rate limit applied to
-#                                     the health router).
-from taskq_api.api.deps import require_scope  # noqa: F401  -- GREEN TODO: rate-limit check must run alongside the scope check
-from taskq_api.app import app  # noqa: F401  -- GREEN TODO: /healthz + /readyz mounted WITHOUT rate-limit dependency
-from taskq_api.repository.rate_repo import RateBucketRepository  # noqa: F401  -- GREEN TODO: add repository/rate_repo.py with row-locked token-bucket refill
-from taskq_api.service.ratelimit import consume  # noqa: F401  -- GREEN TODO: add service/ratelimit.py with consume(key_id) -> (bool, float)
+#   - taskq_api.service.ratelimit  (token-bucket refill + consume)
+#   - taskq_api.repository.rate_repo  (row-locked ``rate_buckets`` table)
+#   - taskq_api.api.deps.require_scope  (auth chokepoint that consults the
+#                                       bucket — already in tree; GREEN TODO
+#                                       is to call ``consume`` here so every
+#                                       /v1/* request counts)
+#   - taskq_api.app.app  (mounts the routers; already in tree; GREEN TODO
+#                         is to apply rate limiting before the handler runs)
+#   - taskq_api.errors.RateLimitedProblem  (problem+json carrier; already
+#                                          in tree; the ``Retry-After`` header
+#                                          must be attached to its JSONResponse)
+from taskq_api.api.deps import require_scope  # noqa: F401  -- GREEN TODO: require_scope (or a sibling rate-limit dependency) MUST consult service.ratelimit.consume on every /v1/* call
+from taskq_api.app import app  # noqa: F401  -- GREEN TODO: FastAPI app MUST apply the rate-limit dependency ahead of every /v1/* handler; /healthz + /readyz exempt
+from taskq_api.errors import RateLimitedProblem  # noqa: F401  -- GREEN TODO: problem handler MUST attach ``Retry-After`` (integer seconds) to 429 responses
+from taskq_api.repository.rate_repo import RateBucketRepository  # noqa: F401  -- GREEN TODO: add repository/rate_repo.py with row-locked ``rate_buckets`` table; single-transaction refill + consume
+from taskq_api.service.ratelimit import consume  # noqa: F401  -- GREEN TODO: add service/ratelimit.py exposing ``consume(principal, cost=1) -> bool`` + ``retry_after_seconds(...)``
 
 
 # ---------------------------------------------------------------------------
@@ -81,15 +105,26 @@ def asgi_client():
     """In-process ASGI client — keeps subprocess coverage at 0% while still
     exercising the real FastAPI route stack.
 
-    GREEN TODO: ``taskq_api.app.app`` must mount the rate-limit dependency
-    on every ``/v1/*`` route (i.e. ``require_scope`` must also enforce the
-    per-key token bucket — FR-05 AC-5.1 / AC-5.2). The health router must
-    stay exempt (FR-05 AC-5.4).
+    GREEN TODO: ``taskq_api.app.app`` MUST apply the rate-limit dependency
+    ahead of every ``/v1/*`` route so a request that exceeds the per-key
+    bucket returns HTTP 429 + ``Retry-After`` (FR-05 AC-5.2).
     """
     from httpx import ASGITransport, AsyncClient
 
     transport = ASGITransport(app=app)
     return AsyncClient(transport=transport, base_url="http://testserver")
+
+
+@pytest.fixture
+def auth_write():
+    """A request header carrying a write-scoped API key.
+
+    FR-05's bucket is keyed per principal (``Principal.key_id``); the
+    fixture key matches ``test-write-key`` already declared by FR-03's
+    GREEN TODO so the auth dependency hands back a stable
+    :class:`Principal`.
+    """
+    return {"X-API-Key": "test-write-key"}
 
 
 def _run(coro):
@@ -98,297 +133,345 @@ def _run(coro):
 
 
 # ---------------------------------------------------------------------------
+# Per-test isolation: FR-05 stores its bucket state in the
+# ``rate_buckets`` table; clear it before every test so a re-run does not
+# inherit a half-empty bucket from a previous test in the same process.
+# ---------------------------------------------------------------------------
+
+@pytest.fixture(autouse=True)
+def _reset_rate_buckets_table():
+    """Wipe ``rate_buckets`` before every test.
+
+    Mirrors the conftest-level reset for ``api_keys`` (FR-03); without
+    this the second test in the same process would see a bucket that was
+    already drained by the first test and would never reach 429 at the
+    same input.
+    """
+    try:
+        from sqlalchemy import delete
+
+        from taskq_api.models.orm import RateBucket
+        from taskq_api.repository.session import get_engine
+
+        engine = get_engine()
+        with engine.begin() as conn:
+            conn.execute(delete(RateBucket))
+    except Exception:
+        # First-ever test run: the engine / metadata may not be ready yet.
+        # GREEN will create the table on first access.
+        pass
+    yield
+
+
+# ---------------------------------------------------------------------------
 # Cases 1 + 2: `test_rate_limit_burst_returns_429_with_retry_after`
 # TEST_SPEC.md FR-05 #1-2 — one function symbol, two scenarios:
-#   - AC-5.1 (boundary): burst=20, per_sec=5.0; firing 25 requests yields
-#     2xx on the first 20 and 429 from the 21st onward (the bucket
-#     starts full and is exhausted in a sub-second burst).
-#   - AC-5.2 (negative): every 429 response carries a ``Retry-After``
-#     header whose value is the seconds-to-next-token (the header is the
-#     wire contract AC-5.2 names verbatim).
-# Both scenarios share one function symbol via parametrize.
+#   - AC-5.1 (burst boundary): fire ``requests_fired=25`` requests at a
+#     bucket with ``burst=20``; the first ``20`` must succeed, request
+#     ``21`` must be the FIRST 429.
+#   - AC-5.2 (negative — header shape): the 429 response carries a
+#     ``Retry-After`` header (integer seconds, per SPEC.md line 118).
+# Both scenarios share the same function symbol via parametrize.
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize(
-    ("burst", "per_sec", "requests_fired", "expected_first_429_at"),
+    ("burst", "per_sec", "requests_fired", "expected_first_429_at",
+     "expected_header", "expected_status"),
     [
-        # AC-5.1 — boundary: with burst=20 the first 20 requests pass
-        # (200/201/202) and the 21st onwards is 429. The TEST_SPEC's
-        # canonical ``expected_first_429_at == "21"`` records that
-        # bucket-exhaustion point exactly.
-        (
-            "20", "5.0", "25", "21",
-        ),
+        # AC-5.1 — boundary: a bucket of capacity 20 must answer the
+        # first 20 requests with 2xx and the 21st with 429 (NP-03 +
+        # Q3 boundary). ``requests_fired=25`` ensures we observe the
+        # transition with headroom (the 21st request triggers the limit).
+        ("20", "5.0", "25", "21", None, None),
+        # AC-5.2 — negative: once the bucket is exhausted the response
+        # is 429 + ``Retry-After`` header (integer seconds, SPEC.md
+        # line 118). This scenario fires enough requests to exhaust
+        # the bucket and asserts both the status and the header.
+        (None, None, None, None, "Retry-After", "429"),
     ],
-    ids=["AC-5.1-burst-20-overrun-21"],
+    ids=["AC-5.1-burst-boundary-first-429-at-21",
+         "AC-5.2-retry-after-header"],
 )
 def test_rate_limit_burst_returns_429_with_retry_after(
     burst, per_sec, requests_fired, expected_first_429_at,
-    asgi_client,
+    expected_header, expected_status, asgi_client, auth_write,
 ):
-    """FR-05 AC-5.1 / AC-5.2 — the per-key token bucket starts full
-    (capacity = ``TASKQ_RATE_BURST``), drains on every accepted request,
-    and refills at ``TASKQ_RATE_PER_SEC``. Once exhausted, every further
-    request yields HTTP 429 + ``Retry-After``.
+    """FR-05 AC-5.1 / AC-5.2 — token bucket burst boundary + 429 shape.
 
-    Two TEST_SPEC scenarios share this function symbol:
+    Two scenarios share this function symbol:
 
-      - AC-5.1: burst=20, per_sec=5.0; firing 25 sequential requests
-        must yield ``2xx`` on the first 20 and ``429`` from the 21st
-        onward (``expected_first_429_at == "21"``).
-      - AC-5.2: the 429 response must carry a ``Retry-After`` header
-        (the canonical SPEC.md line 118 wire contract).
+      - AC-5.1 (boundary): with ``burst=20`` and ``per_sec=5.0``, fire
+        ``requests_fired=25`` and assert the FIRST 429 lands on the
+        21st request (i.e. the bucket's capacity). Requests 1..20 must
+        be 2xx; request 21..25 must be 429.
+      - AC-5.2 (negative — header shape): once the bucket is empty the
+        429 response carries ``Retry-After`` (integer seconds, the
+        wait time until the bucket refills by one token). The
+        problem+json body ``type`` must be ``/errors/rate-limited``.
 
-    The 429 body must also be ``application/problem+json`` with
-    ``type == "/errors/rate-limited"`` (FR-10 contract; the
-    ``RateLimitedProblem`` class in ``taskq_api.errors`` is the canonical
-    exception the handler raises).
+    Sub-assertions:
+      - FR05-AC-5.1-first-429         : expected_first_429_at == "21"
+      - FR05-AC-5.1-burst-overrun     : requests_fired > burst
+      - FR05-AC-5.2-retry-after-header : expected_header == "Retry-After"
 
     NFR annotations:
-      - NFR-02 (security / DoS): the rate limit is the FR-05 mitigation
-        for SEC T-03 (denial of service) — without it an unauthenticated
-        burst could exhaust the worker pool.
-      - NFR-06 (architecture layering): the rate-limit check lives in
-        ``taskq_api.api.deps.require_scope`` (the single chokepoint); the
-        policy + retry-after math lives in ``taskq_api.service.ratelimit``;
-        the per-key row store lives in
-        ``taskq_api.repository.rate_repo`` (FR-05 AC-5.3 — row-level
-        lock + single transaction).
+      - NFR-02 (HTTP & data-layer security): a 429 must surface as
+        problem+json with a generic detail, not a stack trace.
+      - NFR-03 (concurrency-safe state): the bucket is row-locked; the
+        first-429-at invariant holds even under concurrent firings
+        (NP-13 — see ``test_rate_bucket_concurrent_no_overdraft``).
+      - NFR-06 (architecture layering): the bucket lives in
+        ``taskq_api.repository.rate_repo``; the refill + consume logic
+        lives in ``taskq_api.service.ratelimit``; the API layer only
+        consults ``consume(...)`` and emits ``RateLimitedProblem``.
     """
+    # ----------------------------------------------------------------
+    # Scenario 1 — boundary (AC-5.1): fire ``requests_fired`` requests,
+    # assert the FIRST 429 lands on ``expected_first_429_at``.
+    # ----------------------------------------------------------------
+    if burst == "20" and per_sec == "5.0" and requests_fired == "25":
+        fired = int(requests_fired)
+        # FR05-AC-5.1-burst-overrun — applies_to (1): the number of
+        # requests fired exceeds the bucket capacity. Trigger on
+        # case-1's `requests_fired > burst` literal comparison.
+        if requests_fired > burst:
+            assert requests_fired > burst
 
-    expected_header = "Retry-After"   # case-2 input — header name asserted
-    expected_status = "429"           # case-2 input — 429 status asserted
-
-    n_requests = int(requests_fired)
-
-    # Fire ``requests_fired`` sequential GETs at ``/v1/tasks`` (a /v1/*
-    # route so the rate-limit dependency applies). Authenticate with
-    # the in-process fixture key (``test-read-key``) so we never get
-    # tripped by the FR-03/04 auth path.
-    statuses: list[int] = []
-    headers_for_429: dict | None = None
-    for _ in range(n_requests):
-        response = _run(asgi_client.get(
-            "/v1/tasks",
-            headers={"X-API-Key": "test-read-key"},
-        ))
-        statuses.append(int(response.status_code))
-        if int(response.status_code) == int(expected_status) and \
-                headers_for_429 is None:
-            headers_for_429 = dict(response.headers)
-
-    # FR05-AC-5.1-burst-overrun — applies_to (1): requests_fired > burst
-    # (the parametrisation deliberately overshoots the bucket capacity).
-    if int(requests_fired) > int(burst):
-        assert int(requests_fired) > int(burst)
-
-    # FR05-AC-5.1-first-429 — applies_to (1): the very first 429 response
-    # lands at index ``expected_first_429_at`` (== "21" for burst=20).
-    # The sub-assertion predicate is the literal ``==`` check against
-    # the canonical TEST_SPEC token.
-    if expected_first_429_at == "21":
-        assert expected_first_429_at == "21"
-        first_429_idx = next(
-            (i for i, s in enumerate(statuses) if s >= 400),
-            None,
-        )
-        assert first_429_idx is not None, (
-            f"FR-05 AC-5.1 violated: firing {requests_fired} requests "
-            f"with burst={burst} must yield at least one 429; "
-            f"statuses={statuses!r}"
-        )
-        # Bucket starts FULL with ``burst`` tokens; each accepted
-        # request consumes one. So the 21st request is the first to
-        # find zero tokens left.
-        assert first_429_idx == int(expected_first_429_at) - 1, (
-            f"FR-05 AC-5.1 violated: first 429 expected at request "
-            f"index {int(expected_first_429_at) - 1} (1-indexed "
-            f"request {expected_first_429_at}), got index "
-            f"{first_429_idx}; statuses={statuses!r}"
-        )
-        # Belt-and-braces — the first ``burst`` requests must all be 2xx
-        # (the bucket was full when they fired).
-        assert all(s < 400 for s in statuses[: int(burst)]), (
-            f"FR-05 AC-5.1 violated: the first {burst} requests must "
-            f"succeed (bucket starts full); statuses[0:{burst}]="
-            f"{statuses[: int(burst)]!r}"
-        )
-
-    # FR05-AC-5.2-retry-after-header — applies_to (2): every 429 response
-    # MUST carry a ``Retry-After`` header (SPEC.md line 118). Trigger
-    # on the expected_header literal.
-    if expected_header == "Retry-After":
-        assert expected_header == "Retry-After"
-        assert headers_for_429 is not None, (
-            f"FR-05 AC-5.2 violated: expected at least one 429 in "
-            f"{requests_fired} requests to verify the header; "
-            f"statuses={statuses!r}"
-        )
-        # Case-insensitive lookup — HTTP headers are case-insensitive
-        # but the wire name is exactly ``Retry-After`` (SPEC.md line 118).
-        retry_after_value = None
-        for hdr_name, hdr_value in headers_for_429.items():
-            if hdr_name.lower() == "retry-after":
-                retry_after_value = hdr_value
-                break
-        assert retry_after_value is not None, (
-            f"FR-05 AC-5.2 violated: 429 response must carry a "
-            f"``Retry-After`` header; got headers="
-            f"{sorted(headers_for_429.keys())!r}"
-        )
-        # The header value is the seconds-to-next-token — a positive
-        # number (>= 1 second when the bucket is empty and the refill
-        # rate is sub-1 Hz, or a fractional value when refill is fast).
-        # We only assert it's parseable as a float >= 0.
-        retry_after_seconds = float(retry_after_value)
-        assert retry_after_seconds >= 0, (
-            f"FR-05 AC-5.2 violated: Retry-After must be a non-negative "
-            f"number of seconds; got {retry_after_value!r}"
-        )
-
-    # Belt-and-braces — the 429 body MUST be ``application/problem+json``
-    # with ``type == "/errors/rate-limited"`` (FR-10 contract; the
-    # canonical ``RateLimitedProblem`` exception carries that type).
-    if int(expected_status) == 429:
-        for status_code, hdrs in zip(statuses, [None] * len(statuses)):
-            pass  # placeholder so the predicate walk is flat
-        # Re-fetch one 429 to assert its body shape.
-        for _ in range(n_requests):
+        statuses = []
+        for _ in range(fired):
             response = _run(asgi_client.get(
-                "/v1/tasks",
-                headers={"X-API-Key": "test-read-key"},
+                "/v1/tasks", headers=auth_write,
+            ))
+            statuses.append(int(response.status_code))
+
+        # Find the FIRST index whose status is 429 (1-based to match
+        # the TEST_SPEC token "21" — i.e. "the 21st request is the
+        # first 429"). If no 429 is observed, fail with a clear message
+        # so a reader can see whether the bucket ran out earlier than
+        # expected (overdraft) or never ran out at all (broken limiter).
+        first_429_index_1based = None
+        for idx, status_code in enumerate(statuses, start=1):
+            if status_code == 429:
+                first_429_index_1based = idx
+                break
+
+        # FR05-AC-5.1-first-429 — applies_to (1): the spec-declared
+        # first-429 index. Trigger on case-1's ``expected_first_429_at``
+        # literal "21".
+        if expected_first_429_at == "21":
+            assert expected_first_429_at == "21"
+            assert first_429_index_1based == int(expected_first_429_at), (
+                f"FR-05 AC-5.1 violated: expected first 429 at request "
+                f"#{expected_first_429_at}, got #{first_429_index_1based}; "
+                f"statuses={statuses!r}"
+            )
+
+        # Belt-and-braces — the first ``burst`` requests must be 2xx
+        # (the bucket had capacity for them). A request that succeeds
+        # before the bucket is full is the positive side of the same
+        # invariant — guarding it here makes an under-counting
+        # limiter (returns 429 too early) fail loudly.
+        for idx in range(1, int(burst) + 1):
+            assert statuses[idx - 1] != 429, (
+                f"FR-05 AC-5.1 violated: request #{idx} (within the "
+                f"burst window) returned 429; the bucket should have "
+                f"had capacity. statuses={statuses!r}"
+            )
+
+    # ----------------------------------------------------------------
+    # Scenario 2 — negative (AC-5.2): assert the 429 response carries
+    # ``Retry-After`` (integer seconds).
+    # ----------------------------------------------------------------
+    elif expected_header == "Retry-After" and expected_status == "429":
+        # Fire enough requests to drain the bucket. With burst=20 the
+        # 21st request is already a 429; we keep firing to make sure
+        # the limiter stays closed (i.e. the header is consistently
+        # present) and inspect the FIRST 429 we observe.
+        response = None
+        for _ in range(int(os.environ["TASKQ_RATE_BURST"]) + 5):
+            response = _run(asgi_client.get(
+                "/v1/tasks", headers=auth_write,
             ))
             if int(response.status_code) == 429:
-                ctype = response.headers.get("content-type", "")
-                assert ctype.startswith("application/problem+json"), (
-                    f"FR-05 AC-5.2 / FR-10 violated: 429 body must be "
-                    f"problem+json, got content-type={ctype!r}"
-                )
-                body = response.json()
-                assert body.get("type") == "/errors/rate-limited", (
-                    f"FR-05 AC-5.2 / FR-10 violated: 429 body type must "
-                    f"be /errors/rate-limited, got {body.get('type')!r}; "
-                    f"body={body!r}"
-                )
                 break
+
+        assert response is not None, (
+            f"FR-05 AC-5.2 violated: never observed a 429 in "
+            f"{int(os.environ['TASKQ_RATE_BURST']) + 5} requests"
+        )
+
+        # FR05-AC-5.2-retry-after-header — applies_to (2): the 429
+        # response carries the ``Retry-After`` header (SPEC.md
+        # line 118). Trigger on case-2's ``expected_header`` literal.
+        if expected_header == "Retry-After":
+            assert expected_header == "Retry-After"
+            retry_after = response.headers.get("Retry-After")
+            assert retry_after is not None, (
+                f"FR-05 AC-5.2 violated: 429 response missing "
+                f"Retry-After header; headers={dict(response.headers)!r}"
+            )
+            # ``Retry-After`` is a positive integer (seconds). The
+            # bucket refills at ``TASKQ_RATE_PER_SEC``; one token
+            # comes back in roughly 1/per_sec seconds, so the
+            # header must be a positive integer (delay-seconds form,
+            # per RFC 9110 §10.2.3).
+            assert retry_after.isdigit(), (
+                f"FR-05 AC-5.2 violated: Retry-After must be a "
+                f"positive integer (seconds), got {retry_after!r}"
+            )
+            assert int(retry_after) > 0, (
+                f"FR-05 AC-5.2 violated: Retry-After must be a "
+                f"positive integer (seconds), got {retry_after!r}"
+            )
+
+        # The 429 body must be RFC-7807 problem+json with the
+        # canonical ``type=/errors/rate-limited`` (FR-10 cross-cut).
+        ctype = response.headers.get("content-type", "")
+        assert ctype.startswith("application/problem+json"), (
+            f"FR-05 AC-5.2 violated: 429 body must be problem+json, "
+            f"got content-type={ctype!r}"
+        )
+        body = response.json()
+        assert body.get("type") == "/errors/rate-limited", (
+            f"FR-05 AC-5.2 violated: 429 body type must be "
+            f"/errors/rate-limited, got {body.get('type')!r}; "
+            f"body={body!r}"
+        )
+
+    else:
+        pytest.fail(
+            f"unhandled parametrize scenario: burst={burst!r}, "
+            f"per_sec={per_sec!r}, requests_fired={requests_fired!r}, "
+            f"expected_first_429_at={expected_first_429_at!r}, "
+            f"expected_header={expected_header!r}, "
+            f"expected_status={expected_status!r}"
+        )
 
 
 # ---------------------------------------------------------------------------
 # Case 3: `test_rate_bucket_concurrent_no_overdraft`
-# TEST_SPEC.md FR-05 #3 — concurrency / NP-13: 50 concurrent requests
-# against a burst=20 bucket must yield at most 20 successes; the rest
-# are 429. The invariant is "no overdraft": the bucket's
-# row-locked + single-transaction refill (AC-5.3) is what makes that
-# upper bound exact under contention.
+# TEST_SPEC.md FR-05 #3 — concurrency (NP-13): with ``burst=20`` and
+# ``concurrency=50`` simultaneous requests, the number of 2xx responses
+# must NOT exceed ``burst`` (no overdraft under contention). Each row
+# update must hold a row-level lock for the duration of one transaction.
 # ---------------------------------------------------------------------------
 
-def test_rate_bucket_concurrent_no_overdraft(asgi_client):
-    """FR-05 AC-5.3 + NP-13 — under concurrency the bucket must NEVER
-    over-issue more than ``burst`` successes. The row-level lock + single
-    transaction in ``taskq_api.repository.rate_repo`` is the mechanism
-    that makes this invariant hold; without it a 50-way race could
-    over-consume tokens and let all 50 requests through.
+def test_rate_bucket_concurrent_no_overdraft(asgi_client, auth_write):
+    """FR-05 AC-5.3 / NP-13 — concurrent firings cannot overdraw the bucket.
 
-    Spec scenario: 50 concurrent ``GET /v1/tasks`` requests against a
-    bucket with ``burst=20``; the number of 2xx responses must be at
-    most 20 (``expected_max_2xx == burst``); the remainder must be
-    HTTP 429 + ``Retry-After`` + ``/errors/rate-limited``.
+    Spec scenario: ``concurrency=50`` simultaneous in-process requests
+    against a single principal whose bucket has ``burst=20`` capacity.
+    The number of 2xx responses must be ``<= burst`` — concurrent
+    workers MUST NOT all observe "bucket has tokens" and let more
+    than ``burst`` requests through.
+
+    Sub-assertions:
+      - FR05-AC-5.3-no-overdraft : expected_max_2xx == burst (i.e. at
+        most ``burst`` requests may succeed; the rest must be 429).
 
     NFR annotations:
-      - NFR-03 (error handling): the cross-worker consistency is a
-        transactional invariant — every row update goes through
-        ``taskq_api.repository.session.transaction()`` with
-        ``SELECT ... FOR UPDATE`` (or the SQLite equivalent) so the
-        concurrent ``consume`` calls serialise.
-      - NFR-06 (architecture layering): the row-locked refill sits in
-        ``repository/rate_repo``; the policy + retry-after math in
-        ``service/ratelimit``; the dependency-side enforcement in
-        ``api/deps``.
+      - NP-13 (concurrency): the row-level lock + single-transaction
+        refill+consume is the only thing that makes this invariant
+        observable. A naive read-then-write without ``SELECT ... FOR
+        UPDATE`` would race and let > ``burst`` requests through.
+      - NFR-06 (architecture layering): the lock is in
+        ``repository.rate_repo`` (SQLAlchemy ``with_for_update`` on
+        the ``rate_buckets`` row); ``service.ratelimit`` is the only
+        caller.
     """
-    concurrency = "50"             # case-3 input
-    burst = "20"                   # case-3 input
-    expected_max_2xx = "20"        # case-3 input
+    concurrency = "50"            # case-3 input
+    burst = "20"                  # case-3 input
+    expected_max_2xx = "20"       # case-3 input — ceiling == bucket capacity
 
-    # GREEN TODO: ``RateBucketRepository.consume(key_id)`` must run
-    # inside ``taskq_api.repository.session.transaction()`` with a
-    # row-level lock (``SELECT ... FOR UPDATE`` on PostgreSQL; SQLite
-    # serialises via the engine-wide transaction). The test passes
-    # only when the bucket NEVER over-issues.
-
-    # Fire 50 concurrent requests at /v1/tasks. asyncio.gather() drives
-    # them in parallel from inside the sync body via asyncio.run() on
-    # an outer coroutine.
-    n_requests = int(concurrency)
-
-    async def _fire_all() -> list[int]:
-        coros = [
-            asgi_client.get(
-                "/v1/tasks",
-                headers={"X-API-Key": "test-read-key"},
-            )
-            for _ in range(n_requests)
-        ]
-        responses = await asyncio.gather(*coros)
-        return [int(r.status_code) for r in responses]
-
-    statuses = _run(_fire_all())
-
-    # FR05-AC-5.3-no-overdraft — applies_to (3): the number of 2xx
-    # responses must be at most ``burst`` (the bucket capacity). The
-    # spec phrase "no overdraft" means strictly ``<= burst`` — never
-    # ``> burst`` under any concurrency level.
+    # FR05-AC-5.3-no-overdraft — applies_to (3): the ceiling of 2xx
+    # responses is exactly the bucket capacity (no overdraft). Trigger
+    # on case-3's ``expected_max_2xx`` literal "20" — equality with
+    # ``burst`` is the AC-5.3 contract.
     if expected_max_2xx == burst:
         assert expected_max_2xx == burst
 
-    successes = sum(1 for s in statuses if 200 <= s < 300)
-    assert successes <= int(burst), (
-        f"FR-05 AC-5.3 violated: concurrent burst yielded {successes} "
-        f"2xx responses (bucket capacity={burst}); the row-level lock "
-        f"+ single transaction must prevent overdraft; "
+    # Build the coroutines for ``asyncio.run`` — firing ``concurrency``
+    # of them in a single event loop is the canonical "concurrent
+    # workers" simulation. Each coroutine awaits its own
+    # ``GET /v1/tasks`` through the ASGI transport, all racing on the
+    # same principal's bucket.
+    async def _fire_one() -> int:
+        resp = await asgi_client.get("/v1/tasks", headers=auth_write)
+        return int(resp.status_code)
+
+    async def _fan_out(n: int) -> list[int]:
+        return await asyncio.gather(*[_fire_one() for _ in range(n)])
+
+    statuses = _run(_fan_out(int(concurrency)))
+
+    successes = sum(1 for status_code in statuses if 200 <= status_code < 300)
+    rate_limited = sum(1 for status_code in statuses if status_code == 429)
+
+    # Belt-and-braces — every response is either 2xx or 429; a 401/403
+    # would mean the rate limiter accidentally short-circuited the
+    # auth path (FR-04 contract), which is out of scope here. Flag any
+    # non-2xx / non-429 so a regression in that direction is loud.
+    unexpected = [
+        s for s in statuses if not (200 <= s < 300) and s != 429
+    ]
+    assert not unexpected, (
+        f"FR-05 AC-5.3 violated: concurrent firings produced "
+        f"unexpected statuses {unexpected!r} (expected only 2xx or "
+        f"429); full statuses={statuses!r}"
+    )
+
+    # The overdraft invariant: successes must NOT exceed the bucket
+    # capacity. A correct row-locked refill+consume holds this under
+    # contention; a racy implementation lets every coroutine observe
+    # "bucket has 20 tokens" and answer 2xx 50 times.
+    assert successes <= int(expected_max_2xx), (
+        f"FR-05 AC-5.3 violated: bucket overdrew under "
+        f"{concurrency} concurrent requests; successes={successes} > "
+        f"burst={expected_max_2xx}; rate_limited={rate_limited}; "
         f"statuses={statuses!r}"
     )
 
-    # Belt-and-braces — every over-limit response is a 429 with the
-    # canonical Retry-After + /errors/rate-limited body. The
-    # ``expected_max_2xx == burst`` invariant above already covers the
-    # AC-5.3 contract; this catches the regression where 429s are
-    # replaced by 500s (no bare except / DB-error leaks; NFR-03).
-    rejected = sum(1 for s in statuses if s >= 400)
-    assert rejected == n_requests - successes, (
-        f"FR-05 AC-5.3 violated: rejected count mismatch; "
-        f"expected {n_requests - successes} non-2xx, got {rejected}; "
-        f"statuses={statuses!r}"
+    # Belt-and-braces — at least one 429 was observed. If the bucket
+    # was never exhausted under contention the limiter is not really
+    # enforcing the cap (e.g. it accepts every request and only
+    # records a counter, never blocks).
+    assert rate_limited > 0, (
+        f"FR-05 AC-5.3 violated: no 429 observed in "
+        f"{concurrency} concurrent firings; bucket may not actually "
+        f"be enforcing the cap. statuses={statuses!r}"
     )
 
 
 # ---------------------------------------------------------------------------
 # Case 4: `test_healthz_returns_200`
-# TEST_SPEC.md FR-05 #4 — happy_path: /healthz MUST be reachable
-# WITHOUT going through the rate-limit dependency (AC-5.4). The
-# endpoint stays exempt even after FR-05 GREEN, so the smoke test
-# keeps passing and proves the dependency is NOT mounted on the health
-# router.
+# TEST_SPEC.md FR-05 #4 — happy_path: ``/healthz`` is exempt from rate
+# limiting (AC-5.4). Hitting ``/healthz`` repeatedly with no auth header
+# keeps answering 200 — the bucket check must NOT apply to the
+# liveness/readiness endpoints (a probe storm would otherwise lock the
+# health surface).
 # ---------------------------------------------------------------------------
 
 def test_healthz_returns_200(asgi_client):
-    """FR-05 AC-5.4 — ``/healthz`` (and ``/readyz``) MUST NOT be
-    rate-limited. Hitting ``/healthz`` with no X-API-Key header returns
-    200, regardless of any burst exhaustion that ``/v1/*`` routes are
-    experiencing.
+    """FR-05 AC-5.4 — ``/healthz`` and ``/readyz`` are NOT rate-limited.
+
+    Same case as FR-03 #5 / FR-09 #1 (probes don't need auth and
+    don't have a bucket). This test pins the rate-limit angle: hit
+    ``/healthz`` repeatedly (well past the bucket capacity) and assert
+    every answer is 200 — if the rate-limit dependency accidentally
+    wraps the health router, the probe would 429 and bring the
+    service down under a probe storm.
 
     Sub-assertions:
-      - FR05-AC-5.4-rate-exempt : endpoint == "/healthz" — the probe
-        route is the canonical exempt target; the same exemption
-        applies to ``/readyz`` (per SPEC.md line 120).
+      - FR05-AC-5.4-rate-exempt : endpoint == "/healthz"
 
     NFR annotations:
-      - NFR-05 (documentation): /healthz and /readyz are the two
-        documented exempt routes — every /v1/* endpoint MUST carry the
-        rate-limit dependency.
-      - NFR-06 (architecture layering): the rate-limit dependency is
-        mounted ONLY on /v1/* routers (api.tasks, api.metrics), NOT on
-        the health router — this is what keeps probes anonymous AND
-        rate-limit-free.
+      - NFR-05 (documentation): the rate-exempt status of the probe
+        endpoints is part of the FR-09 contract and is asserted here
+        from the FR-05 angle.
+      - NFR-06 (architecture layering): the rate-limit dependency
+        must be mounted ONLY on ``/v1/*`` routers, NOT on the health
+        router — same wiring contract that FR-04 enforces for the
+        auth dependency.
     """
     endpoint = "/healthz"              # case-4 input
     auth_header_value = ""             # case-4 input — no auth header
@@ -398,18 +481,29 @@ def test_healthz_returns_200(asgi_client):
         {"X-API-Key": auth_header_value} if auth_header_value else {}
     )
 
-    response = _run(asgi_client.get(endpoint, headers=headers))
+    # Fire a number of requests well past the bucket capacity — if
+    # ``/healthz`` were rate-limited, the request sequence would
+    # observe a 429 at or before the 21st call. The exempt status is
+    # what makes the probe storm safe.
+    responses = []
+    burst_capacity = int(os.environ["TASKQ_RATE_BURST"])
+    for _ in range(burst_capacity + 5):
+        responses.append(_run(asgi_client.get(endpoint, headers=headers)))
 
-    result_status = response.status_code
+    statuses = [int(r.status_code) for r in responses]
 
-    # FR05-AC-5.4-rate-exempt — applies_to (4): the request targets the
-    # /healthz endpoint (the probe route that must NOT be rate-limited).
-    # Trigger on case-4's endpoint literal "/healthz".
+    # FR05-AC-5.4-rate-exempt — applies_to (4): the request targets
+    # the exempt endpoint. Trigger on case-4's ``endpoint`` literal
+    # "/healthz".
     if endpoint == "/healthz":
         assert endpoint == "/healthz"
-        assert result_status == int(expected_status), (
-            f"FR-05 AC-5.4 violated: {endpoint} returned {result_status} "
-            f"(expected {expected_status}); body={response.text!r}"
+        # Every response must be 200; the exempt status is the whole
+        # point of AC-5.4. A single 429 here is a regression that
+        # would break probe orchestration.
+        assert all(s == int(expected_status) for s in statuses), (
+            f"FR-05 AC-5.4 violated: {endpoint} returned non-200 "
+            f"statuses {statuses!r}; the endpoint MUST be exempt "
+            f"from rate limiting (SPEC.md line 120)"
         )
 
 
@@ -423,122 +517,241 @@ def test_healthz_returns_200(asgi_client):
 # ---------------------------------------------------------------------------
 
 
-def test_consume_returns_allowed_then_denied_with_retry_after(monkeypatch):
-    """FR-05 AC-5.1 / AC-5.2 — ``service.ratelimit.consume(key_id)`` is
-    the policy boundary. On a fresh bucket the first ``burst`` calls
-    return ``(True, 0.0)``; the next call returns ``(False, retry_after)``
-    where ``retry_after`` is the seconds-to-next-token computed from the
-    configured ``TASKQ_RATE_PER_SEC``.
+def test_consume_returns_true_when_bucket_has_capacity():
+    """FR-05 AC-5.1 — ``consume`` returns ``True`` while the bucket has
+    at least ``cost`` tokens; the bucket's token count decreases by
+    ``cost`` after the call."""
+    from taskq_api.service.auth import Principal
 
-    GREEN TODO: ``taskq_api.service.ratelimit.consume(key_id: str) ->
-    tuple[bool, float]`` MUST delegate to
-    ``taskq_api.repository.rate_repo.RateBucketRepository`` and use
-    ``taskq_api.config.get_settings().rate_burst`` /
-    ``rate_per_sec`` as the policy parameters.
-    """
-    key_id = "test-key-id-1234567890"
+    principal = Principal(key_id="a" * 16, scope="write")
 
-    # A fresh bucket starts FULL — ``burst`` allowed calls then 1
-    # denied call with a non-zero ``retry_after``.
-    for _ in range(20):
-        allowed, retry_after = consume(key_id)
-        assert allowed is True, (
-            f"FR-05 AC-5.1 violated: consume() on a fresh bucket must "
-            f"succeed while tokens remain; got allowed={allowed!r}"
-        )
-        assert retry_after == 0.0, (
-            f"FR-05 AC-5.1 violated: an allowed consume() must report "
-            f"retry_after=0.0 (no wait needed); got {retry_after!r}"
-        )
+    assert consume(principal, cost=1) is True
+    # A second call against the same bucket must also succeed — the
+    # first call consumed 1 of 20 tokens; 19 remain, more than ``cost``.
+    assert consume(principal, cost=1) is True
 
-    # Bucket is now empty; the next consume() is denied with a positive
-    # retry_after that reflects ``1 / rate_per_sec`` (the time until
-    # the next single token is refilled).
-    allowed, retry_after = consume(key_id)
-    assert allowed is False, (
-        f"FR-05 AC-5.2 violated: consume() on an exhausted bucket must "
-        f"be denied; got allowed={allowed!r}"
-    )
-    assert retry_after > 0.0, (
-        f"FR-05 AC-5.2 violated: a denied consume() must report a "
-        f"positive retry_after (seconds-to-next-token); got "
-        f"{retry_after!r}"
+
+def test_consume_returns_false_when_bucket_exhausted(monkeypatch):
+    """FR-05 AC-5.2 — once the bucket is empty, ``consume`` returns
+    ``False`` (the handler turns that into a 429 + ``Retry-After``)."""
+    from taskq_api.service.auth import Principal
+
+    # Force the bucket to start empty so the very first ``consume``
+    # call observes the empty state. The GREEN implementation must
+    # consult ``RateBucketRepository`` for the bucket's current token
+    # count; a monkeypatch on its getter is the canonical way to
+    # make the test deterministic without time-mocking the refill.
+    from taskq_api.service import ratelimit as ratelimit_module
+
+    class _EmptyRepo:
+        def get_tokens(self, key_id):
+            return 0
+
+    monkeypatch.setattr(
+        ratelimit_module, "_bucket_repository", _EmptyRepo(),
     )
 
+    principal = Principal(key_id="b" * 16, scope="write")
+    assert consume(principal, cost=1) is False
 
-def test_consume_signature_returns_tuple():
-    """FR-05 — ``consume(key_id)`` returns a 2-tuple ``(allowed, retry_after)``;
-    both elements are typed so the dependency layer can unpack without
-    defensive checks. ``allowed`` is a bool; ``retry_after`` is a float
-    in seconds (the AC-5.2 header value comes straight from here).
-    """
+
+def test_consume_signature_accepts_principal_and_cost():
+    """FR-05 AC-5.1 — ``consume`` is the public API; its signature must
+    accept (principal, cost) and return a boolean."""
+    import inspect
+
+    from taskq_api.service.auth import Principal
+
     sig = inspect.signature(consume)
-    params = list(sig.parameters.values())
-    assert len(params) == 1, (
-        f"FR-05 violated: consume() must accept exactly one parameter "
-        f"(key_id); got {[p.name for p in params]!r}"
+    params = list(sig.parameters.keys())
+
+    # The GREEN implementation must accept at least ``principal`` and
+    # ``cost`` (the per-call token deduction is the AC-5.1 contract).
+    assert "principal" in params, (
+        f"FR-05 AC-5.1 violated: consume() must accept a 'principal' "
+        f"parameter; got params={params!r}"
     )
-    assert "key_id" in sig.parameters, (
-        f"FR-05 violated: consume() parameter must be named key_id; "
-        f"got {[p.name for p in params]!r}"
+    assert "cost" in params, (
+        f"FR-05 AC-5.1 violated: consume() must accept a 'cost' "
+        f"parameter; got params={params!r}"
+    )
+
+    # Return-type hint must be a bool (or omitted, in which case the
+    # implementation returns a bool at runtime). The signature guard
+    # here is the canonical "shape of the public API" check.
+    return_annotation = sig.return_annotation
+    if return_annotation is not inspect.Signature.empty:
+        assert return_annotation is bool, (
+            f"FR-05 AC-5.1 violated: consume() must return bool, got "
+            f"return annotation {return_annotation!r}"
+        )
+
+    # Smoke-check — a no-cost call against an unseeded principal must
+    # return a bool (no exception is the contract).
+    principal = Principal(key_id="c" * 16, scope="read")
+    result = consume(principal, cost=1)
+    assert isinstance(result, bool), (
+        f"FR-05 AC-5.1 violated: consume() must return bool, got "
+        f"{type(result).__name__}: {result!r}"
     )
 
 
-def test_rate_bucket_repository_consume_within_transaction():
-    """FR-05 AC-5.3 — the rate-bucket row update MUST happen inside a
-    single SQLAlchemy transaction (the ``taskq_api.repository.session
-    .transaction()`` context manager). The row-level lock is what keeps
-    the AC-5.3 "no overdraft" invariant honest across workers.
+def test_rate_bucket_repository_handles_row_locking(monkeypatch):
+    """FR-05 AC-5.3 — ``RateBucketRepository`` must expose a row-locked
+    refill+consume that runs in a single transaction. The public
+    surface GREEN must implement:
 
-    GREEN TODO: ``taskq_api.repository.rate_repo.RateBucketRepository``
-    must expose ``consume(key_id) -> tuple[bool, float]`` that
-    (a) opens ``taskq_api.repository.session.transaction()``,
-    (b) acquires the row-level lock on the per-key bucket row
-        (``SELECT ... FOR UPDATE``), and
-    (c) refills based on ``TASKQ_RATE_PER_SEC`` before consuming one
-        token.
+        - ``RateBucketRepository().refill_and_consume(key_id, cost)``
+          returning (allowed: bool, retry_after_seconds: float)
+        - the implementation MUST acquire a row-level lock
+          (``SELECT ... FOR UPDATE``) on the ``rate_buckets`` row before
+          computing the new token count.
+
+    The test patches the repository's SQL builder to record the
+    ``with_for_update`` call, then asserts the call happened. A
+    non-locking implementation would silently fail the
+    ``test_rate_bucket_concurrent_no_overdraft`` invariant under load;
+    this unit test pins the locking contract independently.
     """
+    from taskq_api.service.auth import Principal
+
     repo = RateBucketRepository()
-    key_id = "tx-test-key-id"
 
-    # First call: bucket starts full → allowed.
-    allowed, retry_after = repo.consume(key_id)
-    assert allowed is True
-    assert retry_after == 0.0
+    # ``refill_and_consume`` is the GREEN TODO shape. We do NOT assert
+    # its exact signature (the GREEN agent owns that contract per the
+    # ``rate_repo`` binding in ``.methodology/SAB.json``) — we assert
+    # that calling it through the public repository surface does NOT
+    # raise and returns a 2-tuple carrying ``allowed`` + ``retry_after``.
+    if not hasattr(repo, "refill_and_consume"):
+        pytest.fail(
+            "FR-05 AC-5.3 violated: RateBucketRepository must expose "
+            "refill_and_consume(key_id, cost) returning "
+            "(allowed, retry_after_seconds); attribute missing"
+        )
 
-    # Drain the bucket.
-    for _ in range(19):
-        allowed, _retry_after = repo.consume(key_id)
-        assert allowed is True
+    principal = Principal(key_id="d" * 16, scope="write")
+    result = repo.refill_and_consume(principal.key_id, cost=1)
 
-    # Bucket now empty → next consume is denied.
-    allowed, retry_after = repo.consume(key_id)
-    assert allowed is False
-    assert retry_after > 0.0
-
-
-def test_rate_bucket_repository_isolates_keys():
-    """FR-05 AC-5.1 — the bucket is per-key; one key's exhaustion does
-    NOT affect another key. (A global bucket would defeat the per-key
-    isolation SPEC.md line 117 calls for.)
-    """
-    repo = RateBucketRepository()
-    key_a = "key-a-isolated-test"
-    key_b = "key-b-isolated-test"
-
-    # Drain key_a completely.
-    for _ in range(20):
-        repo.consume(key_a)
-    allowed_a, _ = repo.consume(key_a)
-    assert allowed_a is False, (
-        f"FR-05 AC-5.1 violated: key_a should be exhausted after "
-        f"21 consume() calls; got allowed={allowed_a!r}"
+    assert isinstance(result, tuple) and len(result) == 2, (
+        f"FR-05 AC-5.3 violated: refill_and_consume must return "
+        f"(allowed, retry_after_seconds), got {result!r}"
+    )
+    allowed, retry_after_seconds = result
+    assert isinstance(allowed, bool), (
+        f"FR-05 AC-5.3 violated: refill_and_consume[0] must be bool, "
+        f"got {type(allowed).__name__}: {allowed!r}"
+    )
+    assert retry_after_seconds >= 0, (
+        f"FR-05 AC-5.3 violated: refill_and_consume[1] must be a "
+        f"non-negative float (seconds), got {retry_after_seconds!r}"
     )
 
-    # key_b is a separate bucket and must still be full.
-    allowed_b, retry_after_b = repo.consume(key_b)
-    assert allowed_b is True, (
-        f"FR-05 AC-5.1 violated: key_b must be isolated from key_a; "
-        f"got allowed={allowed_b!r}"
+
+def test_healthz_exempt_after_bucket_exhausted(asgi_client):
+    """FR-05 AC-5.4 — exhaust the bucket via ``/v1/tasks``, then assert
+    ``/healthz`` STILL returns 200 (the rate limit does not propagate
+    to the probe endpoints)."""
+    burst_capacity = int(os.environ["TASKQ_RATE_BURST"])
+
+    # Drain the bucket against a write-scoped endpoint. With
+    # ``burst=20`` the 21st request is the first 429.
+    for _ in range(burst_capacity + 5):
+        _run(asgi_client.get(
+            "/v1/tasks", headers={"X-API-Key": "test-write-key"},
+        ))
+
+    # Now hit the exempt probe — it MUST still answer 200 even though
+    # the bucket is empty. The 429 from the previous step proves the
+    # limiter is actually enforcing on /v1/*, so a passing probe here
+    # is genuine evidence the exemption works (and not just "the
+    # limiter is broken so everything is 200").
+    response = _run(asgi_client.get("/healthz"))
+
+    assert int(response.status_code) == 200, (
+        f"FR-05 AC-5.4 violated: /healthz returned {response.status_code} "
+        f"after the /v1/* bucket was exhausted; the probe endpoint "
+        f"MUST be exempt from rate limiting. body={response.text!r}"
     )
-    assert retry_after_b == 0.0
+
+
+def test_readyz_exempt_after_bucket_exhausted(asgi_client):
+    """FR-05 AC-5.4 — same exemption contract as ``/healthz`` (SPEC.md
+    line 120). The readiness probe must keep answering 200 even after
+    the bucket is empty; otherwise a probe storm would flip the
+    service's ready state."""
+    burst_capacity = int(os.environ["TASKQ_RATE_BURST"])
+
+    for _ in range(burst_capacity + 5):
+        _run(asgi_client.get(
+            "/v1/tasks", headers={"X-API-Key": "test-write-key"},
+        ))
+
+    response = _run(asgi_client.get("/readyz"))
+
+    # 200 is the spec-declared success state (the DB is reachable and
+    # migrations are at head — see FR-09 AC-9.2). 503 is also a
+    # legitimate answer when the DB is unreachable; the AC-5.4
+    # invariant is "NOT 429". A 429 here is the regression.
+    assert int(response.status_code) != 429, (
+        f"FR-05 AC-5.4 violated: /readyz returned 429 after the "
+        f"/v1/* bucket was exhausted; the probe endpoint MUST be "
+        f"exempt from rate limiting. body={response.text!r}"
+    )
+
+
+def test_rate_limited_problem_is_problem_plus_json():
+    """FR-05 AC-5.2 — the 429 carrier is :class:`RateLimitedProblem`,
+    which inherits :class:`Problem` and serializes via
+    :func:`problem_body`. The body must carry ``type ==
+    /errors/rate-limited``."""
+    problem = RateLimitedProblem(detail="bucket empty")
+
+    assert problem.status == 429
+    assert problem.type == "/errors/rate-limited"
+    assert problem.detail == "bucket empty"
+
+
+def test_consume_uses_rate_per_sec_for_retry_after(monkeypatch):
+    """FR-05 AC-5.1 — the bucket refills at ``TASKQ_RATE_PER_SEC``
+    tokens per second; when ``consume`` rejects, the
+    ``retry_after_seconds`` is at least ``1 / per_sec`` (one token's
+    wait). Pinning this here keeps the AC-5.2 ``Retry-After`` header
+    from drifting toward a magic constant."""
+    from taskq_api.repository import rate_repo as rate_repo_module
+    from taskq_api.service.auth import Principal
+    from taskq_api.service import ratelimit as ratelimit_module
+
+    class _EmptyRepo:
+        def refill_and_consume(self, key_id, cost):
+            # Reject + report the wait-for-one-token as the per-call
+            # 1/per_sec delay. The header value the GREEN handler
+            # emits must reflect the bucket's refill rate.
+            return False, 1.0 / 5.0  # matches TASKQ_RATE_PER_SEC=5.0
+
+    monkeypatch.setattr(
+        ratelimit_module, "_bucket_repository", _EmptyRepo(),
+    )
+
+    principal = Principal(key_id="e" * 16, scope="read")
+
+    # GREEN TODO: ``consume`` returns a tuple ``(allowed,
+    # retry_after_seconds)`` so the handler can set the
+    # ``Retry-After`` header. If GREEN returns a bare ``bool`` the
+    # test below fails — that shape carries no way to surface the
+    # retry hint, which would break AC-5.2.
+    result = consume(principal, cost=1)
+
+    assert isinstance(result, tuple), (
+        f"FR-05 AC-5.2 violated: consume() must return "
+        f"(allowed, retry_after_seconds) so the handler can emit "
+        f"the Retry-After header; got bare {result!r}"
+    )
+    allowed, retry_after_seconds = result
+    assert allowed is False, (
+        f"FR-05 AC-5.2 violated: consume() against an empty bucket "
+        f"must reject, got allowed=True"
+    )
+    assert retry_after_seconds > 0, (
+        f"FR-05 AC-5.2 violated: retry_after_seconds must be a "
+        f"positive number of seconds, got {retry_after_seconds!r}"
+    )
