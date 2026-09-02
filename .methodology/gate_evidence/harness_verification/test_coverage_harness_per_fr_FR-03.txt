@@ -1,0 +1,12 @@
+# Harness-executed: pytest-cov (re-scored per FR)
+# dimension: test_coverage
+# fr_id: FR-03
+# scope: this FR's own modules, per fr_module_traceability
+# executed/coverable: 105/106
+# per-fr coverage: 99.1%
+# whole-project coverage: 92.0% (see .methodology/gate_evidence/harness_verification/test_coverage_harness.txt)
+#
+# files in scope:
+#   03-development/src/taskq_api/api/deps.py
+#   03-development/src/taskq_api/repository/key_repo.py
+#   03-development/src/taskq_api/service/auth.py

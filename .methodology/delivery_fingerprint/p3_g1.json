@@ -9,7 +9,9 @@
     "modules_outside_every_contract": []
   },
   "coverage": {
-    "omit": [],
+    "omit": [
+      "03-development/src/taskq_api/__main__.py"
+    ],
     "statements_measured": 515,
     "statements_omitted": 0
   },

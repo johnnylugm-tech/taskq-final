@@ -84,3 +84,37 @@ if not isinstance(getattr(httpx.Response, "status_code", None), property) or \
     httpx.Response.status_code = property(
         _patched_status_code, _patched_status_code_setter,
     )
+
+
+# ---------------------------------------------------------------------------
+# Per-test isolation: clear the `api_keys` table before every test so
+# deterministic key hashes do not collide across re-runs against the
+# file-backed SQLite database.
+# ---------------------------------------------------------------------------
+
+import pytest  # noqa: E402
+
+from sqlalchemy import delete  # noqa: E402
+
+from taskq_api.repository.session import get_engine  # noqa: E402
+from taskq_api.models.orm import ApiKey  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _reset_api_keys_table():
+    """Wipe ``api_keys`` before every test.
+
+    FR-03's tests insert specific hashes (e.g. sha256("revoked-key")) and
+    expect a fresh table every run — the file-backed SQLite at
+    ``taskq.db`` would otherwise keep rows from previous runs and trip
+    the UNIQUE constraint on ``api_keys.key_hash``.
+    """
+    try:
+        engine = get_engine()
+        with engine.begin() as conn:
+            conn.execute(delete(ApiKey))
+    except Exception:
+        # First-ever test run: the engine / metadata may not be ready yet.
+        # The KeyRepository's own setup will create tables on demand.
+        pass
+    yield
