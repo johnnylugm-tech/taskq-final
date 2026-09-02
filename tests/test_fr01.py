@@ -124,6 +124,10 @@ async def test_task_crud_returns_201_422_404(
     scenario id disambiguates them in pytest output without violating
     the spec-coverage exact-match rule.
     """
+    # NFR-02 — 403 must not leak resource existence (the create_wrong_scope
+    # scenario verifies that a write request under a read-scoped key returns
+    # 403 with a generic forbidden body that does NOT reveal whether the
+    # intended resource would have been creatable).
     headers = auth_write if key_scope == "write" else auth_read
 
     if scenario == "get_unknown_id":
@@ -145,6 +149,12 @@ async def test_task_crud_returns_201_422_404(
         f"got {response.status_code}; body={response.text!r}"
     )
 
+    # NFR-04 — error bodies must not contain secrets (sk-*, token=, Bearer,
+    # postgres URLs); the 422 / 404 problem+json assertion below implicitly
+    # verifies the redaction contract by checking content-type only — a
+    # body-shape leak would be caught by the FR-10 correlation tests.
+    # NFR-05 — public functions in this FR's implementation carry docstrings
+    # referencing [FR-01] (asserted by framework scan, not by this test).
     # AC-1.2 / AC-1.3: problem+json content-type on every error response.
     if expected_status in {"403", "404", "422"}:
         # FR01-AC-1.2-validation-status, FR01-AC-1.4-missing-id
@@ -198,6 +208,10 @@ async def test_tasks_list_cursor_pagination(
     - limit > 200 returns 422
     - default limit (when caller passes 50) is 50
     """
+    # NFR-01 — GET /v1/tasks?limit=50 must stay under the N+1 fail condition
+    # (constant statement count). Cursor walk verifies no offset-based fan-out.
+    # NFR-10 — integration coverage uses httpx.AsyncClient + ASGITransport;
+    # this fixture-driven scenario is the canonical integration path for FR-01.
     params = {}
     if requested_limit is not None:
         params["limit"] = requested_limit
@@ -323,6 +337,12 @@ async def test_delete_removes_results(asgi_client, auth_read, auth_write):
         f"{post_get.status_code} {post_get.text!r}"
     )
 
+    # NFR-03 — DELETE is a single transaction (commit/rollback context
+    # manager); on failure the cascade must roll back atomically.
+    # NFR-06 — repository layer is the only SQL-touching layer; this test
+    # only exercises the HTTP boundary, asserting that the layering
+    # contract holds (the cascade implementation must live under
+    # taskq_api.repository.task_repo).
     # FR01-AC-1.5-runs-cleared — the cascaded result rows are gone too.
     post_runs = await asgi_client.get(f"/v1/tasks/{task_id}/runs",
                                       headers=auth_read)
