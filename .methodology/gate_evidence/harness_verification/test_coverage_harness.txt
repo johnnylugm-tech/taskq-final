@@ -1,8 +1,9 @@
 # Harness-executed: pytest-cov
 # returncode: 0
-# agent_score: 83.5 | threshold: 80.0
+# agent_score: 100.0 | threshold: 80.0
 
-....................................................................     [100%]
+........................................................................ [ 82%]
+...............                                                          [100%]
 =============================== warnings summary ===============================
 .venv/lib/python3.11/site-packages/starlette/formparsers.py:12
   /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
@@ -24,20 +25,21 @@ Name                                                   Stmts   Miss  Cover   Mis
 03-development/src/taskq_api/config.py                    33     11    67%   64-74
 03-development/src/taskq_api/errors.py                    41      0   100%
 03-development/src/taskq_api/models/__init__.py            0      0   100%
-03-development/src/taskq_api/models/orm.py                43      0   100%
+03-development/src/taskq_api/models/orm.py                44      0   100%
 03-development/src/taskq_api/models/schemas.py            38      0   100%
 03-development/src/taskq_api/repository/__init__.py        0      0   100%
-03-development/src/taskq_api/repository/key_repo.py       57      0   100%
-03-development/src/taskq_api/repository/rate_repo.py      56     12    79%   58, 145-149, 171, 176-179, 193
-03-development/src/taskq_api/repository/session.py        46      6    87%   56, 69-71, 82-83
-03-development/src/taskq_api/repository/task_repo.py     137      1    99%   198
+03-development/src/taskq_api/repository/_time.py           8      8     0%   18-37
+03-development/src/taskq_api/repository/key_repo.py       63      0   100%
+03-development/src/taskq_api/repository/rate_repo.py      56      0   100%
+03-development/src/taskq_api/repository/session.py        49      0   100%
+03-development/src/taskq_api/repository/task_repo.py     201      0   100%
 03-development/src/taskq_api/service/__init__.py           0      0   100%
 03-development/src/taskq_api/service/auth.py              38      1    97%   76
 03-development/src/taskq_api/service/common.py            25      0   100%
 03-development/src/taskq_api/service/health.py             4      0   100%
-03-development/src/taskq_api/service/ratelimit.py         34      5    85%   117, 134-137
+03-development/src/taskq_api/service/ratelimit.py         23      1    96%   92
 03-development/src/taskq_api/service/runner.py            72     10    86%   94, 116-119, 125, 127, 185-186, 218
 03-development/src/taskq_api/service/tasks.py             29      0   100%
 ------------------------------------------------------------------------------------
-TOTAL                                                    781     49    94%
-68 passed, 1 warning in 0.72s
+TOTAL                                                    852     34    96%
+87 passed, 1 warning in 1.08s
