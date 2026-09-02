@@ -1,39 +1,42 @@
-"""[FR-03] API-key persistence — L2.
+"""[FR-03] API-key repository — DB-backed ``api_keys`` table.
 
-DB-backed ``api_keys`` table. Stores ONLY the SHA-256 hex digest of the
-plaintext key (never the plaintext); the ``revoked_at`` column lets
-operators retire a key without losing the audit trail.
-
-The repository is the single owner of the ``api_keys`` row shape —
-``service.auth`` reads it through ``find_active_by_hash`` so revoked
-keys are transparently rejected (AC-3.4).
+Stores ONLY the SHA-256 hex digest of the plaintext key (64 hex chars,
+AC-3.2). Plaintext is never written here; the only surface that ever
+sees plaintext is ``python -m taskq_api key create`` (CLI), and only at
+the moment of creation.
 
 Citations:
-    - SPEC.md §3 FR-03 AC-3.2 (SHA-256 hash, never plaintext)
-    - SPEC.md §3 FR-03 AC-3.4 (revoked_at filters inactive keys)
-    - SAD.md §2.6, §3.4
+    - SPEC.md §3 FR-03 AC-3.2 (SHA-256 hex storage)
+    - SPEC.md §3 FR-03 AC-3.4 (revoked keys are invalid)
+    - SPEC.md §4 NFR-02 (no plaintext on disk)
+    - SPEC.md §4 NFR-04 (plaintext emitted once at create)
+    - SAD.md §2.7
 """
 
 from __future__ import annotations
 
-import threading
-import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Optional
 
+from sqlalchemy import select
 
-_LOCK = threading.RLock()
-_KEYS: dict[str, "ApiKeyRow"] = {}
+from taskq_api.models.orm import ApiKey
+from taskq_api.repository.session import transaction
+
+
+def _now() -> datetime:
+    """[FR-03] UTC timestamp used for both ``created_at`` and test
+    ``revoked_at`` markers."""
+    return datetime.now(timezone.utc)
 
 
 @dataclass
 class ApiKeyRow:
-    """[FR-03] One ``api_keys`` row.
+    """[FR-03] In-memory projection of an ``api_keys`` row.
 
-    The ``key_hash`` column is a 64-char lowercase hex digest of the
-    plaintext key (see :meth:`KeyRepository.insert`). The plaintext
-    itself is NEVER persisted (NFR-02 / AC-3.2).
+    Used so the FR-03 service layer / tests can talk in dict-style keys
+    (the test asserts ``row[stored_column]`` against ``key_hash``).
     """
 
     id: int
@@ -42,94 +45,106 @@ class ApiKeyRow:
     created_at: datetime
     revoked_at: Optional[datetime]
 
+    def __getitem__(self, item: str):
+        return getattr(self, item)
 
-def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    def __contains__(self, item: object) -> bool:
+        return item in self.keys()
+
+    def __iter__(self):
+        return iter(self.keys())
+
+    def values(self):
+        return {
+            "id": self.id,
+            "key_hash": self.key_hash,
+            "scope": self.scope,
+            "created_at": self.created_at,
+            "revoked_at": self.revoked_at,
+        }.values()
+
+    def keys(self):
+        return ("id", "key_hash", "scope", "created_at", "revoked_at")
+
+    def get(self, key: str, default=None):
+        return getattr(self, key, default)
 
 
-def _row_to_dict(row: ApiKeyRow) -> dict:
-    return {
-        "id": row.id,
-        "key_hash": row.key_hash,
-        "scope": row.scope,
-        "created_at": row.created_at,
-        "revoked_at": row.revoked_at,
-    }
+def _to_row(orm_row: ApiKey) -> ApiKeyRow:
+    return ApiKeyRow(
+        id=int(orm_row.id),
+        key_hash=orm_row.key_hash,
+        scope=orm_row.scope,
+        created_at=orm_row.created_at,
+        revoked_at=orm_row.revoked_at,
+    )
 
 
 class KeyRepository:
-    """[FR-03] Api-key persistence.
+    """[FR-03] Persistence for API keys — SHA-256 hash only.
 
-    Public surface (used by ``service.auth`` + the
-    ``python -m taskq_api key create`` CLI):
-
-    * ``insert(key_hash, scope, revoked_at=None)``  — store a new row
-    * ``find_active_by_hash(key_hash)``            — AC-3.4: omit
-      revoked rows (returns ``None`` for missing or revoked)
-    * ``find_by_hash(key_hash)``                   — read-only access
-      used by tests for AC-3.2 (stores hashed values, never plaintext)
-    * ``now()``                                    — clock helper so
-      tests can stamp deterministic ``revoked_at`` rows
-
-    The store is in-memory (process-local). The SQL-backed shape lives
-    in :class:`taskq_api.models.orm.ApiKey`; the public method names
-    here match the L2 contract so swapping the body to a SQLAlchemy
-    session does not touch callers.
+    Public surface:
+        - ``insert(key_hash, scope, revoked_at=None)``
+        - ``find_by_hash(key_hash)``
+        - ``find_active_by_hash(key_hash)``  — filters out revoked rows
+        - ``revoke(key_hash)``
+        - ``now()``                          — UTC clock used by tests
     """
-
-    def now(self) -> datetime:
-        """[FR-03] Return a UTC timestamp for test/CLI stamping."""
-        return _now()
 
     def insert(
         self,
         key_hash: str,
         scope: str,
         revoked_at: Optional[datetime] = None,
-    ) -> dict:
-        """[FR-03 AC-3.2, AC-3.4] Persist one ``api_keys`` row.
-
-        ``key_hash`` is the 64-char SHA-256 hex digest of the plaintext
-        — the plaintext is never stored. ``revoked_at`` is non-null
-        only for retired keys (AC-3.4 contract — ``find_active_by_hash``
-        filters them out).
-        """
-        with _LOCK:
-            row_id = uuid.uuid4().int & 0x7FFFFFFF  # monotonic-ish int PK
-            row = ApiKeyRow(
-                id=row_id,
+    ) -> ApiKeyRow:
+        """[FR-03 AC-3.2] Persist one row with a SHA-256 hash."""
+        with transaction() as session:
+            row = ApiKey(
                 key_hash=key_hash,
                 scope=scope,
                 created_at=_now(),
                 revoked_at=revoked_at,
             )
-            _KEYS[key_hash] = row
-            return _row_to_dict(row)
+            session.add(row)
+            session.flush()
+            return _to_row(row)
 
-    def find_by_hash(self, key_hash: str) -> Optional[dict]:
-        """[FR-03 AC-3.2] Read a single ``api_keys`` row by hash.
-
-        Returns the row dict (canonical columns ``key_hash``,
-        ``scope``, ``revoked_at``) or ``None`` for an unknown hash.
-        Revoked rows are returned here — callers that need to filter
-        out revoked keys must use :meth:`find_active_by_hash`.
-        """
-        with _LOCK:
-            row = _KEYS.get(key_hash)
-            return _row_to_dict(row) if row else None
-
-    def find_active_by_hash(self, key_hash: str) -> Optional[dict]:
-        """[FR-03 AC-3.4] Return the row only if ``revoked_at`` is null.
-
-        This is the hot read path for ``service.auth.verify_key`` — a
-        non-null ``revoked_at`` (state-machine retirement) yields
-        ``None``, which the auth layer turns into HTTP 401.
-        """
-        with _LOCK:
-            row = _KEYS.get(key_hash)
-            if row is None or row.revoked_at is not None:
+    def find_by_hash(self, key_hash: str) -> Optional[ApiKeyRow]:
+        """[FR-03] Look up one row by hash, regardless of revocation state."""
+        with transaction() as session:
+            stmt = select(ApiKey).where(ApiKey.key_hash == key_hash)
+            orm_row = session.execute(stmt).scalar_one_or_none()
+            if orm_row is None:
                 return None
-            return _row_to_dict(row)
+            return _to_row(orm_row)
+
+    def find_active_by_hash(self, key_hash: str) -> Optional[ApiKeyRow]:
+        """[FR-03 AC-3.4] Look up one row, omitting revoked ones."""
+        with transaction() as session:
+            stmt = (
+                select(ApiKey)
+                .where(ApiKey.key_hash == key_hash)
+                .where(ApiKey.revoked_at.is_(None))
+            )
+            orm_row = session.execute(stmt).scalar_one_or_none()
+            if orm_row is None:
+                return None
+            return _to_row(orm_row)
+
+    def revoke(self, key_hash: str) -> bool:
+        """[FR-03 AC-3.4] Mark one row as revoked; ``False`` if missing."""
+        with transaction() as session:
+            stmt = select(ApiKey).where(ApiKey.key_hash == key_hash)
+            orm_row = session.execute(stmt).scalar_one_or_none()
+            if orm_row is None:
+                return False
+            orm_row.revoked_at = _now()
+            return True
+
+    def now(self) -> datetime:
+        """[FR-03] UTC clock — exposed so tests can stamp ``revoked_at``
+        deterministically without importing ``datetime`` directly."""
+        return _now()
 
 
-__all__ = ["KeyRepository", "ApiKeyRow"]
+__all__ = ["ApiKeyRow", "KeyRepository"]

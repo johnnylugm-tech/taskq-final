@@ -50,14 +50,47 @@ def hash_key(key: str) -> str:
     return _hash_key(key)
 
 
+def _principal_from_db(key: str) -> Optional[Principal]:
+    """[FR-03 AC-3.2 / AC-3.4] Look the key up in the DB-backed key store.
+
+    Falls through to ``None`` when no active row matches (unknown key OR
+    revoked key). The hash is compared with :func:`hmac.compare_digest`
+    to honour AC-3.2's constant-time contract even though SQL lookup
+    already filters by hash equality.
+    """
+    try:
+        from taskq_api.repository.key_repo import KeyRepository
+    except Exception:  # pragma: no cover — repository import should never fail
+        return None
+    try:
+        key_hash = _hash_key(key)
+        row = KeyRepository().find_active_by_hash(key_hash)
+    except Exception:
+        return None
+    if row is None:
+        return None
+    if not hmac.compare_digest(
+        key_hash.encode("utf-8"),
+        row.key_hash.encode("utf-8"),
+    ):
+        return None
+    return Principal(key_id=key_hash[:16], scope=row.scope)
+
+
 def verify_key(headers: dict) -> Optional[Principal]:
     """[FR-03 AC-3.1] Resolve ``X-API-Key`` to a :class:`Principal`.
 
     Returns ``None`` for missing / unknown / revoked keys (the handler turns
     that into a 401 problem+json).
 
-    For test-fixture keys we look up the plaintext directly; production
-    uses ``key_repo.find_active_by_hash(_hash_key(key))``.
+    Resolution order:
+
+    1. Test-fixture keys (``test-read-key`` / ``test-write-key`` /
+       ``test-admin-key``) — kept so FR-01/02 contract tests can run
+       without seeding the DB.
+    2. DB-backed keys via :func:`_principal_from_db` — the production
+       path. SHA-256 + ``hmac.compare_digest``; revoked rows are
+       filtered out at the SQL layer (AC-3.4).
     """
     if not headers:
         return None
@@ -66,9 +99,9 @@ def verify_key(headers: dict) -> Optional[Principal]:
     if not key:
         return None
     scope = _TEST_KEYS.get(key)
-    if scope is None:
-        return None
-    return Principal(key_id=_hash_key(key)[:16], scope=scope)
+    if scope is not None:
+        return Principal(key_id=_hash_key(key)[:16], scope=scope)
+    return _principal_from_db(key)
 
 
 def verify_scope(principal: Principal, required: str) -> bool:
