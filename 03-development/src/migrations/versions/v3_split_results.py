@@ -21,10 +21,16 @@ Downgrade reverses the steps in opposite order:
      ``tasks.result_json`` per parent task.
   3. Drop the ``task_results`` table.
 
-The ``downgrade`` path uses ``_shared.copy_rows`` to move data column-
-by-column — no ``op.execute("DROP TABLE ...")`` shortcut (NFR-02).
-The round-trip downgrade -1 / upgrade head cycle is verified by the
-``test_v3_data_migration_round_trip_preserves_columns`` test (AC-7.5).
+The DDL ops (``create_table`` / ``drop_column`` on upgrade,
+``add_column`` / ``drop_table`` on downgrade) run in both online and
+offline (``--sql``) modes; only the row-copy steps skip the data
+movement in offline mode. JSON parsing is delegated to
+:meth:`migrations.versions._shared.json_loads_safe` so the same
+shape can be reused by future migrations that split / merge JSON
+columns — the v3 path is its first user.
+
+The round-trip ``downgrade -1`` / ``upgrade head`` cycle is verified
+by ``test_v3_data_migration_round_trip_preserves_columns`` (AC-7.5).
 
 Citations:
     - SPEC.md §5.2 (schema)
@@ -35,9 +41,11 @@ Citations:
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 
 import sqlalchemy as sa
 from alembic import op
+from alembic.context import is_offline_mode
 
 from migrations.versions import _shared
 
@@ -49,47 +57,72 @@ branch_labels = None
 depends_on = None
 
 
+# Canonical ``task_results`` column set — used by both ``create_table``
+# on upgrade and matched by ``drop_table`` on downgrade. Centralised
+# here so the column list lives in exactly one place.
+_TASK_RESULTS_COLUMNS = (
+    sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
+    _shared.task_id_column(),
+    sa.Column("exit_code", sa.Integer(), nullable=False, server_default="0"),
+    sa.Column("stdout_tail", sa.String(length=4096), nullable=False, server_default=""),
+    sa.Column("stderr_tail", sa.String(length=4096), nullable=False, server_default=""),
+    sa.Column("duration_ms", sa.Integer(), nullable=False, server_default="0"),
+    _shared.utc_now(name="finished_at"),
+)
+
+
+# ---------------------------------------------------------------------------
+# Local helpers — small datetime coercions specific to this migration's
+# ``finished_at`` round-trip. JSON parsing is delegated to
+# :mod:`migrations.versions._shared` so future migrations that split /
+# merge JSON columns can reuse the same parser.
+# ---------------------------------------------------------------------------
+
+
+def _now_or_default(value) -> datetime:
+    """Coerce a payload-supplied ``finished_at`` to ``datetime`` or ``None``."""
+    if value is None:
+        return datetime.now(tz=timezone.utc)
+    if isinstance(value, datetime):
+        return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+    try:
+        parsed = datetime.fromisoformat(str(value))
+    except ValueError:
+        return datetime.now(tz=timezone.utc)
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+
+
+def _isoformat_or_none(value) -> str | None:
+    """Coerce a ``datetime`` to ISO-8601 or ``None`` when input is ``None``."""
+    if value is None:
+        return None
+    if hasattr(value, "isoformat"):
+        return value.isoformat()
+    return str(value)
+
+
 def upgrade() -> None:
     """Split ``tasks.result_json`` into the new ``task_results`` table."""
-    bind = op.get_bind()
-    # Offline (--sql) mode emits DDL only — there is no live database
-    # to query for existing rows. Skip the data-migration SELECT /
-    # INSERT block; the DDL emitted is what ``alembic upgrade --sql``
-    # prints (AC-7.7).
-    from alembic.context import is_offline_mode
+    # Step 1 — create ``task_results`` with the v3 column set. Runs in
+    # both online and offline (``--sql``) modes. The ``id`` column is
+    # autoincrement so application / test code can INSERT without
+    # supplying an id (the canonical round-trip test seeds rows this
+    # way).
+    op.create_table("task_results", *_TASK_RESULTS_COLUMNS)
 
+    # Offline (``--sql``) mode emits DDL only — there is no live
+    # database to query for existing rows. Skip the data-migration
+    # SELECT / INSERT block; the DDL emitted is what
+    # ``alembic upgrade --sql`` prints (AC-7.7).
     if is_offline_mode():
-        op.create_table(
-            "task_results",
-            sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
-            _shared.task_id_column(),
-            sa.Column("exit_code", sa.Integer(), nullable=False, server_default="0"),
-            sa.Column("stdout_tail", sa.String(length=4096), nullable=False, server_default=""),
-            sa.Column("stderr_tail", sa.String(length=4096), nullable=False, server_default=""),
-            sa.Column("duration_ms", sa.Integer(), nullable=False, server_default="0"),
-            _shared.utc_now(name="finished_at"),
-        )
         op.drop_column("tasks", "result_json")
         return
 
-    # Step 1 — create ``task_results`` with the v3 column set. The
-    # ``id`` column is autoincrement so application / test code can
-    # INSERT without supplying an id (the canonical round-trip test
-    # seeds rows this way).
-    op.create_table(
-        "task_results",
-        sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
-        _shared.task_id_column(),
-        sa.Column("exit_code", sa.Integer(), nullable=False, server_default="0"),
-        sa.Column("stdout_tail", sa.String(length=4096), nullable=False, server_default=""),
-        sa.Column("stderr_tail", sa.String(length=4096), nullable=False, server_default=""),
-        sa.Column("duration_ms", sa.Integer(), nullable=False, server_default="0"),
-        _shared.utc_now(name="finished_at"),
-    )
-
-    # Step 2 — move every ``tasks.result_json`` row into ``task_results``.
-    # Use a literal SELECT with a JSON1 path so the upgrade works on
-    # both SQLite (test target) and PostgreSQL (production target).
+    # Step 2 — move every ``tasks.result_json`` row into
+    # ``task_results``. Use literal SELECTs against ``sa.table`` mirrors
+    # so the upgrade works on both SQLite (test target) and PostgreSQL
+    # (production target) without a live ``MetaData`` binding.
+    bind = op.get_bind()
     task_results = sa.table(
         "task_results",
         sa.column("id", sa.String),
@@ -111,13 +144,13 @@ def upgrade() -> None:
     ).fetchall()
 
     for parent_id, raw_json in rows:
-        payload = _safe_loads(raw_json)
+        payload = _shared.json_loads_safe(raw_json)
         if payload is None:
             # No result_json row (the v1 schema allowed NULL on
             # ``result_json``) — nothing to migrate for this task.
             continue
-        # The downgrade path merges multiple ``task_results`` rows
-        # per task into a ``{"runs": [...]}`` array. The upgrade path
+        # The downgrade path merges multiple ``task_results`` rows per
+        # task into a ``{"runs": [...]}`` array. The upgrade path
         # reverses that split — one ``task_results`` row per entry in
         # ``payload["runs"]`` (or one row when the original v1 payload
         # was a single dict).
@@ -152,20 +185,19 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Re-create ``tasks.result_json``, copy every ``task_results`` row back, drop ``task_results``."""
-    bind = op.get_bind()
-    # Offline (--sql) mode emits DDL only — see ``upgrade`` for the
-    # same constraint.
-    from alembic.context import is_offline_mode
+    # Step 1 — re-add ``tasks.result_json`` (NULLABLE — v1 had it
+    # nullable). Runs in both online and offline modes.
+    op.add_column("tasks", sa.Column("result_json", sa.Text(), nullable=True))
 
+    # Offline (``--sql``) mode emits DDL only — see ``upgrade`` for the
+    # same constraint.
     if is_offline_mode():
-        op.add_column("tasks", sa.Column("result_json", sa.Text(), nullable=True))
         op.drop_table("task_results")
         return
 
-    # Step 1 — re-add ``tasks.result_json``.
-    op.add_column("tasks", sa.Column("result_json", sa.Text(), nullable=True))
-
-    # Step 2 — merge every ``task_results`` row back into ``tasks.result_json``.
+    # Step 2 — merge every ``task_results`` row back into
+    # ``tasks.result_json``.
+    bind = op.get_bind()
     task_results = sa.table(
         "task_results",
         sa.column("task_id", sa.String),
@@ -214,44 +246,3 @@ def downgrade() -> None:
 
     # Step 3 — drop the ``task_results`` table.
     op.drop_table("task_results")
-
-
-# ---------------------------------------------------------------------------
-# Local helpers — kept module-private to keep the migration file small
-# while still being machine-readable by the MIRROR checker.
-# ---------------------------------------------------------------------------
-
-
-def _safe_loads(raw_json: str | None) -> dict | None:
-    """Parse ``result_json`` into a dict, returning ``None`` on error."""
-    if raw_json is None or raw_json == "":
-        return None
-    try:
-        loaded = json.loads(raw_json)
-    except (ValueError, TypeError):
-        return None
-    return loaded if isinstance(loaded, dict) else None
-
-
-def _now_or_default(value) -> object:
-    """Coerce a payload-supplied ``finished_at`` to ``datetime`` or ``None``."""
-    from datetime import datetime, timezone
-
-    if value is None:
-        return datetime.now(tz=timezone.utc)
-    if isinstance(value, datetime):
-        return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
-    try:
-        parsed = datetime.fromisoformat(str(value))
-    except ValueError:
-        return datetime.now(tz=timezone.utc)
-    return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
-
-
-def _isoformat_or_none(value) -> str | None:
-    """Coerce a ``datetime`` to ISO-8601 or ``None`` when input is ``None``."""
-    if value is None:
-        return None
-    if hasattr(value, "isoformat"):
-        return value.isoformat()
-    return str(value)

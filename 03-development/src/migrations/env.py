@@ -39,27 +39,19 @@ if str(_PROJECT_SRC) not in sys.path:
 from taskq_api.config import Settings  # noqa: E402  -- import after sys.path fix-up
 
 
-def _resolve_alembic_context():
+def _alembic_context():
     """Return the ``alembic.context`` runtime proxy.
 
-    The proxy is only initialised when alembic invokes ``env.py`` as
-    part of ``alembic upgrade`` / ``alembic downgrade`` / ``alembic
-    upgrade --sql``. Calling ``context.config`` outside that runtime
-    raises ``AttributeError``; callers should defer the lookup to
-    inside ``run_migrations_online`` / ``run_migrations_offline``.
+    The proxy is populated by alembic before this module is invoked
+    during ``alembic upgrade`` / ``alembic downgrade`` / ``alembic
+    upgrade --sql``. Calling this outside alembic raises
+    ``AttributeError``; callers should defer the lookup to inside the
+    ``run_migrations_online`` / ``run_migrations_offline`` entry
+    points (or guard it, as ``_configure_logging_if_available`` does).
     """
-    from alembic import context as alembic_context
+    from alembic import context
 
-    return alembic_context
-
-
-def _alembic_config():
-    """Return the alembic ``Config`` object for the current run.
-
-    Raises ``AttributeError`` outside the alembic runtime proxy (used
-    here only by the online / offline migration entry points).
-    """
-    return _resolve_alembic_context().config
+    return context
 
 
 # Configure Python logging from alembic.ini when alembic invokes
@@ -68,7 +60,7 @@ def _alembic_config():
 # so it is guarded.
 def _configure_logging_if_available():
     try:
-        cfg = _alembic_config()
+        cfg = _alembic_context().config
     except AttributeError:
         return
     if cfg.config_file_name:
@@ -97,24 +89,24 @@ def run_migrations_offline() -> None:
     ``Settings.db_url`` below). The SQL emitted is what ``alembic
     upgrade head --sql`` prints — verified by FR-07 AC-7.7.
     """
-    alembic_context = _resolve_alembic_context()
-    cfg = alembic_context.config
+    context = _alembic_context()
+    cfg = context.config
     cfg.set_main_option("sqlalchemy.url", _settings.db_url)
     url = cfg.get_main_option("sqlalchemy.url")
-    alembic_context.configure(
+    context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
     )
-    with alembic_context.begin_transaction():
-        alembic_context.run_migrations()
+    with context.begin_transaction():
+        context.run_migrations()
 
 
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode (open a live DB connection)."""
-    alembic_context = _resolve_alembic_context()
-    cfg = alembic_context.config
+    context = _alembic_context()
+    cfg = context.config
     cfg.set_main_option("sqlalchemy.url", _settings.db_url)
     connectable = engine_from_config(
         cfg.get_section(cfg.config_ini_section, {}),
@@ -123,13 +115,13 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        alembic_context.configure(
+        context.configure(
             connection=connection,
             target_metadata=target_metadata,
         )
 
         with connection.begin():
-            alembic_context.run_migrations()
+            context.run_migrations()
 
 
 # Wire the entry points — alembic's env.py contract is that the proxy's
@@ -145,9 +137,8 @@ def run_migrations_online() -> None:
 # the ``run_migrations_online`` / ``run_migrations_offline`` entry
 # points are the only callers that matter at runtime.
 def _dispatch() -> None:
-    alembic_context = _resolve_alembic_context()
     try:
-        is_offline = alembic_context.is_offline_mode()
+        is_offline = _alembic_context().is_offline_mode()
     except NameError:
         # Proxy not established — we are NOT inside an alembic run
         # (this branch fires only when env.py is imported as a regular
