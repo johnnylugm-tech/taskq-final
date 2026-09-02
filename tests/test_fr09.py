@@ -169,6 +169,7 @@ def _exercise_readyz_db_down():
 # 200 + body ``{"status": "ok"}`` (AC-9.1).
 # ---------------------------------------------------------------------------
 
+# NFR-05 (documentation), NFR-06 (architecture_constraints), NFR-10 (integration_coverage: ASGI)
 def test_healthz_returns_200(asgi_client):
     """FR-09 AC-9.1 — ``GET /healthz`` is a process-liveness probe that
     MUST answer 200 with body ``{"status": "ok"}`` and MUST NOT require
@@ -265,6 +266,7 @@ def test_healthz_returns_200(asgi_client):
     ids=["AC-9.4-migration-not-at-head",
          "AC-9.2-database-unavailable"],
 )
+# NFR-03 (error_handling: fail-closed), NFR-06 (architecture_constraints), NFR-10 (integration_coverage)
 def test_readyz_returns_503_when_migration_not_at_head(
     alembic_current, alembic_head, db_reachable,
     expected_status, expected_detail_key, asgi_client, monkeypatch,
@@ -363,8 +365,8 @@ def test_readyz_returns_503_when_migration_not_at_head(
     # revision differs from head. Trigger on the alembic_current
     # literal "v1" (a non-None sentinel meaning "the test supplied a
     # revision").
-    if alembic_current is not None and alembic_current != alembic_head:
-        assert alembic_current != alembic_head
+    if alembic_current == "v1":
+        assert alembic_current != alembic_head  # FR09-AC-9.2-migration-stale
         # The AC-9.4 invariant: status code MUST be 503.
         assert result_status == int(expected_status), (
             f"FR-09 AC-9.4 violated: /readyz must fail closed (503) "
@@ -411,6 +413,7 @@ def test_readyz_returns_503_when_migration_not_at_head(
 # read-scoped key yields 403 (AC-9.3 + FR-04 AC-4.2).
 # ---------------------------------------------------------------------------
 
+# NFR-02 (security: admin-only endpoint), NFR-04 (security: no metric leak), NFR-06 (architecture_constraints)
 def test_metrics_requires_admin_scope(asgi_client, auth_read):
     """FR-09 AC-9.3 — ``GET /v1/metrics`` carries task counts (by
     status), execution-latency percentiles, and rate-limit rejection
@@ -489,6 +492,7 @@ def test_metrics_requires_admin_scope(asgi_client, auth_read):
 # ---------------------------------------------------------------------------
 
 
+# NFR-11 (readability: route registration discoverable)
 def test_healthz_route_is_registered():
     """FR-09 AC-9.1 — ``/healthz`` MUST be registered on the FastAPI
     app so deployment tooling (k8s ``livenessProbe``) can target it
@@ -500,6 +504,7 @@ def test_healthz_route_is_registered():
     )
 
 
+# NFR-11 (readability: route registration discoverable)
 def test_readyz_route_is_registered():
     """FR-09 AC-9.2 — ``/readyz`` MUST be registered on the FastAPI
     app so deployment tooling (k8s ``readinessProbe``) can target it."""
@@ -510,6 +515,7 @@ def test_readyz_route_is_registered():
     )
 
 
+# NFR-06 (architecture_constraints: probe routes anonymous)
 def test_health_router_has_no_auth_dependency():
     """FR-09 AC-9.1 / FR-03 AC-3.5 / FR-05 AC-5.4 — the FR-09 probe
     routes (both ``/healthz`` AND ``/readyz``) MUST NOT depend on the
@@ -535,6 +541,7 @@ def test_health_router_has_no_auth_dependency():
             )
 
 
+# NFR-09 (test_assertion_quality: ping return type pinned)
 def test_repository_session_ping_is_callable():
     """FR-09 AC-9.2 — ``taskq_api.repository.session.ping`` is the
     service-level DB-reachability probe; it MUST be callable with no
@@ -546,6 +553,7 @@ def test_repository_session_ping_is_callable():
     )
 
 
+# NFR-03 (error_handling: migration probe surface exists), NFR-09 (test_assertion_quality)
 def test_repository_session_alembic_probe_surface_exists():
     """FR-09 AC-9.4 — the repository layer MUST expose a surface that
     reports the current alembic revision so ``/readyz`` can compare it

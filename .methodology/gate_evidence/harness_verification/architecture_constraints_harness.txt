@@ -10,7 +10,7 @@ Import Linter
 Contracts
 ---------
 
-Analyzed 50 files, 117 dependencies.
+Analyzed 51 files, 120 dependencies.
 ------------------------------------
 
 Layer ordering KEPT
