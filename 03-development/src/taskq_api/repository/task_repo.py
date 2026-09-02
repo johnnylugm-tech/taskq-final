@@ -40,7 +40,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from sqlalchemy import func, select, tuple_
+from sqlalchemy import select, tuple_
 from sqlalchemy.orm import selectinload
 
 # Imported via the module object (NOT ``from ... import transaction``) so
@@ -325,34 +325,57 @@ class TaskRepository:
         repository boundary because the service layer is forbidden from
         importing SQLAlchemy (NFR-06).
 
-        No ``OFFSET``: keyset walk on ``(created_at DESC, id DESC)``.
+        The visible window is the ``_MAX_LISTABLE`` (=100) newest rows
+        to match the prior in-memory implementation; SQL loads the
+        capped set once per call, and cursor pagination walks it in
+        Python. No ``OFFSET``: keyset cursor on
+        ``(created_at DESC, id DESC)``.
         """
+        limit_int = int(limit)
         with _session.transaction() as db_session:
             query = (
                 select(Task)
                 .options(selectinload(Task.results))
                 .order_by(Task.created_at.desc(), Task.id.desc())
+                .limit(_MAX_LISTABLE)
             )
             if status is not None:
                 query = query.where(Task.status == status)
-            if cursor:
-                try:
-                    c_ts, c_id = _cursor_decode(cursor)
-                    query = query.where(
-                        tuple_(Task.created_at, Task.id) < tuple_(c_ts, c_id),
-                    )
-                except (binascii.Error, ValueError, UnicodeDecodeError):
-                    return [], None
+            rows = db_session.execute(query).scalars().unique().all()
 
-            rows = db_session.execute(
-                query.limit(limit + 1)
-            ).scalars().unique().all()
-            page = rows[:limit]
-            next_cursor: Optional[str] = None
-            if len(rows) > limit and page:
-                last = page[-1]
-                next_cursor = _cursor_encode(last.created_at, last.id)
-            return [_task_to_dict(r) for r in page], next_cursor
+            # All ORM access happens inside the session block — once
+            # the ``transaction()`` CM exits, the Session closes and any
+            # further attribute read on a Task ORM instance raises
+            # ``DetachedInstanceError``. Snapshot the (created_at, id)
+            # pairs and the dict projection BEFORE the session closes.
+            snapshots: list[tuple[datetime, str]] = [
+                (r.created_at, r.id) for r in rows
+            ]
+            items = [_task_to_dict(r) for r in rows]
+
+        # Cursor pagination in Python: the SQL has already loaded the
+        # capped visible window, so a keyset walk within it is just an
+        # index scan over the snapshot list.
+        start = 0
+        if cursor:
+            try:
+                c_ts, c_id = _cursor_decode(cursor)
+            except (binascii.Error, ValueError, UnicodeDecodeError):
+                return [], None
+            for i, (ts, tid) in enumerate(snapshots):
+                if ts == c_ts and tid == c_id:
+                    start = i + 1
+                    break
+            else:
+                # Cursor points outside the visible window — empty page.
+                return [], None
+
+        page_items = items[start:start + limit_int]
+        next_cursor: Optional[str] = None
+        if start + limit_int < len(items) and page_items:
+            last_ts, last_id = snapshots[start + limit_int - 1]
+            next_cursor = _cursor_encode(last_ts, last_id)
+        return page_items, next_cursor
 
     def list_results(self, task_id: str) -> list[dict]:
         """[FR-02 AC-2.5, FR-06] Newest-first run history for one task via SQL."""

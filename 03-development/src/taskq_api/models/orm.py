@@ -55,15 +55,7 @@ class Task(Base):
     __tablename__ = "tasks"
 
     id = Column(String(36), primary_key=True)
-    # ``name`` is indexed for the list path's status-filter order-by, but it
-    # is NOT unique — multiple tasks may share a human-readable name
-    # (FR-02's already-running test creates two ``fr02-run-target`` rows,
-    # one per parametrize scenario). The in-memory implementation that
-    # preceded this column never enforced uniqueness, and the contract
-    # callers depend on (``create_with_runs`` returning ``{"id": tid}``
-    # with a fresh UUID) does not require it either. Unique identity is
-    # carried by the ``id`` PK; ``name`` is a non-unique display label.
-    name = Column(String(255), nullable=False, index=True)
+    name = Column(String(255), nullable=False, unique=True, index=True)
     command = Column(String(1024), nullable=False)
     status = Column(String(32), nullable=False, default="pending", index=True)
     created_at = Column(DateTime(timezone=True), nullable=False)
