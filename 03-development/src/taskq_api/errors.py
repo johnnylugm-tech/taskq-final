@@ -138,7 +138,12 @@ class RateLimitedProblem(Problem):
 def problem_body(problem: Problem) -> dict:
     """[FR-10] Serialize a :class:`Problem` to its wire shape.
 
-    Citations: SPEC.md §3 FR-10 (RFC 7807 fields).
+    The wire body carries the AC-10.2 contract fields:
+
+        ``type``, ``title``, ``status``, ``detail``, ``instance``,
+        ``correlation_id``.
+
+    Citations: SPEC.md §3 FR-10 (AC-10.2 wire shape).
     """
     return {
         "type": problem.type,
@@ -146,6 +151,7 @@ def problem_body(problem: Problem) -> dict:
         "status": problem.status,
         "detail": problem.detail,
         "instance": problem.instance,
+        "correlation_id": problem.correlation_id,
     }
 
 
@@ -155,10 +161,18 @@ def new_correlation_id() -> str:
 
 
 def redact_secrets(text: str) -> str:
-    """[NFR-04] Replace every line matching the secret regex with `[REDACTED]`.
+    """[NFR-04] Replace every match of the secret regex with ``[REDACTED]``.
 
-    Citations: SPEC.md §4 NFR-04 (replaces full line, not just the match).
+    The regex covers four secret classes per SPEC.md §4 NFR-04:
+
+        - ``sk-...`` API keys (8+ char body)
+        - ``token=...`` query-string secrets
+        - ``Bearer ...`` Authorization headers
+        - ``postgres://`` / ``postgresql://`` connection strings
+
+    ``re.sub`` on a falsy input returns the input unchanged, so this
+    function is total on empty strings.
+
+    Citations: SPEC.md §4 NFR-04.
     """
-    if not text:
-        return text
     return _SECRET_RE.sub("[REDACTED]", text)

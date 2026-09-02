@@ -27,6 +27,7 @@ from taskq_api.api.tasks import router as tasks_router
 from taskq_api.config import get_settings
 from taskq_api.errors import (
     Problem,
+    ValidationProblem,
     new_correlation_id,
     problem_body,
 )
@@ -37,6 +38,17 @@ from taskq_api.errors import (
 # ``getLogger(__name__)``) so the FR-10 AC-10.4 contract on the
 # ``audit`` logger name is stable across module renames.
 _audit_logger = logging.getLogger("audit")
+
+
+def _request_correlation_id(request: Request) -> str:
+    """Return the correlation_id stashed on the request by the middleware.
+
+    Falls back to a fresh UUID4 hex if no middleware ran (e.g. an
+    exception fired before middleware dispatch, or a synthetic test
+    request). Keeping the fallback prevents an exception handler from
+    surfacing a ``None`` correlation_id on the wire.
+    """
+    return getattr(request.state, "correlation_id", None) or new_correlation_id()
 
 
 def _problem_response(problem: Problem) -> JSONResponse:
@@ -144,15 +156,10 @@ def create_app() -> FastAPI:
     async def _handle_validation(
         request: Request, exc: RequestValidationError,
     ) -> JSONResponse:
-        from taskq_api.errors import ValidationProblem
-
         problem = ValidationProblem(detail=str(exc.errors()))
         # Reuse the middleware-set correlation_id so the response header
         # and the audit-log record carry the same token (AC-10.4).
-        problem.correlation_id = (
-            getattr(request.state, "correlation_id", None)
-            or new_correlation_id()
-        )
+        problem.correlation_id = _request_correlation_id(request)
         return _problem_response(problem)
 
     @application.exception_handler(Exception)
@@ -174,10 +181,7 @@ def create_app() -> FastAPI:
             status=500,
             detail="internal server error",
         )
-        problem.correlation_id = (
-            getattr(request.state, "correlation_id", None)
-            or new_correlation_id()
-        )
+        problem.correlation_id = _request_correlation_id(request)
         return _problem_response(problem)
 
     @application.get("/", include_in_schema=False)
