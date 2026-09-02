@@ -1,17 +1,26 @@
-"""[FR-06, NFR-03] Transaction boundary / pool / ping — L2.
+"""[FR-06, FR-09, NFR-03] Transaction boundary / pool / ping / alembic probe — L2.
 
 Owns the SQLAlchemy ``engine`` and the ``transaction()`` context-manager.
 Every repository call must enter one.
 
+The FR-09 alembic-revision probe (``current_alembic_revision``,
+``alembic_head``, ``is_migration_at_head``) lives here so the readiness
+probe in ``api/health.py`` can fail closed when a deployment forgot to
+run migrations (SPEC.md line 158, AC-9.4).
+
 Citations:
     - SPEC.md §3 FR-06 AC-6.2 (commit/rollback via CM)
+    - SPEC.md §3 FR-09 AC-9.2 (DB ping) / AC-9.4 (migration drift fail-closed)
+    - SPEC.md line 158 (AC-9.4 deployment-forgot-migrations invariant)
     - SPEC.md §4 NFR-03 (no bare except; rollback always)
     - SAD.md §2.6
 """
 
 from __future__ import annotations
 
+import re
 from contextlib import contextmanager
+from pathlib import Path
 from typing import Iterator
 
 from sqlalchemy import create_engine, select, text
@@ -29,15 +38,18 @@ from taskq_api.models.orm import Base
 __all__ = [
     "Engine",
     "Session",
+    "alembic_head",
     "create_engine",
+    "current_alembic_revision",
+    "get_engine",
+    "get_session_factory",
+    "is_migration_at_head",
+    "ping",
     "select",
     "selectinload",
     "sessionmaker",
     "text",
     "transaction",
-    "get_engine",
-    "get_session_factory",
-    "ping",
 ]
 
 _engine: Engine | None = None
@@ -135,10 +147,100 @@ def transaction() -> Iterator[Session]:
 
 
 def ping() -> bool:
-    """[FR-09] Return ``True`` iff the engine can answer ``SELECT 1``."""
+    """[FR-09 AC-9.2] Return ``True`` iff the engine can answer ``SELECT 1``.
+
+    Any exception (engine down, network partition, auth failure) is
+    collapsed to ``False`` so the readiness probe can answer 503 with
+    a stable boolean — SPEC.md line 156 (AC-9.2 fail-closed).
+    """
     try:
         with get_engine().connect() as conn:
             conn.execute(text("SELECT 1"))
         return True
     except Exception:
         return False
+
+
+def current_alembic_revision() -> str | None:
+    """[FR-09 AC-9.4] Return the alembic revision stamped in the DB.
+
+    Reads the canonical ``alembic_version`` table alembic writes during
+    ``alembic upgrade``. Returns ``None`` when the table is missing
+    (migrations never ran, OR the DB itself is unreachable — the
+    catch-all ``Exception`` branch collapses both into the same
+    "not at head" signal so the readiness probe fails closed in either
+    case).
+
+    Citations: SPEC.md line 158 (AC-9.4 deployment-forgot-migrations).
+    """
+    try:
+        with get_engine().connect() as conn:
+            row = conn.execute(
+                text("SELECT version_num FROM alembic_version"),
+            ).first()
+    except Exception:
+        return None
+    if row is None:
+        return None
+    return row[0]
+
+
+def alembic_head() -> str:
+    """[FR-09 AC-9.4] Return the alembic head revision expected at runtime.
+
+    Discovers the head by parsing each revision script's
+    ``revision = "<id>"`` / ``down_revision = "<id>"`` declarations in
+    the FR-07 ``migrations/versions`` directory — the head is the
+    revision that is NOT the down_revision of any other. This keeps
+    the answer in sync as new revisions land without requiring the
+    alembic runtime proxy at import time.
+    """
+    versions_dir = (
+        Path(__file__).resolve().parent.parent.parent
+        / "migrations"
+        / "versions"
+    )
+    revisions: dict[str, str | None] = {}
+    for script in sorted(versions_dir.glob("*.py")):
+        if script.name.startswith("_"):
+            continue
+        content = script.read_text(encoding="utf-8")
+        rev_match = re.search(
+            r"""^revision\s*=\s*['"]([^'"]+)['"]""",
+            content,
+            re.MULTILINE,
+        )
+        if rev_match is None:
+            continue
+        rev = rev_match.group(1)
+        down_match = re.search(
+            r"""^down_revision\s*=\s*(?P<val>['"]([^'"]+)['"]|None)""",
+            content,
+            re.MULTILINE,
+        )
+        if down_match is None:
+            revisions[rev] = None
+            continue
+        down_val = down_match.group(2) if down_match.group(2) else None
+        revisions[rev] = down_val
+    if not revisions:
+        return ""
+    down_targets = {down for down in revisions.values() if down is not None}
+    heads = [rev for rev, down in revisions.items() if rev not in down_targets]
+    if heads:
+        return heads[0]
+    return max(revisions.keys())
+
+
+def is_migration_at_head() -> bool:
+    """[FR-09 AC-9.4] Return ``True`` iff ``current_alembic_revision() == alembic_head()``.
+
+    A ``None`` current revision (table missing OR DB unreachable) is
+    treated as drift so the readiness probe fails closed — the canonical
+    SPEC.md line 158 invariant ("deployment forgot to run migration MUST
+    fail closed").
+    """
+    current = current_alembic_revision()
+    if current is None:
+        return False
+    return current == alembic_head()
