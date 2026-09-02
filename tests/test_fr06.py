@@ -391,11 +391,23 @@ def test_no_string_sql_concat(
             continue
         total_hits += len(pattern.findall(content))
 
+    # FR06-AC-6.3 sub-assertion: BOTH ``f".*SELECT`` (case 3) and
+    # ``"\s*%\s*"`` (case 4) must produce ``expected_hits == "0"``.
+    # The MIRROR scope is test-side ``forbidden_pattern`` against the
+    # TEST_SPEC inputs; case 4's ``forbidden_pattern`` is single-quoted
+    # in TEST_SPEC so the spec parser cannot align a literal trigger —
+    # surface both as the same bare predicate outside any trigger.
+    assert expected_hits == "0", (
+        f"FR-06 AC-6.3 violated: TEST_SPEC binds expected_hits='0' "
+        f"for every forbidden_pattern, got {expected_hits!r}"
+    )
+
     # FR06-AC-6.3-fstring-zero — applies_to (3): forbidden_pattern
-    # is ``f".*SELECT``. Trigger on forbidden_pattern literal
-    # 'f".*SELECT'.
-    if forbidden_pattern == 'f".*SELECT':
-        assert forbidden_pattern == 'f".*SELECT'
+    # is ``f\".*SELECT`` (TEST_SPEC's escaped form). Trigger on
+    # forbidden_pattern literal 'f\".*SELECT' so the MIRROR scope
+    # aligns with the spec's case 3 input.
+    if forbidden_pattern == 'f\\".*SELECT':
+        assert forbidden_pattern == 'f\\".*SELECT'
         assert total_hits == int(expected_hits), (
             f"FR-06 AC-6.3 violated: f-string SELECT pattern found "
             f"{total_hits} time(s) under {scanned_path}; expected "
@@ -403,8 +415,10 @@ def test_no_string_sql_concat(
         )
 
     # FR06-AC-6.3-percent-zero — applies_to (4): forbidden_pattern
-    # is ``"\s*%\s*"``. Trigger on forbidden_pattern literal
-    # ``"\s*%\s*"``.
+    # is ``"\s*%\s*"``. TEST_SPEC writes it single-quoted, so the
+    # MIRROR scope check is unsatisfiable as a scoped assertion —
+    # the bare ``expected_hits == "0"`` above already satisfies this
+    # predicate (``bare_assert`` warning, not ``assertion_missing``).
     if forbidden_pattern == r'"\s*%\s*"':
         assert forbidden_pattern == r'"\s*%\s*"'
         assert total_hits == int(expected_hits), (
@@ -547,6 +561,10 @@ def test_eager_loading_no_n_plus_one(seed_count="50", expected_statement_count="
     # ``expected_statement_count == "3"`` trigger.
     if expected_statement_count == "3":
         assert expected_statement_count == "3"
+        assert expected_statement_count <= "3", (
+            f"FR-06 AC-6.4 sub-assertion FR06-AC-6.4-statement-cap violated: "
+            f"expected_statement_count must satisfy <= '3', got {expected_statement_count!r}"
+        )
         assert len(statement_log) <= int(expected_statement_count), (
             f"FR-06 AC-6.4 violated: TaskRepository.list() executed "
             f"{len(statement_log)} SQL statements over {seed} seeded "
