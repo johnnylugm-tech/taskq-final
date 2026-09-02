@@ -19,7 +19,7 @@ from fastapi import APIRouter, Depends, Query, Request, status
 from fastapi.responses import JSONResponse
 
 from taskq_api.api.deps import require_scope
-from taskq_api.errors import ValidationProblem
+from taskq_api.errors import ForbiddenProblem, ValidationProblem
 from taskq_api.models.schemas import TaskCreate
 from taskq_api.service import tasks as service_tasks
 from taskq_api.service.auth import Principal
@@ -28,6 +28,21 @@ router = APIRouter(prefix="/v1/tasks", tags=["tasks"])
 
 _MAX_LIMIT = 200
 _DEFAULT_LIMIT = 50
+
+# Scope hierarchy: `read < write < admin`. Each handler asserts the
+# required scope inline so the per-route constant is visible at the
+# declaration site (FR-04 AC-4.3 keeps auth/scope split).
+_READ_OR_HIGHER = ("read", "write", "admin")
+_WRITE_OR_HIGHER = ("write", "admin")
+_ADMIN_ONLY = ("admin",)
+
+
+def _assert_scope(principal: Principal, allowed: tuple[str, ...]) -> None:
+    """[FR-04] Raise ``ForbiddenProblem`` unless ``principal.scope`` is in
+    ``allowed``. Centralises the per-route scope guard so every handler
+    shares one raise path."""
+    if principal.scope not in allowed:
+        raise ForbiddenProblem()
 
 
 def _to_out(row: dict) -> dict:
@@ -38,6 +53,19 @@ def _to_out(row: dict) -> dict:
         "command": row["command"],
         "status": row["status"],
         "created_at": row["created_at"].isoformat(),
+    }
+
+
+def _run_to_out(row: dict) -> dict:
+    """[FR-02] Normalize a repository run row to the ``RunOut`` wire shape."""
+    return {
+        "id": row["id"],
+        "task_id": row["task_id"],
+        "exit_code": row["exit_code"],
+        "stdout_tail": row["stdout_tail"],
+        "stderr_tail": row["stderr_tail"],
+        "duration_ms": row["duration_ms"],
+        "finished_at": row["finished_at"].isoformat(),
     }
 
 
@@ -56,12 +84,7 @@ async def create_task(
     principal: Principal = Depends(require_scope),
 ) -> JSONResponse:
     """[FR-01 AC-1.1] `POST /v1/tasks` (scope=write)."""
-    # Inline scope check so FastAPI sees a single dependency chokepoint
-    # (FR-04 AC-4.3) while still honouring the per-route scope constant.
-    if principal.scope not in ("write", "admin"):
-        from taskq_api.errors import ForbiddenProblem
-
-        raise ForbiddenProblem()
+    _assert_scope(principal, _WRITE_OR_HIGHER)
     row = service_tasks.create_task(payload)
     return JSONResponse(status_code=201, content={"id": row["id"]})
 
@@ -79,10 +102,7 @@ async def get_task(
     principal: Principal = Depends(require_scope),
 ) -> dict:
     """[FR-01 AC-1.3] `GET /v1/tasks/{id}` (scope=read)."""
-    if principal.scope not in ("read", "write", "admin"):
-        from taskq_api.errors import ForbiddenProblem
-
-        raise ForbiddenProblem()
+    _assert_scope(principal, _READ_OR_HIGHER)
     row = service_tasks.get_task(task_id)
     return _to_out(row)
 
@@ -103,10 +123,7 @@ async def list_tasks(
     principal: Principal = Depends(require_scope),
 ) -> dict:
     """[FR-01 AC-1.4] `GET /v1/tasks` (scope=read) — cursor pagination."""
-    if principal.scope not in ("read", "write", "admin"):
-        from taskq_api.errors import ForbiddenProblem
-
-        raise ForbiddenProblem()
+    _assert_scope(principal, _READ_OR_HIGHER)
     applied = _DEFAULT_LIMIT if limit is None else int(limit)
     if applied < 1:
         raise ValidationProblem("limit must be >= 1")
@@ -135,10 +152,7 @@ async def delete_task(
     principal: Principal = Depends(require_scope),
 ) -> JSONResponse:
     """[FR-01 AC-1.5] `DELETE /v1/tasks/{id}` (scope=admin)."""
-    if principal.scope != "admin":
-        from taskq_api.errors import ForbiddenProblem
-
-        raise ForbiddenProblem()
+    _assert_scope(principal, _ADMIN_ONLY)
     service_tasks.delete_task(task_id)
     return JSONResponse(status_code=204, content=None)
 
@@ -156,22 +170,6 @@ async def list_runs(
     principal: Principal = Depends(require_scope),
 ) -> dict:
     """[FR-02 AC-2.5] `GET /v1/tasks/{id}/runs` (scope=read)."""
-    if principal.scope not in ("read", "write", "admin"):
-        from taskq_api.errors import ForbiddenProblem
-
-        raise ForbiddenProblem()
+    _assert_scope(principal, _READ_OR_HIGHER)
     runs = service_tasks.list_runs(task_id)
-    return {
-        "items": [
-            {
-                "id": r["id"],
-                "task_id": r["task_id"],
-                "exit_code": r["exit_code"],
-                "stdout_tail": r["stdout_tail"],
-                "stderr_tail": r["stderr_tail"],
-                "duration_ms": r["duration_ms"],
-                "finished_at": r["finished_at"].isoformat(),
-            }
-            for r in runs
-        ]
-    }
+    return {"items": [_run_to_out(r) for r in runs]}

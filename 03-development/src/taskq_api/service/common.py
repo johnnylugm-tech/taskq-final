@@ -18,7 +18,7 @@ import re
 from datetime import datetime, timezone
 from typing import Iterable
 
-from taskq_api.errors import redact_secrets
+from taskq_api.errors import ValidationProblem, redact_secrets
 
 # FR-01 AC-1.2 — injection-character blacklist.
 # We ban characters that have no legitimate use in shell-style command lines
@@ -38,14 +38,6 @@ def sanitize_text(text: str, *, field: str = "text") -> str:
     Raises ``ValidationProblem`` on rule violation so the handler turns it
     into a 422 + ``application/problem+json`` body.
     """
-    if text is None:
-        from taskq_api.errors import ValidationProblem
-
-        raise ValidationProblem(f"{field} is required")
-
-    # Import here to avoid a circular import at module load.
-    from taskq_api.errors import ValidationProblem
-
     if len(text) == 0:
         raise ValidationProblem(f"{field} must not be empty")
     if len(text) > 1000:

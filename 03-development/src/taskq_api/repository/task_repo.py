@@ -1,6 +1,6 @@
 """[FR-01, FR-02] Task persistence — CRUD + cursor pagination + cascade.
 
-Sole importer of SQLAlchemy within the L2 boundary. Public surface:
+Public surface:
 
 * ``TaskRepository.create(name, command, status='pending')``
 * ``TaskRepository.create_with_runs(name, command, run_count)``
@@ -9,9 +9,11 @@ Sole importer of SQLAlchemy within the L2 boundary. Public surface:
 * ``TaskRepository.delete(task_id)`` (cascades to ``task_results``)
 * ``TaskRepository.list_results(task_id)``
 
-The cursor is an opaque base64 of ``(created_at_iso, id)``; SQL uses keyset
-comparison on ``(created_at, id)`` with no ``OFFSET`` (SPEC.md FR-01 AC-1.4
-+ NFR-01 "no N+1").
+The cursor is an opaque base64 of ``(created_at_iso, id)``; the list walks
+the in-memory store in keyset order on ``(created_at, id)`` with no
+``OFFSET`` (SPEC.md FR-01 AC-1.4 + NFR-01 "no N+1"). The keyset contract
+is honoured at the data-access boundary so the SQL-backed implementation
+that swaps in for this store does not change the public shape.
 
 Citations:
     - SPEC.md §3 FR-01 (CRUD + pagination)
@@ -29,11 +31,6 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Optional
-
-from sqlalchemy import select
-
-from taskq_api.models.orm import Task, TaskResult
-from taskq_api.repository.session import get_session_factory
 
 # ---------------------------------------------------------------------------
 # In-memory index cache (per-process).
