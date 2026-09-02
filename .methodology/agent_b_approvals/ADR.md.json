@@ -1,0 +1,33 @@
+{
+  "fr": "ADR.md",
+  "review_status": "APPROVE",
+  "reason": "Verified all 19 ADRs against SAD.md and SRS.md on disk rather than relying on the DOC snapshots. Structural coverage is complete: tech stack (ADR-001), layering (ADR-002), error contract (ADR-003), async execution/subprocess safety (ADR-004/005), authn-authz (ADR-006/007), rate limit (ADR-008), pagination and SQL policy (ADR-009/010), migrations (ADR-011), CORS (ADR-012), correlation id (ADR-013), readiness (ADR-014), drain (ADR-015), transaction primitive (ADR-016), redaction (ADR-017), atomic-write non-decision (ADR-018) and the verification target (ADR-019). Every ADR carries Status/Context/Decision/Consequences with Positive+Negative bullets (19/19 each) plus an explicit Alternatives Considered block, so the checklist items on context, decision, consequences and alternatives are satisf",
+  "citations": [
+    "02-architecture/adr/ADR.md:12",
+    "02-architecture/adr/ADR.md:51",
+    "02-architecture/adr/ADR.md:132",
+    "02-architecture/adr/ADR.md:307",
+    "02-architecture/adr/ADR.md:557",
+    "02-architecture/adr/ADR.md:596",
+    "02-architecture/adr/ADR.md:669",
+    "harness/templates/ADR.md:27",
+    "02-architecture/SAD.md:150",
+    "02-architecture/SAD.md:170",
+    "02-architecture/SAD.md:193",
+    "02-architecture/SAD.md:196",
+    "02-architecture/SAD.md:215",
+    "02-architecture/SAD.md:365",
+    "02-architecture/SAD.md:392",
+    "02-architecture/SAD.md:436",
+    "02-architecture/SAD.md:516",
+    "01-requirements/SRS.md:220",
+    "01-requirements/SRS.md:285",
+    "01-requirements/SRS.md:363"
+  ],
+  "docs_embedded": [
+    "SRS.md",
+    "SAD.md",
+    "ADR.md"
+  ],
+  "confidence": 0.9
+}

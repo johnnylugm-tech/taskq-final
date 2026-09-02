@@ -85,7 +85,7 @@ test_inventory:
       fr: FR-02
       ac: AC-2.4
       layer: integration
-      test_function: test_run_history_newest_first
+      test_function: test_task_results_row_has_v3_columns
       test_file: tests/integration/test_fr02_runner.py
     - tc_id: TC-FR02-05
       fr: FR-02

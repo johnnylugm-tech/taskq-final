@@ -152,7 +152,7 @@ Never invent filenames (e.g. do NOT use `ARCHITECTURE.md` for P2 — use `SAD.md
 | FR/NFR | Test File / Method | Coverage Target | Status |
 |--------|--------------------|-----------------|--------|
 | FR-01 | `test_task_crud_returns_201_422_404`, `test_tasks_list_cursor_pagination`, `test_delete_removes_results` | AC-1.1 ~ AC-1.5 | DRAFT |
-| FR-02 | `test_task_run_returns_202_with_run_id`, `test_subprocess_no_shell_true`, `test_run_history_newest_first` | AC-2.1 ~ AC-2.5 | DRAFT |
+| FR-02 | `test_task_run_returns_202_with_run_id`, `test_subprocess_no_shell_true`, `test_run_history_newest_first`, `test_task_results_row_has_v3_columns` | AC-2.1 ~ AC-2.5 | DRAFT |
 | FR-03 | `test_missing_api_key_returns_401`, `test_invalid_api_key_returns_401`, `test_api_keys_table_has_no_plaintext` | AC-3.1 ~ AC-3.5 | DRAFT |
 | FR-04 | `test_write_key_admin_endpoint_returns_403_no_disclosure`, `test_all_v1_routes_use_single_dependency` | AC-4.1 ~ AC-4.3 | DRAFT |
 | FR-05 | `test_rate_limit_burst_returns_429_with_retry_after`, `test_rate_bucket_concurrent_no_overdraft` | AC-5.1 ~ AC-5.4 | DRAFT |
@@ -192,7 +192,7 @@ Never invent filenames (e.g. do NOT use `ARCHITECTURE.md` for P2 — use `SAD.md
 | AC-2.1 | `test_task_run_returns_202_with_run_id` |
 | AC-2.2 | `test_subprocess_no_shell_true` |
 | AC-2.3 | `test_task_run_returns_202_with_run_id` |
-| AC-2.4 | `test_run_history_newest_first` |
+| AC-2.4 | `test_task_results_row_has_v3_columns` |
 | AC-2.5 | `test_run_history_newest_first` |
 | AC-3.1 | `test_missing_api_key_returns_401` |
 | AC-3.2 | `test_api_keys_table_has_no_plaintext` |

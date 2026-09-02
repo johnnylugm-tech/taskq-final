@@ -580,6 +580,23 @@ API key 明文只在 `key create` 當下輸出一次,不得寫入任何持久化
 - 截至 SPEC.md v1.0.0,無 `FR-XX-deferred` 或 `NFR-99` 條款。所有 FR(01-10)與 NFR(01-12)皆在 canonical spec 中有明確定義。
 - NFR-99 預留作為「規格新增/變更時的歧義裁決項」,本轉錄無觸發。
 
+### 7.1 Deferred until implementation phase (P3+)
+
+以下配置鍵於 canonical spec (SPEC.md) 宣告,但在 Phase 2 時尚未有 `src/` 程式碼可讀取,屬於 P3+ 實作期才會落地的項目(spec_alignment preflight 標記為 unread_config_key,以下以 deferral 紀錄):
+
+- `TASKQ_HOST` — uvicorn bind host
+- `TASKQ_PORT` — uvicorn bind port
+- `TASKQ_CORS_ORIGINS` — CORS allowlist
+- `TASKQ_LOG_LEVEL` / `TASKQ_LOG_FORMAT` — logging 設定
+- `TASKQ_DB_URL` — DB connection string
+- `TASKQ_DB_POOL_SIZE` — SQLAlchemy pool_size
+- `TASKQ_TASK_TIMEOUT` — subprocess per-task timeout
+- `TASKQ_DRAIN_TIMEOUT` — graceful drain upper bound
+- `TASKQ_MAX_CONCURRENT` — executor concurrency cap
+- `TASKQ_RATE_PER_SEC` / `TASKQ_RATE_BURST` — token bucket tuning
+
+對應實作將在 P3 (Implementation) 期間透過 `src/03-development/` 內的程式碼讀入。preflight spec_alignment check 會在 P3 重新驗證這些鍵是否實際被讀取。
+
 ## 8. Risks
 
 對應 SPEC.md §9(風險矩陣,R1-R12):
@@ -642,7 +659,7 @@ API key 明文只在 `key create` 當下輸出一次,不得寫入任何持久化
       "id": "FR-02",
       "description": "Task execution endpoint — POST /v1/tasks/{id}/run (202 + run_id); asyncio subprocess with no shell=True; status machine; result rows; GET /v1/tasks/{id}/runs.",
       "implementation_functions": ["taskq_api.api.tasks", "taskq_api.service.runner", "taskq_api.repository.task_repo"],
-      "verification_method": "integration test: test_task_run_returns_202_with_run_id; test_subprocess_no_shell_true; test_run_history_newest_first"
+      "verification_method": "integration test: test_task_run_returns_202_with_run_id; test_subprocess_no_shell_true; test_run_history_newest_first; test_task_results_row_has_v3_columns"
     },
     {
       "id": "FR-03",
