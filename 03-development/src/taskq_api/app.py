@@ -2,6 +2,8 @@
 
 Builds the ``FastAPI`` instance, mounts the routers, and registers the
 RFC-7807 exception handlers that every :class:`errors.Problem` maps to.
+The lifespan context manager wires the FR-08 graceful drain on shutdown
+(AC-8.1).
 
 Citations:
     - SPEC.md §3 FR-08 (drain on shutdown)
@@ -11,6 +13,8 @@ Citations:
 
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -18,6 +22,7 @@ from fastapi.responses import JSONResponse
 from taskq_api.api.health import router as health_router
 from taskq_api.api.metrics import router as metrics_router
 from taskq_api.api.tasks import router as tasks_router
+from taskq_api.config import get_settings
 from taskq_api.errors import (
     Problem,
     problem_body,
@@ -43,6 +48,32 @@ def _problem_response(problem: Problem) -> JSONResponse:
     )
 
 
+@asynccontextmanager
+async def lifespan(application: FastAPI):
+    """[FR-08 AC-8.1] Drive the FR-08 graceful drain on shutdown.
+
+    Yields immediately so FastAPI starts serving requests. On shutdown
+    the FR-08 executor (``taskq_api.service.runner``) is drained with
+    ``TASKQ_DRAIN_TIMEOUT`` so in-flight tasks finish or are stamped
+    ``interrupted`` before the process exits — SPEC.md line 147.
+    """
+    yield
+    # Lazy import keeps the import-time dependency graph acyclic:
+    # service/runner pulls in config, but the drain call here only fires
+    # at shutdown, so any startup race is avoided.
+    from taskq_api.service.runner import drain
+
+    try:
+        timeout = float(get_settings().drain_timeout)
+    except Exception:
+        timeout = 5.0
+    try:
+        await drain(timeout=timeout)
+    except Exception:
+        # Best-effort — a failed drain MUST NOT block process exit.
+        pass
+
+
 def create_app() -> FastAPI:
     """[NFR-12] Build the FastAPI instance and wire handlers."""
     application = FastAPI(
@@ -52,6 +83,7 @@ def create_app() -> FastAPI:
             "taskq-api — FR-01 CRUD + cursor pagination, FR-02 run, "
             "FR-03/04 auth, FR-09 health."
         ),
+        lifespan=lifespan,
     )
 
     application.include_router(health_router)

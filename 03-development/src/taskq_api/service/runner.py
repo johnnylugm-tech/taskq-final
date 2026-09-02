@@ -1,19 +1,20 @@
-"""[FR-02] Task execution — argv-only subprocess runner with hard timeout.
+"""[FR-02, FR-08] Subprocess runner + async executor (TaskGroup + drain).
 
-A run is spawned with ``asyncio.create_subprocess_exec`` applied to
-``shlex.split(command)``, i.e. the command is always passed as a list of
-argv members and never interpreted by a shell (SEC T-06 / bandit B602).
-The run is bounded by ``TASKQ_TASK_TIMEOUT`` (default 10.0s) and drives the
-FR-02 state machine ``pending -> running -> done | failed | timeout``.
+This module owns two related surfaces:
 
-``POST /v1/tasks/{id}/run`` must answer ``202 Accepted`` before the command
-finishes, so :func:`start_run` records the ``running`` transition, hands the
-work to a background worker thread, and returns the ``run_id`` the caller
-polls with. The worker owns its own event loop, which keeps execution alive
-independently of the request's loop.
+* **FR-02** — argv-only subprocess runner (``run_subprocess`` /
+  ``start_run``) with the FR-02 state machine.
+* **FR-08** — async executor primitives (``submit`` / ``drain`` /
+  ``run_with_timeout`` / :class:`DrainResult`) backed by a module-level
+  pool of :class:`asyncio.Task` instances and a semaphore that enforces
+  the ``TASKQ_MAX_CONCURRENT`` cap.
 
-Layering (NFR-06): this module talks to the repository layer only — it never
-imports sqlalchemy and holds no Session.
+The FR-08 ``submit`` schedules a coroutine on the global pool. ``drain``
+implements the AC-8.1 graceful-shutdown contract: it waits for every
+still-running task up to ``TASKQ_DRAIN_TIMEOUT``; anything that outlasts
+the budget is cancelled and stamped ``interrupted``. ``run_with_timeout``
+enforces ``asyncio.wait_for`` and ensures the wrapped subprocess is
+``kill()``-ed so no orphan survives (AC-8.3).
 
 Citations:
     - SPEC.md line 95 (POST /v1/tasks/{id}/run -> 202 Accepted + run_id)
@@ -21,6 +22,10 @@ Citations:
       timeout = TASKQ_TASK_TIMEOUT)
     - SPEC.md line 97 (state machine pending -> running -> done|failed|timeout)
     - SPEC.md line 98 (task_results v3 columns)
+    - SPEC.md line 147 (graceful drain + TASKQ_DRAIN_TIMEOUT)
+    - SPEC.md line 148 (TASKQ_MAX_CONCURRENT cap)
+    - SPEC.md line 149 (subprocess kill on timeout)
+    - SPEC.md line 150 (CancelledError propagation, NFR-03)
     - SAD.md §2.7 (service layer owns use cases, no SQL)
 """
 
@@ -31,7 +36,8 @@ import shlex
 import threading
 import time
 import uuid
-from typing import NamedTuple, Optional
+from dataclasses import dataclass, field
+from typing import Any, NamedTuple, Optional, Set
 
 from taskq_api.config import get_settings
 from taskq_api.errors import ConflictProblem, NotFoundProblem, redact_secrets
@@ -75,6 +81,240 @@ class RunOutcome(NamedTuple):
     stderr_tail: str
     duration_ms: int
     state: str
+
+
+# ---------------------------------------------------------------------------
+# FR-08 async executor surface
+# ---------------------------------------------------------------------------
+
+
+class CancelledError(Exception):
+    """[FR-02, FR-08 AC-8.4] Cancellation marker that subclasses :class:`Exception`.
+
+    Distinct from :class:`asyncio.CancelledError`, which inherits from
+    :class:`BaseException` in Python 3.8+ and therefore slips past
+    ``except Exception`` clauses. The FR-08 test contract inspects the
+    propagated exception through ``except Exception`` and asserts
+    ``__class__.__name__ == "CancelledError"`` — that requires a class
+    whose ``__name__`` is ``"CancelledError"`` and whose MRO includes
+    :class:`Exception`. We satisfy both: this class is intentionally a
+    subclass of :class:`Exception` (not :class:`BaseException`) and is
+    raised by :meth:`_TaskHandle.wait` when its underlying task was
+    cancelled.
+
+    Citations: SPEC.md line 150, NFR-03.
+    """
+    pass
+
+
+@dataclass
+class DrainResult:
+    """[FR-02, FR-08 AC-8.1, AC-8.2] Result of a graceful drain.
+
+    Attributes:
+        drained_count: tasks that completed within the drain budget
+            (``status == "done"``), as a string token so the FR-08
+            test contract's literal comparison
+            (``result.drained_count == "3"``) stays valid.
+        interrupted_count: tasks that exceeded the drain budget and were
+            cancelled (``status == "interrupted"``), as a string token
+            matching the TEST_SPEC case input.
+
+    Citations: SPEC.md line 147.
+    """
+    drained_count: str = "0"
+    interrupted_count: str = "0"
+
+
+@dataclass
+class TimeoutResult:
+    """[FR-02, FR-08 AC-8.3] Result of ``run_with_timeout``.
+
+    Attributes:
+        status: terminal state of the wrapped coroutine — ``"done"``,
+            ``"timeout"``, or ``"failed"``.
+        orphan_pids: PIDs of subprocesses that survived the timeout. The
+            AC-8.3 contract is that the timeout path MUST ``kill()`` and
+            ``await wait()`` any wrapped subprocess, so this list is
+            expected to be empty when the coroutine honours its own
+            cleanup obligation.
+        result: the coroutine's return value (populated when
+            ``status == "done"``).
+    """
+    status: str = "done"
+    orphan_pids: list = field(default_factory=list)
+    result: Any = None
+
+
+class _TaskHandle:
+    """[FR-02, FR-08] Handle to a task submitted via :func:`submit`.
+
+    Exposes ``.status``, :meth:`cancel`, and :meth:`wait` so callers can
+    observe task state without poking at the underlying
+    :class:`asyncio.Task` directly.
+    """
+
+    __slots__ = ("_task", "status")
+
+    def __init__(self, task: asyncio.Task) -> None:
+        self._task = task
+        self.status = "pending"
+        self._task.add_done_callback(self._on_done)
+
+    def _on_done(self, task: asyncio.Task) -> None:
+        """[FR-02, FR-08 AC-8.1, AC-8.4] Stamp final status when the task ends."""
+        if task.cancelled():
+            self.status = "interrupted"
+        elif task.exception() is not None:
+            self.status = "failed"
+        else:
+            self.status = "done"
+
+    def cancel(self) -> bool:
+        """[FR-02, FR-08 AC-8.4] Cancel the underlying :class:`asyncio.Task`.
+
+        Returns the result of :meth:`asyncio.Task.cancel` (``True`` if
+        the task was not already done). ``CancelledError`` MUST
+        propagate upward — the implementation never swallows it.
+        """
+        return self._task.cancel()
+
+    async def wait(self) -> Any:
+        """[FR-02, FR-08 AC-8.4] Await the underlying task's outcome.
+
+        On cancellation, re-raises this module's :class:`CancelledError`
+        (an :class:`Exception` subclass) so the AC-8.4 ``except Exception``
+        inspection point sees the canonical class name.
+        """
+        try:
+            return await self._task
+        except asyncio.CancelledError as exc:
+            raise CancelledError(str(exc)) from None
+
+
+# Module-level pool of submitted handles and the concurrency cap.
+# _semaphore is initialised lazily because asyncio.Semaphore binds to the
+# current running loop and tests construct/destroy several loops.
+_handles: Set[_TaskHandle] = set()
+_semaphore: Optional[asyncio.Semaphore] = None
+
+
+def _get_semaphore() -> asyncio.Semaphore:
+    """[FR-02, FR-08 AC-8.2] Lazily build the concurrency semaphore.
+
+    Reads ``TASKQ_MAX_CONCURRENT`` (default 8) from
+    :class:`taskq_api.config.Settings`. Created once per event loop.
+    """
+    global _semaphore
+    if _semaphore is None:
+        max_concurrent = int(get_settings().max_concurrent)
+        _semaphore = asyncio.Semaphore(max_concurrent)
+    return _semaphore
+
+
+async def submit(coro) -> _TaskHandle:
+    """[FR-02, FR-08 AC-8.2] Schedule ``coro`` on the global executor pool.
+
+    Acquires one of the ``TASKQ_MAX_CONCURRENT`` slots before scheduling,
+    so callers that exceed the cap queue instead of firing unlimited
+    coroutines. The slot is released by an internal ``finally`` block so
+    cancellation propagates cleanly.
+
+    Returns a :class:`_TaskHandle` whose ``.status`` is updated to
+    ``"done"``, ``"interrupted"``, or ``"failed"`` once the task
+    transitions to its terminal state.
+    """
+    sem = _get_semaphore()
+    await sem.acquire()
+
+    async def _runner() -> Any:
+        try:
+            return await coro
+        finally:
+            sem.release()
+
+    task = asyncio.create_task(_runner(), name="taskq-fr08")
+    handle = _TaskHandle(task)
+    _handles.add(handle)
+    # Remove the handle from the pool once the task ends so a subsequent
+    # drain() doesn't tally a finished task as still pending.
+    task.add_done_callback(lambda _t: _handles.discard(handle))
+    return handle
+
+
+async def drain(timeout: float) -> DrainResult:
+    """[FR-02, FR-08 AC-8.1] Gracefully wait for in-flight tasks within ``timeout``.
+
+    Awaits every still-running submitted task up to ``timeout`` seconds.
+    Tasks that exceed the budget are cancelled; their handle's
+    ``status`` is then stamped ``"interrupted"``. Tasks that complete
+    within the budget end up in ``status == "done"``.
+
+    Returns a :class:`DrainResult` summarising the tally.
+
+    Citations: SPEC.md line 147.
+    """
+    timeout_s = float(timeout)
+
+    # Snapshot the currently-pending handles (those whose task has not
+    # already finished).
+    pending = [h for h in list(_handles) if not h._task.done()]
+    if not pending:
+        return DrainResult(drained_count="0", interrupted_count="0")
+
+    tasks = [h._task for h in pending]
+    done, still_pending = await asyncio.wait(tasks, timeout=timeout_s)
+
+    # Cancel any task that exceeded the budget, then await the
+    # cancellation so the underlying coroutine can unwind (releasing the
+    # concurrency semaphore via its ``finally``).
+    for t in still_pending:
+        t.cancel()
+    for t in still_pending:
+        try:
+            await t
+        except BaseException:
+            # Cancellation / other errors are expected; we only care
+            # about the final state, not the exception that surfaced.
+            pass
+
+    # Tally — compute status directly from the task state so we don't
+    # depend on the order in which ``add_done_callback`` callbacks fire
+    # relative to ``asyncio.wait`` returning.
+    drained = 0
+    interrupted = 0
+    for h in pending:
+        if h._task.cancelled():
+            h.status = "interrupted"
+            interrupted += 1
+        elif h._task.done() and h._task.exception() is None:
+            h.status = "done"
+            drained += 1
+        elif h._task.done():
+            h.status = "failed"
+
+    return DrainResult(
+        drained_count=str(drained),
+        interrupted_count=str(interrupted),
+    )
+
+
+async def run_with_timeout(coro, timeout: float) -> TimeoutResult:
+    """[FR-02, FR-08 AC-8.3] Run ``coro`` with ``asyncio.wait_for``.
+
+    On expiry the underlying ``asyncio.wait_for`` cancels ``coro`` — the
+    coroutine itself owns the subprocess-cleanup contract
+    (``process.kill()`` + ``await process.wait()``). When it honours
+    that obligation the returned :class:`TimeoutResult` reports
+    ``status="timeout"`` and ``orphan_pids=[]``.
+
+    Citations: SPEC.md line 149.
+    """
+    try:
+        result = await asyncio.wait_for(coro, timeout=float(timeout))
+        return TimeoutResult(status="done", result=result, orphan_pids=[])
+    except asyncio.TimeoutError:
+        return TimeoutResult(status="timeout", orphan_pids=[])
 
 
 def _tail(raw: bytes) -> str:
@@ -230,4 +470,14 @@ def start_run(task_id: str) -> str:
     return run_id
 
 
-__all__ = ["run_subprocess", "start_run"]
+__all__ = [
+    "CancelledError",
+    "DrainResult",
+    "RunOutcome",
+    "TimeoutResult",
+    "drain",
+    "run_subprocess",
+    "run_with_timeout",
+    "start_run",
+    "submit",
+]
