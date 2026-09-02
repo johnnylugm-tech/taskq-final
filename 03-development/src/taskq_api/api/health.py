@@ -24,8 +24,8 @@ async def healthz() -> dict:
 @router.get("/readyz", summary="Readiness probe")
 async def readyz() -> dict:
     """[FR-09] 200 iff the DB is reachable and migrations are at head."""
-    from taskq_api.repository.session import ping
+    from taskq_api.service.health import is_database_ready
 
-    if not ping():
+    if not is_database_ready():
         return {"status": "not-ready", "reason": "database unavailable"}
     return {"status": "ok"}
