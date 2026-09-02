@@ -15,10 +15,12 @@ layers =
 name = SQLAlchemy containment
 type = forbidden
 source_modules =
+    taskq_api
     taskq_api.api
     taskq_api.service
     taskq_api.repository
     taskq_api.models
+    taskq_api.app
 forbidden_modules =
     sqlalchemy
 ignore_imports =
