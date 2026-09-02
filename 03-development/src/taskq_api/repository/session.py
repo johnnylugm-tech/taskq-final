@@ -26,11 +26,20 @@ _SessionLocal: sessionmaker[Session] | None = None
 
 
 def _build_engine() -> Engine:
+    """[FR-06 AC-6.5] Construct the engine with the spec-required pool config.
+
+    ``pool_size`` honours ``TASKQ_DB_POOL_SIZE`` (default 5) and
+    ``pool_pre_ping=True`` drops stale connections before each checkout
+    — the load-bearing half of AC-6.5, because a stale connection would
+    silently surface a 5xx on the next request.
+    """
     settings = get_settings()
     url = settings.db_url
-    connect_args: dict = {}
-    if url.startswith("sqlite"):
-        connect_args["check_same_thread"] = False
+    # SQLite runs in-process and serializes writers on the transaction
+    # itself, so a single connection is reused across threads.
+    connect_args = (
+        {"check_same_thread": False} if url.startswith("sqlite") else {}
+    )
     return create_engine(
         url,
         pool_size=settings.db_pool_size,
@@ -41,7 +50,13 @@ def _build_engine() -> Engine:
 
 
 def get_engine() -> Engine:
-    """Return the cached engine, building tables on first access."""
+    """Return the cached engine, building tables on first access.
+
+    First call creates the engine, opens the schema metadata, and drops
+    the DB-level UNIQUE index on ``tasks.name`` (see
+    :func:`_relax_orm_constraints`). Subsequent calls return the cached
+    engine so callers share a single connection pool.
+    """
     global _engine, _SessionLocal
     if _engine is None:
         _engine = _build_engine()

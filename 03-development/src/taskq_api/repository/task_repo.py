@@ -40,7 +40,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from sqlalchemy import select, tuple_
+from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 # Imported via the module object (NOT ``from ... import transaction``) so
