@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from taskq_api.errors import ConflictProblem, NotFoundProblem
+from taskq_api.errors import NotFoundProblem
 from taskq_api.models.schemas import TaskCreate
 from taskq_api.repository.task_repo import TaskRepository
 
