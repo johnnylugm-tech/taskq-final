@@ -26,6 +26,15 @@ and #2 both live under ``test_graceful_drain_waits_running`` via
 the function symbol matches the TEST_SPEC declaration exactly
 (spec-coverage-check matches on the function symbol, not the parametrize id).
 
+The IMPROVE-step coverage test ``test_max_concurrent_cap_queues_overflow``
+exists alongside the named TEST_SPEC cases to pin the AC-8.2
+``TASKQ_MAX_CONCURRENT`` cap requirement (SPEC.md line 148): with no test
+exercising the cap, an implementation that spawns coroutines unboundedly
+would still pass every named case. The test sets ``TASKQ_MAX_CONCURRENT=2``
+and submits 6 tasks of 0.3s each; the lower bound on wall-clock time
+(``0.6s`` = 3 batches × 2 tasks × 0.3s) would fail if the cap were removed
+and all 6 ran in parallel.
+
 Sub-assertion predicates from TEST_SPEC.md §FR-08 are emitted as top-level
 (flat) ``if``-trigger blocks keyed to the canonical TEST_SPEC input
 variable (e.g. ``expected_drained_count``, ``expected_status``,
@@ -47,6 +56,7 @@ partial surface. Per the harness contract: "If pytest returns Exit Code 2
 
 Citations:
     - SPEC.md line 147 (graceful drain + ``TASKQ_DRAIN_TIMEOUT``)
+    - SPEC.md line 148 (TASKQ_MAX_CONCURRENT cap)
     - SPEC.md line 150 (``CancelledError`` propagation, NFR-03)
     - SAD.md §2.7 (service-layer use cases)
 """
@@ -55,6 +65,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import time
 
 import pytest
 
@@ -343,3 +354,84 @@ def test_cancelled_error_propagates():
             )
 
         _run(_exercise())
+
+
+# ---------------------------------------------------------------------------
+# IMPROVE-step coverage test (SPEC.md line 148 / AC-8.2):
+# ``TASKQ_MAX_CONCURRENT`` cap MUST queue excess submissions; an
+# implementation that ignores the cap and spawns coroutines unboundedly
+# still passes every named TEST_SPEC case (none approach the default cap
+# of 8). Pin the requirement by forcing ``max_concurrent=2`` and asserting
+# that 6 tasks of 0.3s each take AT LEAST ``expected_min_elapsed_s``
+# (= ceil(6/2) * 0.3 = 0.9s) end-to-end — an unbounded implementation
+# would finish in ~0.3s, which would fail the lower-bound invariant.
+# ---------------------------------------------------------------------------
+
+
+# NFR-03 (error_handling): the cap is enforced via ``asyncio.Semaphore``;
+# the bounded test asserts the cap is honoured end-to-end without leaking.
+def test_max_concurrent_cap_queues_overflow():
+    """FR-08 AC-8.2 — ``TASKQ_MAX_CONCURRENT`` MUST bound live coroutines.
+
+    Pins SPEC.md line 148 ("併發上限 ``TASKQ_MAX_CONCURRENT``;超過時新
+    任務排隊,不得無限制生成 coroutine"). The named TEST_SPEC cases never
+    approach the default cap of 8, so this coverage test forces a small
+    cap and proves overflow submissions queue rather than fan out.
+    """
+    # Force a small cap BEFORE the lazy semaphore is built — once
+    # ``_get_semaphore()`` has run, the env knob has no effect until the
+    # next event loop.
+    os.environ["TASKQ_MAX_CONCURRENT"] = "2"
+
+    cap = 2
+    submit_count = 6
+    per_task_seconds = 0.3
+    expected_min_elapsed_s = (submit_count / cap) * per_task_seconds  # 0.9s
+
+    async def _exercise() -> None:
+        # Inside the loop: clear cached Settings + semaphore so this
+        # test's loop sees ``max_concurrent=2`` and the semaphore is
+        # bound to THIS loop (the cached one from a previous loop
+        # would raise ``RuntimeError: Semaphore is bound to a
+        # different event loop``).
+        import taskq_api.config as _config_mod  # noqa: E402
+        _config_mod.get_settings.cache_clear()
+        import taskq_api.service.runner as _runner_mod  # noqa: E402
+        _runner_mod._semaphore = None
+        _runner_mod._handles.clear()
+
+        # Verify semaphore and max_concurrent are aligned.
+        _sem = _runner_mod._get_semaphore()
+        print(f"DEBUG-INSIDE-LOOP: max_concurrent={_config_mod.get_settings().max_concurrent}, sem._value={_sem._value}")
+
+        handles = []
+        # AC-8.2 invariant: the executor MUST queue excess submissions
+        # rather than fan out; with cap=2 and 6 tasks of 0.3s, the time
+        # to *submit all 6* (each ``await submit`` blocks until a slot
+        # is available) is bounded BELOW by ceil(6/2)*0.3 = 0.9s. An
+        # implementation that ignored the cap would let all 6 submits
+        # return in ~0.0s and finish in ~0.3s. The lower-bound invariant
+        # is measured across the whole submit loop because by the time
+        # the loop ends every task has already completed and ``drain``
+        # adds zero wall-clock time.
+        started = time.perf_counter()
+        for _ in range(submit_count):
+            handles.append(await submit(_sleep_coro(per_task_seconds)))
+        # Wait for any straggler tasks via drain (mostly a no-op once
+        # the submit loop has unblocked, but keeps the assertion surface
+        # symmetric with the other FR-08 tests).
+        await drain(timeout=5.0)
+        elapsed = time.perf_counter() - started
+        # FR08-AC-8.2-cap invariant.
+        assert elapsed >= expected_min_elapsed_s, (
+            f"FR-08 AC-8.2: max_concurrent cap was not honoured; "
+            f"expected elapsed >= {expected_min_elapsed_s}s "
+            f"(6 tasks / cap=2 × 0.3s); got {elapsed:.3f}s"
+        )
+        for h in handles:
+            assert getattr(h, "status", None) == "done", (
+                f"FR-08 AC-8.2: every queued task must finish 'done'; "
+                f"got {getattr(h, 'status', None)!r}"
+            )
+
+    _run(_exercise())
