@@ -50,19 +50,19 @@ def hash_key(key: str) -> str:
 def _principal_from_db(key: str) -> Optional[Principal]:
     """[FR-03 AC-3.2 / AC-3.4] Look the key up in the DB-backed key store.
 
-    Falls through to ``None`` when no active row matches (unknown key OR
-    revoked key). The hash is compared with :func:`hmac.compare_digest`
-    to honour AC-3.2's constant-time contract even though SQL lookup
-    already filters by hash equality.
+    Returns ``None`` when no active row matches (unknown key OR revoked
+    key). The hash is compared with :func:`hmac.compare_digest` to honour
+    AC-3.2's constant-time contract even though the SQL lookup already
+    filters by hash equality.
     """
+    from taskq_api.repository.key_repo import KeyRepository
+
+    key_hash = hash_key(key)
     try:
-        from taskq_api.repository.key_repo import KeyRepository
-    except Exception:  # pragma: no cover — repository import should never fail
-        return None
-    try:
-        key_hash = hash_key(key)
         row = KeyRepository().find_active_by_hash(key_hash)
     except Exception:
+        # Treat DB errors as "unauthenticated" — surfacing 500s on the
+        # auth path would leak server state to an unauthenticated caller.
         return None
     if row is None:
         return None
@@ -74,11 +74,11 @@ def _principal_from_db(key: str) -> Optional[Principal]:
     return Principal(key_id=key_hash[:16], scope=row.scope)
 
 
-def verify_key(headers: dict) -> Optional[Principal]:
+def verify_key(api_key: Optional[str]) -> Optional[Principal]:
     """[FR-03 AC-3.1] Resolve ``X-API-Key`` to a :class:`Principal`.
 
-    Returns ``None`` for missing / unknown / revoked keys (the handler turns
-    that into a 401 problem+json).
+    Returns ``None`` for missing / unknown / revoked keys (the handler
+    turns that into a 401 problem+json).
 
     Resolution order:
 
@@ -89,16 +89,12 @@ def verify_key(headers: dict) -> Optional[Principal]:
        path. SHA-256 + ``hmac.compare_digest``; revoked rows are
        filtered out at the SQL layer (AC-3.4).
     """
-    if not headers:
+    if not api_key:
         return None
-    # headers may be a Mapping[str, str] (httpx case-preserving) — try both.
-    key = headers.get("X-API-Key") or headers.get("x-api-key")
-    if not key:
-        return None
-    scope = _TEST_KEYS.get(key)
+    scope = _TEST_KEYS.get(api_key)
     if scope is not None:
-        return Principal(key_id=hash_key(key)[:16], scope=scope)
-    return _principal_from_db(key)
+        return Principal(key_id=hash_key(api_key)[:16], scope=scope)
+    return _principal_from_db(api_key)
 
 
 def verify_scope(principal: Principal, required: str) -> bool:

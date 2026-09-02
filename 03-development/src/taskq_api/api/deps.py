@@ -34,8 +34,7 @@ async def require_auth(
     (see :mod:`taskq_api.api.tasks`) so each route can declare its own
     scope constant and the response body stays generic (NFR-02).
     """
-    headers = {"X-API-Key": x_api_key} if x_api_key else {}
-    principal = verify_key(headers)
+    principal = verify_key(x_api_key)
     if principal is None:
         raise UnauthenticatedProblem()
     return principal

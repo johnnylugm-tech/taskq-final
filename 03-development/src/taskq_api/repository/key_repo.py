@@ -109,10 +109,24 @@ class KeyRepository:
             session.flush()
             return _to_row(row)
 
-    def find_by_hash(self, key_hash: str) -> Optional[ApiKeyRow]:
-        """[FR-03] Look up one row by hash, regardless of revocation state."""
+    def find_by_hash(
+        self, key_hash: str, *, include_revoked: bool = False,
+    ) -> Optional[ApiKeyRow]:
+        """[FR-03] Look up one row by hash.
+
+        Args:
+            key_hash: SHA-256 hex digest of the presented plaintext.
+            include_revoked: when ``True``, return rows whose
+                ``revoked_at`` is non-null too (default ``False`` honours
+                AC-3.4 — revoked keys must not authenticate).
+
+        Returns:
+            The matching :class:`ApiKeyRow`, or ``None`` if no row matches.
+        """
         with transaction() as session:
             stmt = select(ApiKey).where(ApiKey.key_hash == key_hash)
+            if not include_revoked:
+                stmt = stmt.where(ApiKey.revoked_at.is_(None))
             orm_row = session.execute(stmt).scalar_one_or_none()
             if orm_row is None:
                 return None
@@ -120,16 +134,7 @@ class KeyRepository:
 
     def find_active_by_hash(self, key_hash: str) -> Optional[ApiKeyRow]:
         """[FR-03 AC-3.4] Look up one row, omitting revoked ones."""
-        with transaction() as session:
-            stmt = (
-                select(ApiKey)
-                .where(ApiKey.key_hash == key_hash)
-                .where(ApiKey.revoked_at.is_(None))
-            )
-            orm_row = session.execute(stmt).scalar_one_or_none()
-            if orm_row is None:
-                return None
-            return _to_row(orm_row)
+        return self.find_by_hash(key_hash)
 
     def revoke(self, key_hash: str) -> bool:
         """[FR-03 AC-3.4] Mark one row as revoked; ``False`` if missing."""
