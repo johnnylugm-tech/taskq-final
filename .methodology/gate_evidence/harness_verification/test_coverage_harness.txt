@@ -1,8 +1,8 @@
 # Harness-executed: pytest-cov
 # returncode: 0
-# agent_score: 99.1 | threshold: 80.0
+# agent_score: 98.0 | threshold: 80.0
 
-[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[33m                        [100%][0m
+[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[33m                 [100%][0m
 [33m=============================== warnings summary ===============================[0m
 .venv/lib/python3.11/site-packages/starlette/formparsers.py:12
   /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
@@ -18,8 +18,9 @@ Name                                                   Stmts   Miss  Cover   Mis
 03-development/src/taskq_api/api/__init__.py               0      0   100%
 03-development/src/taskq_api/api/deps.py                  11      0   100%
 03-development/src/taskq_api/api/health.py                12      4    67%   27-31
-03-development/src/taskq_api/api/tasks.py                 58      0   100%
-03-development/src/taskq_api/app.py                       28      1    96%   67
+03-development/src/taskq_api/api/metrics.py               11      1    91%   52
+03-development/src/taskq_api/api/tasks.py                 55      0   100%
+03-development/src/taskq_api/app.py                       30      1    97%   69
 03-development/src/taskq_api/config.py                    33     11    67%   64-74
 03-development/src/taskq_api/errors.py                    40      1    98%   120
 03-development/src/taskq_api/models/__init__.py            0      0   100%
@@ -30,11 +31,11 @@ Name                                                   Stmts   Miss  Cover   Mis
 03-development/src/taskq_api/repository/session.py        46     19    59%   55-58, 64-73, 78-83
 03-development/src/taskq_api/repository/task_repo.py     137      1    99%   198
 03-development/src/taskq_api/service/__init__.py           0      0   100%
-03-development/src/taskq_api/service/auth.py              38      1    97%   73
+03-development/src/taskq_api/service/auth.py              38      1    97%   76
 03-development/src/taskq_api/service/common.py            25      0   100%
 03-development/src/taskq_api/service/health.py             4      4     0%   12-25
 03-development/src/taskq_api/service/runner.py            72     10    86%   94, 116-119, 125, 127, 185-186, 218
 03-development/src/taskq_api/service/tasks.py             29      0   100%
 ------------------------------------------------------------------------------------
-TOTAL                                                    670     52    92%
-[33m[32m49 passed[0m, [33m[1m1 warning[0m[33m in 0.51s[0m[0m
+TOTAL                                                    680     53    92%
+[33m[32m56 passed[0m, [33m[1m1 warning[0m[33m in 0.53s[0m[0m
