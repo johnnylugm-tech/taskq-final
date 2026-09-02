@@ -416,3 +416,150 @@ def test_delete_removes_results(asgi_client, auth_read, auth_write):
             f"unexpected post-delete runs status: "
             f"{post_runs.status_code}"
         )
+
+
+# ---------------------------------------------------------------------------
+# Coverage gap tests (FR-01). Not in TEST_SPEC.md (which is the FR-test
+# source-of-truth) but required to cover reachable lines in the source files
+# listed in Gate 1's coverage scope. Per harness escape-hatch policy:
+# only `except BaseException` may be pragma'd; every other reachable line
+# MUST be exercised by a real test.
+# ---------------------------------------------------------------------------
+
+def test_get_task_success_returns_full_row(asgi_client, auth_read):
+    """Coverage: api/tasks.py:107 + service/tasks.py:33 — successful GET
+    returns the full TaskOut row (the AC-1.3 404 path does not exercise
+    the success branch)."""
+    # Seed a task directly so the test is order-independent.
+    repo = TaskRepository()
+    seeded = repo.create(name="cov-get-success", command="echo hi")
+
+    response = _run(asgi_client.get(
+        f"/v1/tasks/{seeded['id']}", headers=auth_read,
+    ))
+    assert response.status_code == 200, (
+        f"expected 200, got {response.status_code}: {response.text!r}"
+    )
+    body = response.json()
+    assert body["id"] == seeded["id"]
+    assert body["name"] == "cov-get-success"
+    assert body["command"] == "echo hi"
+
+
+def test_list_tasks_rejects_limit_below_minimum(asgi_client, auth_read):
+    """Coverage: api/tasks.py:128-129 — ValidationProblem when limit < 1
+    (the limit-over-200 case in test_tasks_list_cursor_pagination only
+    exercises the upper bound)."""
+    response = _run(asgi_client.get(
+        "/v1/tasks", headers=auth_read, params={"limit": "0"},
+    ))
+    assert response.status_code == 422, (
+        f"expected 422 for limit=0, got {response.status_code}: "
+        f"{response.text!r}"
+    )
+    ctype = response.headers.get("content-type", "")
+    assert ctype.startswith("application/problem+json"), (
+        f"expected problem+json, got content-type={ctype!r}"
+    )
+
+
+def test_list_tasks_with_status_filter(asgi_client, auth_read):
+    """Coverage: repository/task_repo.py:207 — status-filter branch in
+    ``TaskRepository.list`` (the other list tests pass ``status=None``)."""
+    response = _run(asgi_client.get(
+        "/v1/tasks",
+        headers=auth_read,
+        params={"status": "pending"},
+    ))
+    assert response.status_code == 200
+    body = response.json()
+    assert "items" in body
+    # All seeded rows are pending; assert at least one came back.
+    assert len(body["items"]) >= 1, (
+        f"expected ≥1 pending row, got {body!r}"
+    )
+
+
+def test_list_tasks_with_invalid_cursor_returns_empty(asgi_client, auth_read):
+    """Coverage: repository/task_repo.py:214-215 — ``except (binascii.Error,
+    ValueError, UnicodeDecodeError)`` path inside cursor decode (the happy
+    path cursor tests do not exercise the decode failure branch)."""
+    # 'abc!' is not valid urlsafe base64 — triggers binascii.Error.
+    response = _run(asgi_client.get(
+        "/v1/tasks",
+        headers=auth_read,
+        params={"cursor": "abc!"},
+    ))
+    assert response.status_code == 200, (
+        f"expected 200 (bad cursor → empty page), got "
+        f"{response.status_code}: {response.text!r}"
+    )
+    body = response.json()
+    assert body.get("items") == [], (
+        f"invalid cursor must produce empty page, got {body!r}"
+    )
+    assert body.get("next_cursor") is None
+
+
+def test_delete_nonexistent_task_returns_404(asgi_client):
+    """Coverage: service/tasks.py:60 + repository/task_repo.py:237 — the
+    DELETE-when-task-missing path (the happy-path DELETE in
+    test_delete_removes_results exercises the True branch)."""
+    headers = {"X-API-Key": "test-admin-key"}
+    response = _run(asgi_client.delete(
+        "/v1/tasks/00000000-0000-0000-0000-000000000000", headers=headers,
+    ))
+    assert response.status_code == 404, (
+        f"expected 404 for missing task, got {response.status_code}: "
+        f"{response.text!r}"
+    )
+    ctype = response.headers.get("content-type", "")
+    assert ctype.startswith("application/problem+json"), (
+        f"expected problem+json, got content-type={ctype!r}"
+    )
+
+
+def test_count_tasks_returns_total_count():
+    """Coverage: repository/task_repo.py:251-252 — ``count_tasks`` helper."""
+    repo = TaskRepository()
+    n = repo.count_tasks()
+    # The seeded store has 100 demo tasks + any rows other tests added.
+    assert n >= 100, f"expected ≥100 tasks in seeded store, got {n}"
+    assert isinstance(n, int)
+
+
+def test_delete_handles_task_absent_from_order_list():
+    """Coverage: repository/task_repo.py:241-242 — defensive except
+    ValueError branch when the task id is in ``_TASKS`` but not
+    ``_TASK_ORDER`` (state-inconsistency recovery)."""
+    # Import the private state to engineer the inconsistency.
+    from datetime import datetime, timezone
+    from taskq_api.repository.task_repo import (
+        TaskRow,
+        _LOCK,
+        _TASKS,
+        _TASK_ORDER,
+    )
+
+    fake_id = "11111111-2222-3333-4444-555555555555"
+    with _LOCK:
+        _TASKS[fake_id] = TaskRow(
+            id=fake_id, name="cov-missing-order",
+            command="echo hi", status="pending",
+            created_at=datetime.now(timezone.utc),
+        )
+        # Do NOT add to _TASK_ORDER — that is the inconsistency.
+
+    assert repo_delete_recovers(fake_id) is True, (
+        "delete must succeed even when task is absent from order list"
+    )
+    # Verify the task was actually removed from _TASKS.
+    with _LOCK:
+        assert fake_id not in _TASKS
+
+
+def repo_delete_recovers(task_id: str) -> bool:
+    """Helper: call ``TaskRepository.delete`` outside the lock so the
+    defensive ``except ValueError: pass`` branch is exercised end-to-end.
+    """
+    return TaskRepository().delete(task_id)
