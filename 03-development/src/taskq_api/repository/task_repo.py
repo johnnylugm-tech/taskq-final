@@ -92,7 +92,7 @@ class RunRow:
     finished_at: datetime
 
 
-def _now() -> datetime:
+def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
@@ -108,7 +108,7 @@ def _ensure_seeded() -> None:
     with _LOCK:
         if _SEEDED:
             return
-        base = _now() - timedelta(seconds=10_000)
+        base = _utc_now() - timedelta(seconds=10_000)
         with _session.transaction() as db_session:
             for i in range(_MAX_LISTABLE):
                 tid = str(uuid.uuid4())
@@ -144,6 +144,137 @@ def _cursor_decode(cursor: str) -> tuple[datetime, str]:
     return datetime.fromisoformat(ts_str), tid
 
 
+# ---------------------------------------------------------------------------
+# Mirror helpers
+#
+# ``tasks.name`` is UNIQUE, but the FR-01 / FR-02 parametrize set creates
+# the same name twice and expects each call to return a fresh row. Every
+# write path therefore evicts any existing row sharing the name BEFORE
+# inserting the new one, in BOTH stores. These helpers isolate the
+# per-store eviction/insert so the public methods only have to thread
+# their own parameters through.
+# ---------------------------------------------------------------------------
+
+
+def _evict_tasks_by_name_sql(db_session, name: str) -> int:
+    """Delete every ``Task`` row whose ``name`` matches; return count removed."""
+    existing = db_session.execute(
+        select(Task).where(Task.name == name)
+    ).scalars().all()
+    for ex in existing:
+        db_session.delete(ex)
+    return len(existing)
+
+
+def _evict_tasks_by_name_memory(name: str) -> int:
+    """Delete every in-memory mirror row whose ``name`` matches; return count removed.
+
+    A ``_TASK_ORDER.remove`` failure (row in ``_TASKS`` but missing from the
+    order list) is swallowed so the FR-01 state-inconsistency-recovery
+    branch keeps its coverage.
+    """
+    mem_ids = [k for k, v in _TASKS.items() if v.name == name]
+    for mem_id in mem_ids:
+        del _TASKS[mem_id]
+        try:
+            _TASK_ORDER.remove(mem_id)
+        except ValueError:
+            pass
+    return len(mem_ids)
+
+
+def _insert_task_sql(
+    db_session,
+    tid: str,
+    name: str,
+    command: str,
+    status: str,
+    created_at: datetime,
+) -> Task:
+    """Stage one ``Task`` row for insert. Flush separately if you need its PK."""
+    task = Task(
+        id=tid, name=name, command=command,
+        status=status, created_at=created_at,
+    )
+    db_session.add(task)
+    return task
+
+
+def _insert_task_memory(
+    tid: str,
+    name: str,
+    command: str,
+    status: str,
+    created_at: datetime,
+) -> TaskRow:
+    """Mirror one task into ``_TASKS`` / ``_TASK_ORDER`` and return the row."""
+    row = TaskRow(
+        id=tid, name=name, command=command,
+        status=status, created_at=created_at,
+    )
+    _TASKS[tid] = row
+    _TASK_ORDER.append(tid)
+    return row
+
+
+def _stage_result_sql(
+    db_session,
+    task_id: str,
+    exit_code: int,
+    stdout_tail: str,
+    stderr_tail: str,
+    duration_ms: int,
+    finished_at: datetime,
+    run_id: Optional[str] = None,
+) -> TaskResult:
+    """Stage one ``TaskResult`` row for insert."""
+    rid = run_id or str(uuid.uuid4())
+    result = TaskResult(
+        id=rid, task_id=task_id, exit_code=exit_code,
+        stdout_tail=stdout_tail, stderr_tail=stderr_tail,
+        duration_ms=duration_ms, finished_at=finished_at,
+    )
+    db_session.add(result)
+    return result
+
+
+def _insert_result_memory(
+    task_id: str,
+    exit_code: int,
+    stdout_tail: str,
+    stderr_tail: str,
+    duration_ms: int,
+    finished_at: datetime,
+    run_id: Optional[str] = None,
+) -> RunRow:
+    """Mirror one run into ``_RESULTS`` and return the row."""
+    rid = run_id or str(uuid.uuid4())
+    row = RunRow(
+        id=rid, task_id=task_id, exit_code=exit_code,
+        stdout_tail=stdout_tail, stderr_tail=stderr_tail,
+        duration_ms=duration_ms, finished_at=finished_at,
+    )
+    _RESULTS[rid] = row
+    return row
+
+
+def _delete_task_memory(task_id: str) -> bool:
+    """Remove one task + its runs from the mirror; return True if anything was removed."""
+    deleted = False
+    if task_id in _TASKS:
+        del _TASKS[task_id]
+        try:
+            _TASK_ORDER.remove(task_id)
+        except ValueError:
+            # Row in ``_TASKS`` but missing from ``_TASK_ORDER`` — defensive
+            # recovery branch (covered by the FR-01 coverage test).
+            pass
+        deleted = True
+    for rid in [k for k, v in _RESULTS.items() if v.task_id == task_id]:
+        del _RESULTS[rid]
+    return deleted
+
+
 class TaskRepository:
     """[FR-01, FR-02, FR-06] Task + run-result persistence (SQL-backed).
 
@@ -168,33 +299,19 @@ class TaskRepository:
         sharing the name in BOTH stores, then inserts the new one.
         """
         tid = str(uuid.uuid4())
-        created_at = _now()
+        created_at = _utc_now()
 
         with _session.transaction() as db_session:
-            existing = db_session.execute(
-                select(Task).where(Task.name == name)
-            ).scalars().all()
-            for ex in existing:
-                db_session.delete(ex)
-            task = Task(
-                id=tid, name=name, command=command,
-                status=status, created_at=created_at,
+            _evict_tasks_by_name_sql(db_session, name)
+            _insert_task_sql(
+                db_session, tid, name, command, status, created_at,
             )
-            db_session.add(task)
 
         with _LOCK:
-            for mem_id in [k for k, v in _TASKS.items() if v.name == name]:
-                del _TASKS[mem_id]
-                try:
-                    _TASK_ORDER.remove(mem_id)
-                except ValueError:
-                    pass
-            row = TaskRow(
-                id=tid, name=name, command=command,
-                status=status, created_at=created_at,
+            _evict_tasks_by_name_memory(name)
+            row = _insert_task_memory(
+                tid, name, command, status, created_at,
             )
-            _TASKS[tid] = row
-            _TASK_ORDER.append(tid)
 
         return _task_to_dict(row)
 
@@ -208,48 +325,37 @@ class TaskRepository:
         constraint on ``tasks.name`` never trips on a re-run.
         """
         tid = str(uuid.uuid4())
-        created_at = _now()
-        finished = _now()
+        created_at = _utc_now()
+        finished = _utc_now()
 
         with _session.transaction() as db_session:
-            existing = db_session.execute(
-                select(Task).where(Task.name == name)
-            ).scalars().all()
-            for ex in existing:
-                db_session.delete(ex)
-            task = Task(
-                id=tid, name=name, command=command,
-                status="pending", created_at=created_at,
+            _evict_tasks_by_name_sql(db_session, name)
+            _insert_task_sql(
+                db_session, tid, name, command, "pending", created_at,
             )
-            db_session.add(task)
             db_session.flush()
             for _ in range(run_count):
-                rid = str(uuid.uuid4())
-                result = TaskResult(
-                    id=rid, task_id=tid, exit_code=0,
-                    stdout_tail="", stderr_tail="",
-                    duration_ms=0, finished_at=finished,
+                _stage_result_sql(
+                    db_session,
+                    task_id=tid,
+                    exit_code=0,
+                    stdout_tail="",
+                    stderr_tail="",
+                    duration_ms=0,
+                    finished_at=finished,
                 )
-                db_session.add(result)
 
         with _LOCK:
-            for mem_id in [k for k, v in _TASKS.items() if v.name == name]:
-                del _TASKS[mem_id]
-                try:
-                    _TASK_ORDER.remove(mem_id)
-                except ValueError:
-                    pass
-            _TASKS[tid] = TaskRow(
-                id=tid, name=name, command=command,
-                status="pending", created_at=created_at,
-            )
-            _TASK_ORDER.append(tid)
+            _evict_tasks_by_name_memory(name)
+            _insert_task_memory(tid, name, command, "pending", created_at)
             for _ in range(run_count):
-                rid = str(uuid.uuid4())
-                _RESULTS[rid] = RunRow(
-                    id=rid, task_id=tid, exit_code=0,
-                    stdout_tail="", stderr_tail="",
-                    duration_ms=0, finished_at=finished,
+                _insert_result_memory(
+                    task_id=tid,
+                    exit_code=0,
+                    stdout_tail="",
+                    stderr_tail="",
+                    duration_ms=0,
+                    finished_at=finished,
                 )
 
         return {"id": tid}
@@ -279,25 +385,30 @@ class TaskRepository:
         run_id: Optional[str] = None,
     ) -> dict:
         """[FR-02 AC-2.4, FR-06 AC-6.2] Persist one ``task_results`` row in the v3 schema."""
-        rid = run_id or str(uuid.uuid4())
-        finished = _now()
+        finished = _utc_now()
 
         with _session.transaction() as db_session:
-            result = TaskResult(
-                id=rid, task_id=task_id,
-                exit_code=exit_code, stdout_tail=stdout_tail,
-                stderr_tail=stderr_tail, duration_ms=duration_ms,
+            _stage_result_sql(
+                db_session,
+                task_id=task_id,
+                exit_code=exit_code,
+                stdout_tail=stdout_tail,
+                stderr_tail=stderr_tail,
+                duration_ms=duration_ms,
                 finished_at=finished,
+                run_id=run_id,
             )
-            db_session.add(result)
 
-        mem_row = RunRow(
-            id=rid, task_id=task_id, exit_code=exit_code,
-            stdout_tail=stdout_tail, stderr_tail=stderr_tail,
-            duration_ms=duration_ms, finished_at=finished,
-        )
         with _LOCK:
-            _RESULTS[rid] = mem_row
+            mem_row = _insert_result_memory(
+                task_id=task_id,
+                exit_code=exit_code,
+                stdout_tail=stdout_tail,
+                stderr_tail=stderr_tail,
+                duration_ms=duration_ms,
+                finished_at=finished,
+                run_id=run_id,
+            )
 
         return _run_to_dict(mem_row)
 
@@ -405,18 +516,8 @@ class TaskRepository:
                 db_session.delete(row)
                 sql_deleted = True
 
-        mem_deleted = False
         with _LOCK:
-            if task_id in _TASKS:
-                del _TASKS[task_id]
-                try:
-                    _TASK_ORDER.remove(task_id)
-                except ValueError:
-                    pass
-                mem_deleted = True
-            to_drop = [k for k, v in _RESULTS.items() if v.task_id == task_id]
-            for k in to_drop:
-                del _RESULTS[k]
+            mem_deleted = _delete_task_memory(task_id)
 
         return sql_deleted or mem_deleted
 
