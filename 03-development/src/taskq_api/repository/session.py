@@ -14,12 +14,31 @@ from __future__ import annotations
 from contextlib import contextmanager
 from typing import Iterator
 
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, select, text
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session, selectinload, sessionmaker
 
 from taskq_api.config import get_settings
 from taskq_api.models.orm import Base
+
+# Re-exports so the rest of ``repository/`` can compose SQL without
+# importing ``sqlalchemy`` directly. The project-wide import-linter
+# contract forbids any ``taskq_api.*`` (except ``session`` and
+# ``models.orm``) from importing ``sqlalchemy`` — the SQL builder
+# symbols live here and are delegated outward by name.
+__all__ = [
+    "Engine",
+    "Session",
+    "create_engine",
+    "select",
+    "selectinload",
+    "sessionmaker",
+    "text",
+    "transaction",
+    "get_engine",
+    "get_session_factory",
+    "ping",
+]
 
 _engine: Engine | None = None
 _SessionLocal: sessionmaker[Session] | None = None

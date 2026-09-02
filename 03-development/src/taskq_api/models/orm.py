@@ -12,6 +12,7 @@ Citations:
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Optional
 
 from sqlalchemy import (
     Column,
@@ -54,11 +55,11 @@ class Task(Base):
 
     __tablename__ = "tasks"
 
-    id = Column(String(36), primary_key=True)
-    name = Column(String(255), nullable=False, unique=True, index=True)
-    command = Column(String(1024), nullable=False)
-    status = Column(String(32), nullable=False, default="pending", index=True)
-    created_at = Column(DateTime(timezone=True), nullable=False)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
+    command: Mapped[str] = mapped_column(String(1024), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending", index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     results = relationship(
         "TaskResult",
@@ -73,13 +74,13 @@ class TaskResult(Base):
 
     __tablename__ = "task_results"
 
-    id = Column(String(36), primary_key=True)
-    task_id = Column(String(36), ForeignKey("tasks.id"), nullable=False, index=True)
-    exit_code = Column(Integer, nullable=False, default=0)
-    stdout_tail = Column(String(4096), nullable=False, default="")
-    stderr_tail = Column(String(4096), nullable=False, default="")
-    duration_ms = Column(Integer, nullable=False, default=0)
-    finished_at = Column(DateTime(timezone=True), nullable=False)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    task_id: Mapped[str] = mapped_column(String(36), ForeignKey("tasks.id"), nullable=False, index=True)
+    exit_code: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    stdout_tail: Mapped[str] = mapped_column(String(4096), nullable=False, default="")
+    stderr_tail: Mapped[str] = mapped_column(String(4096), nullable=False, default="")
+    duration_ms: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    finished_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     task = relationship("Task", back_populates="results")
 
@@ -89,11 +90,11 @@ class ApiKey(Base):
 
     __tablename__ = "api_keys"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    key_hash = Column(String(64), nullable=False, unique=True, index=True)
-    scope = Column(String(16), nullable=False)
-    created_at = Column(DateTime(timezone=True), nullable=False)
-    revoked_at = Column(DateTime(timezone=True), nullable=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    key_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+    scope: Mapped[str] = mapped_column(String(16), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    revoked_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class Tag(Base):

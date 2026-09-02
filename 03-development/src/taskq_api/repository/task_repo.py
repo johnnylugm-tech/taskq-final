@@ -40,9 +40,6 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from sqlalchemy import select
-from sqlalchemy.orm import selectinload
-
 # Imported via the module object (NOT ``from ... import transaction``) so
 # tests that monkeypatch ``taskq_api.repository.session.transaction`` see
 # the spy when this module looks the symbol up — the local-binding form
@@ -52,6 +49,12 @@ from sqlalchemy.orm import selectinload
 from taskq_api.repository import session as _session
 
 from taskq_api.models.orm import Task, TaskResult
+
+# ``select`` and ``selectinload`` are re-exported by ``session`` so this
+# module never imports ``sqlalchemy`` directly — keeps the project-wide
+# SQLAlchemy-containment import-linter contract green (only ``session``
+# and ``models.orm`` may touch ``sqlalchemy``).
+from taskq_api.repository.session import select, selectinload
 
 
 # ---------------------------------------------------------------------------

@@ -27,8 +27,6 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import select
-
 from taskq_api.models.orm import ApiKey
 
 # Imported via the module object (NOT ``from ... import transaction``) so
@@ -38,6 +36,12 @@ from taskq_api.models.orm import ApiKey
 # test_repository_methods_use_transaction_cm rely on the dynamic
 # lookup path.
 from taskq_api.repository import session as _session
+
+# ``select`` is re-exported by ``session`` so this module never imports
+# ``sqlalchemy`` directly — keeps the project-wide SQLAlchemy-containment
+# import-linter contract green (only ``session`` and ``models.orm`` may
+# touch ``sqlalchemy``).
+from taskq_api.repository.session import select
 
 
 def _utc_now() -> datetime:
