@@ -11,6 +11,8 @@ Citations:
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from sqlalchemy import (
     Column,
     DateTime,
@@ -19,7 +21,7 @@ from sqlalchemy import (
     String,
     Table,
 )
-from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy.orm import Mapped, declarative_base, mapped_column, relationship
 
 Base = declarative_base()
 
@@ -117,6 +119,12 @@ class RateBucket(Base):
 
     __tablename__ = "rate_buckets"
 
-    key_id = Column(String(64), primary_key=True)
-    tokens = Column(Integer, nullable=False, default=0)
-    last_refill = Column(DateTime(timezone=True), nullable=False)
+    # Annotated (``Mapped``) columns — the repository reads and writes
+    # these values as plain ``str`` / ``int`` / ``datetime``, and the
+    # annotation is what lets a type checker see them that way instead of
+    # as ``Column[...]`` descriptors.
+    key_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    last_refill: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False,
+    )
