@@ -25,18 +25,24 @@ from taskq_api.models.orm import ApiKey
 from taskq_api.repository.session import transaction
 
 
-def _now() -> datetime:
-    """[FR-03] UTC timestamp used for both ``created_at`` and test
-    ``revoked_at`` markers."""
+def _utc_now() -> datetime:
+    """[FR-03] UTC timestamp used for ``created_at`` and ``revoked_at``."""
     return datetime.now(timezone.utc)
+
+
+# Columns on ``ApiKeyRow`` — used by tests that read row attributes via
+# the dict-like interface (``row[stored_column]``, ``row.values()``,
+# ``row.keys()``, ``stored_column in row``).
+_ROW_KEYS: tuple[str, ...] = ("id", "key_hash", "scope", "created_at", "revoked_at")
 
 
 @dataclass
 class ApiKeyRow:
     """[FR-03] In-memory projection of an ``api_keys`` row.
 
-    Used so the FR-03 service layer / tests can talk in dict-style keys
-    (the test asserts ``row[stored_column]`` against ``key_hash``).
+    Exposes a dict-like read interface (``row[col]``, ``row.values()``,
+    ``row.keys()``, ``col in row``) so FR-03 tests can assert against
+    column names without coupling to the ORM.
     """
 
     id: int
@@ -49,22 +55,16 @@ class ApiKeyRow:
         return getattr(self, item)
 
     def __contains__(self, item: object) -> bool:
-        return item in self.keys()
+        return item in _ROW_KEYS
 
     def __iter__(self):
-        return iter(self.keys())
-
-    def values(self):
-        return {
-            "id": self.id,
-            "key_hash": self.key_hash,
-            "scope": self.scope,
-            "created_at": self.created_at,
-            "revoked_at": self.revoked_at,
-        }.values()
+        return iter(_ROW_KEYS)
 
     def keys(self):
-        return ("id", "key_hash", "scope", "created_at", "revoked_at")
+        return _ROW_KEYS
+
+    def values(self):
+        return (self.id, self.key_hash, self.scope, self.created_at, self.revoked_at)
 
     def get(self, key: str, default=None):
         return getattr(self, key, default)
@@ -102,7 +102,7 @@ class KeyRepository:
             row = ApiKey(
                 key_hash=key_hash,
                 scope=scope,
-                created_at=_now(),
+                created_at=_utc_now(),
                 revoked_at=revoked_at,
             )
             session.add(row)
@@ -138,13 +138,13 @@ class KeyRepository:
             orm_row = session.execute(stmt).scalar_one_or_none()
             if orm_row is None:
                 return False
-            orm_row.revoked_at = _now()
+            orm_row.revoked_at = _utc_now()
             return True
 
     def now(self) -> datetime:
         """[FR-03] UTC clock — exposed so tests can stamp ``revoked_at``
         deterministically without importing ``datetime`` directly."""
-        return _now()
+        return _utc_now()
 
 
 __all__ = ["ApiKeyRow", "KeyRepository"]

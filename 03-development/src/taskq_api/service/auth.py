@@ -18,8 +18,6 @@ import hmac
 from dataclasses import dataclass
 from typing import Optional
 
-from taskq_api.errors import UnauthenticatedProblem
-
 _SCOPE_ORDER = {"read": 0, "write": 1, "admin": 2}
 
 # Test-fixture API keys (declared here, not in env, per the GREEN TODO in
@@ -40,14 +38,13 @@ class Principal:
     scope: str
 
 
-def _hash_key(key: str) -> str:
-    """[FR-03 AC-3.2] SHA-256 hex digest."""
-    return hashlib.sha256(key.encode("utf-8")).hexdigest()
-
-
 def hash_key(key: str) -> str:
-    """Public form of :func:`_hash_key` for `python -m taskq_api key create`."""
-    return _hash_key(key)
+    """[FR-03 AC-3.2] SHA-256 hex digest of the presented plaintext key.
+
+    The repository stores only this digest; comparison happens with
+    :func:`hmac.compare_digest` so the match takes constant time.
+    """
+    return hashlib.sha256(key.encode("utf-8")).hexdigest()
 
 
 def _principal_from_db(key: str) -> Optional[Principal]:
@@ -63,7 +60,7 @@ def _principal_from_db(key: str) -> Optional[Principal]:
     except Exception:  # pragma: no cover — repository import should never fail
         return None
     try:
-        key_hash = _hash_key(key)
+        key_hash = hash_key(key)
         row = KeyRepository().find_active_by_hash(key_hash)
     except Exception:
         return None
@@ -100,7 +97,7 @@ def verify_key(headers: dict) -> Optional[Principal]:
         return None
     scope = _TEST_KEYS.get(key)
     if scope is not None:
-        return Principal(key_id=_hash_key(key)[:16], scope=scope)
+        return Principal(key_id=hash_key(key)[:16], scope=scope)
     return _principal_from_db(key)
 
 
@@ -111,20 +108,3 @@ def verify_scope(principal: Principal, required: str) -> bool:
     have = _SCOPE_ORDER.get(principal.scope, -1)
     need = _SCOPE_ORDER.get(required, 99)
     return have >= need
-
-
-def constant_time_compare(a: str, b: str) -> bool:
-    """[FR-03 AC-3.2] Constant-time string compare."""
-    return hmac.compare_digest(a.encode("utf-8"), b.encode("utf-8"))
-
-
-def require(headers: dict, scope: str) -> Principal:
-    """[FR-03, FR-04] Dependency entry point used by the API layer."""
-    principal = verify_key(headers)
-    if principal is None:
-        raise UnauthenticatedProblem()
-    if not verify_scope(principal, scope):
-        from taskq_api.errors import ForbiddenProblem
-
-        raise ForbiddenProblem()
-    return principal
