@@ -1,0 +1,20 @@
+# Harness-executed: import-linter
+# returncode: 0
+# agent_score: 100.0 | threshold: 100.0
+
+[1m=============[0m
+[1mImport Linter[0m
+[1m=============[0m
+[22m[0m
+[1m---------[0m
+[1mContracts[0m
+[1m---------[0m
+[22m[0m
+[1mAnalyzed 36 files, 66 dependencies.[0m
+[1m-----------------------------------[0m
+[22m[0m
+[22mLayer ordering [0m[32m[22mKEPT[0m[33m[22m[0m[22m[0m
+[22mSQLAlchemy containment [0m[32m[22mKEPT[0m[33m[22m[0m[22m[0m
+[22mConfig and errors independence [0m[32m[22mKEPT[0m[33m[22m[0m[22m[0m
+[22m[0m
+[22mContracts: 3 kept, 0 broken.[0m

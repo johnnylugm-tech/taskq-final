@@ -1,0 +1,63 @@
+{
+  "classified_at": "2026-09-02T12:37:14Z",
+  "cli_tools": [
+    "alembic",
+    "bandit",
+    "fastapi",
+    "httpx",
+    "lint-imports",
+    "mutmut",
+    "pip-licenses",
+    "pydantic",
+    "pyright",
+    "pytest",
+    "pytest-benchmark",
+    "pytest-cov",
+    "python3.11",
+    "radon",
+    "ruff",
+    "scancode",
+    "sqlalchemy",
+    "uvicorn"
+  ],
+  "enforcer_sha": "0e9ce2e94c85cab665c21b154cb227c7dd06ba32",
+  "env_vars": {
+    "dev_opt_in": [],
+    "has_default": [
+      "TASKQ_CORS_ORIGINS",
+      "TASKQ_DB_POOL_SIZE",
+      "TASKQ_DB_URL",
+      "TASKQ_DRAIN_TIMEOUT",
+      "TASKQ_HOST",
+      "TASKQ_LOG_FORMAT",
+      "TASKQ_LOG_LEVEL",
+      "TASKQ_MAX_CONCURRENT",
+      "TASKQ_PORT",
+      "TASKQ_RATE_BURST",
+      "TASKQ_RATE_PER_SEC",
+      "TASKQ_TASK_TIMEOUT"
+    ],
+    "mandatory": []
+  },
+  "infra_services": {
+    "docker_compose_services": [],
+    "required": [
+      {
+        "checked_via": "python sqlite3 create+insert+select roundtrip at /tmp/__env_check_sqlite.db",
+        "fix": "n/a",
+        "name": "sqlite",
+        "reachable": true,
+        "type": "SQLite (stdlib, dev default)"
+      },
+      {
+        "checked_via": "TASKQ_DB_URL is unset (defaults to sqlite:///./taskq.db per SPEC §5.1); prod postgres not required for Phase 3 env check",
+        "fix": "To enable prod postgres: export TASKQ_DB_URL=postgresql://USER:PASS@HOST:5432/DB and ensure `psql` can connect",
+        "name": "postgres",
+        "reachable": false,
+        "type": "PostgreSQL (prod opt-in)"
+      }
+    ]
+  },
+  "schema_version": 1,
+  "source_sha256": "8c9391b1bfafbd0fef300b899d13ae30483ab8adb6608ed5b599dc7d8395db99"
+}
