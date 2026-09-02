@@ -1,0 +1,51 @@
+[importlinter]
+root_package = taskq_api
+include_external_packages = true
+
+[importlinter:contract:layer-ordering]
+name = Layer ordering
+type = layers
+layers =
+    taskq_api.api
+    taskq_api.service
+    taskq_api.repository
+    taskq_api.models
+
+[importlinter:contract:sqlalchemy-containment]
+name = SQLAlchemy containment
+type = forbidden
+source_modules =
+    taskq_api.api
+    taskq_api.service
+    taskq_api.repository
+    taskq_api.models
+forbidden_modules =
+    sqlalchemy
+    sqlalchemy.orm
+    sqlalchemy.engine
+    sqlalchemy.exc
+    sqlalchemy.pool
+ignore_imports =
+    taskq_api.repository.session -> sqlalchemy
+    taskq_api.repository.session -> sqlalchemy.orm
+    taskq_api.repository.session -> sqlalchemy.engine
+    taskq_api.models.orm -> sqlalchemy
+    taskq_api.models.orm -> sqlalchemy.orm
+
+[importlinter:contract:config-errors-independence]
+name = Config and errors independence
+type = independence
+modules =
+    taskq_api.config
+    taskq_api.errors
+
+[importlinter:contract:no-circular-imports]
+name = No circular imports
+type = acyclic
+modules =
+    taskq_api.api
+    taskq_api.service
+    taskq_api.repository
+    taskq_api.models
+    taskq_api.config
+    taskq_api.errors
