@@ -220,7 +220,13 @@ def test_session_rollback_on_exception(
       - NFR-06 (architecture layering): the CM lives in
         ``repository.session`` and is the only place transactions are
         committed / rolled back (the only ``Session``-owning code).
+      - NFR-09 (testability — test honesty): this test executes both
+        scenarios (raise + commit) and asserts visible-row counts, no
+        skip/xfail/zero-assert paths.
     """
+    # NFR-03 — reliability: per-request transaction boundary (CM commit/rollback)
+    # NFR-06 — architecture: repository.session owns the only Session lifecycle
+    # NFR-09 — test honesty: 2 scenarios, both execute real assertions
     from taskq_api.models.orm import ApiKey
 
     probe_hash = _probe_hash()
@@ -339,6 +345,14 @@ def test_no_string_sql_concat(
 ):
     """FR-06 AC-6.3 / NFR-02 — no string-concatenated SQL anywhere under
     ``03-development/src``.
+
+    NFR annotations:
+      - NFR-02 (security — no SQL injection vectors): ORM/bound params
+        only; f-string SELECT and %-format SQL must be absent.
+      - NFR-09 (testability — test honesty): real grep scan, no skip.
+    """
+    # NFR-02 — security: no string-concatenated SQL anywhere under 03-development/src
+    # NFR-09 — test honesty: scans the real tree, asserts zero hits
 
     Two scenarios share this function symbol:
 
@@ -474,7 +488,12 @@ def test_eager_loading_no_n_plus_one(seed_count="50", expected_statement_count="
         repository-layer decision (selectinload / joinedload); it
         cannot be retro-fitted by the service layer because the
         service layer is forbidden from importing SQLAlchemy.
+      - NFR-09 (testability — test honesty): real seeding + real
+        statement-count assertion; no skip / xfail / zero-assert.
     """
+    # NFR-01 — performance: constant statement count regardless of seeded rows (no N+1)
+    # NFR-06 — architecture: eager loading lives at the repository layer only
+    # NFR-09 — test honesty: seeds N=50 rows, executes real list(), asserts cap
     from sqlalchemy import event
 
     # seed_count and expected_statement_count are bound to the TEST_SPEC
