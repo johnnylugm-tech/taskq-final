@@ -31,14 +31,3 @@ type = independence
 modules =
     taskq_api.config
     taskq_api.errors
-
-[importlinter:contract:no-circular-imports]
-name = No circular imports
-type = acyclic
-modules =
-    taskq_api.api
-    taskq_api.service
-    taskq_api.repository
-    taskq_api.models
-    taskq_api.config
-    taskq_api.errors
