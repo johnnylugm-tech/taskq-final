@@ -1,16 +1,21 @@
-"""[FR-03, FR-04] Single FastAPI dependency for auth + scope.
+"""[FR-03, FR-04] Single FastAPI dependency for authentication.
 
-Every ``/v1/*`` route depends on :func:`require_scope` — the order is
-**authenticate → authorize → rate-limit → resource lookup**, so a 403
-never leaks the existence of the resource (NFR-02, FR-04 R4).
+Every ``/v1/*`` route depends on :func:`require_scope` — the SINGLE
+chokepoint that authenticates the caller's ``X-API-Key`` and resolves
+it to a :class:`taskq_api.service.auth.Principal` (FR-04 AC-4.3). Each
+handler then advertises its required scope by calling
+:func:`taskq_api.service.auth.verify_scope` (or the matching
+``_require_scope`` helper in ``api/tasks``), so the per-route scope
+constant stays declarative while the auth path stays centralised.
 
-The dependency only authenticates; per-route scope checks happen inline in
-the handler so a single chokepoint (FR-04 AC-4.3) stays intact while each
-route advertises its required scope.
+The default ``403`` raised downstream is ``ForbiddenProblem`` whose body
+is the generic ``"insufficient scope"`` message — never the task id or
+any resource-existence signal (FR-04 AC-4.2, NFR-02).
 
 Citations:
-    - SPEC.md §3 FR-03 AC-3.1
+    - SPEC.md §3 FR-03 AC-3.1 (authenticate via X-API-Key)
     - SPEC.md §3 FR-04 AC-4.2 (403 must not disclose existence)
+    - SPEC.md §3 FR-04 AC-4.3 (single dependency chokepoint)
     - SAD.md §2.8, §3.2
 """
 
@@ -27,12 +32,14 @@ from taskq_api.service.auth import Principal, verify_key
 async def require_auth(
     x_api_key: Optional[str] = Header(default=None, alias="X-API-Key"),
 ) -> Principal:
-    """[FR-03] Authenticate the request — return a :class:`Principal`.
+    """[FR-03 AC-3.1] Authenticate the request — return a :class:`Principal`.
 
     Raises :class:`UnauthenticatedProblem` (→ 401) for missing / unknown
     keys. Per-route scope authorization is done inline in the handler
-    (see :mod:`taskq_api.api.tasks`) so each route can declare its own
-    scope constant and the response body stays generic (NFR-02).
+    via :func:`taskq_api.service.auth.verify_scope` so each route can
+    declare its own required scope while the response body stays
+    generic — ``ForbiddenProblem``'s default detail is
+    ``"insufficient scope"``, never a resource identifier (NFR-02).
     """
     principal = verify_key(x_api_key)
     if principal is None:
@@ -40,7 +47,8 @@ async def require_auth(
     return principal
 
 
-# Backwards-compatible alias kept so existing ``Depends(require_scope)``
-# call-sites continue to work. The new name ``require_auth`` is preferred
-# because scope enforcement now lives in the handler.
+# Public alias: ``require_scope`` is the FR-04 AC-4.3 chokepoint name and
+# the one every ``/v1/*`` route's ``Depends(...)`` references. It is the
+# same callable as :func:`require_auth` so the resolved dependency graph
+# stays a single identity across every handler.
 require_scope = require_auth

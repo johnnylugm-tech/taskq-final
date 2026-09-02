@@ -23,26 +23,24 @@ from taskq_api.errors import ForbiddenProblem, ValidationProblem
 from taskq_api.models.schemas import TaskCreate
 from taskq_api.service import runner as service_runner
 from taskq_api.service import tasks as service_tasks
-from taskq_api.service.auth import Principal
+from taskq_api.service.auth import Principal, verify_scope
 
 router = APIRouter(prefix="/v1/tasks", tags=["tasks"])
 
 _MAX_LIMIT = 200
 _DEFAULT_LIMIT = 50
 
-# Scope hierarchy: `read < write < admin`. Each handler asserts the
-# required scope inline so the per-route constant is visible at the
-# declaration site (FR-04 AC-4.3 keeps auth/scope split).
-_READ_OR_HIGHER = ("read", "write", "admin")
-_WRITE_OR_HIGHER = ("write", "admin")
-_ADMIN_ONLY = ("admin",)
 
+def _require_scope(principal: Principal, required: str) -> None:
+    """[FR-04 AC-4.1, AC-4.2] Raise ``ForbiddenProblem`` unless
+    ``principal.scope`` is at least ``required`` in the strict
+    ``read < write < admin`` order.
 
-def _assert_scope(principal: Principal, allowed: tuple[str, ...]) -> None:
-    """[FR-04] Raise ``ForbiddenProblem`` unless ``principal.scope`` is in
-    ``allowed``. Centralises the per-route scope guard so every handler
-    shares one raise path."""
-    if principal.scope not in allowed:
+    Delegates to :func:`taskq_api.service.auth.verify_scope` so the per-
+    route guard shares one raise path AND one hierarchy definition with
+    every other ``/v1/*`` handler (FR-04 AC-4.3 — single chokepoint).
+    """
+    if not verify_scope(principal, required):
         raise ForbiddenProblem()
 
 
@@ -85,7 +83,7 @@ async def create_task(
     principal: Principal = Depends(require_scope),
 ) -> JSONResponse:
     """[FR-01 AC-1.1] `POST /v1/tasks` (scope=write)."""
-    _assert_scope(principal, _WRITE_OR_HIGHER)
+    _require_scope(principal, "write")
     row = service_tasks.create_task(payload)
     return JSONResponse(status_code=201, content={"id": row["id"]})
 
@@ -103,7 +101,7 @@ async def get_task(
     principal: Principal = Depends(require_scope),
 ) -> dict:
     """[FR-01 AC-1.3] `GET /v1/tasks/{id}` (scope=read)."""
-    _assert_scope(principal, _READ_OR_HIGHER)
+    _require_scope(principal, "read")
     row = service_tasks.get_task(task_id)
     return _to_out(row)
 
@@ -124,7 +122,7 @@ async def list_tasks(
     principal: Principal = Depends(require_scope),
 ) -> dict:
     """[FR-01 AC-1.4] `GET /v1/tasks` (scope=read) — cursor pagination."""
-    _assert_scope(principal, _READ_OR_HIGHER)
+    _require_scope(principal, "read")
     applied = _DEFAULT_LIMIT if limit is None else int(limit)
     if applied < 1:
         raise ValidationProblem("limit must be >= 1")
@@ -153,7 +151,7 @@ async def delete_task(
     principal: Principal = Depends(require_scope),
 ) -> JSONResponse:
     """[FR-01 AC-1.5] `DELETE /v1/tasks/{id}` (scope=admin)."""
-    _assert_scope(principal, _ADMIN_ONLY)
+    _require_scope(principal, "admin")
     service_tasks.delete_task(task_id)
     return JSONResponse(status_code=204, content=None)
 
@@ -180,7 +178,7 @@ async def run_task(
 
     Citations: SPEC.md line 95 (202 + run_id), line 97 (state machine).
     """
-    _assert_scope(principal, _WRITE_OR_HIGHER)
+    _require_scope(principal, "write")
     run_id = service_runner.start_run(task_id)
     return JSONResponse(status_code=202, content={"run_id": run_id})
 
@@ -198,6 +196,6 @@ async def list_runs(
     principal: Principal = Depends(require_scope),
 ) -> dict:
     """[FR-02 AC-2.5] `GET /v1/tasks/{id}/runs` (scope=read)."""
-    _assert_scope(principal, _READ_OR_HIGHER)
+    _require_scope(principal, "read")
     runs = service_tasks.list_runs(task_id)
     return {"items": [_run_to_out(r) for r in runs]}

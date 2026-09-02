@@ -1,9 +1,9 @@
 """[FR-03, FR-04] Authentication + scope authorization.
 
-Scope order: ``read < write < admin`` (strict). Production compares
-SHA-256 hashes with ``hmac.compare_digest``; the GREEN-path test fixture
-is wired through in-process hard-coded keys (kept here, NOT in
-production settings, to avoid leaking them).
+Scope order: ``read < write < admin`` (strict inclusion). Production
+compares SHA-256 hashes with :func:`hmac.compare_digest`; the test
+fixture keys live in-process so FR-01/02 contract tests can run without
+a real DB-backed key store.
 
 Citations:
     - SPEC.md §3 FR-03 AC-3.2 (hashed keys, constant-time compare)
@@ -18,11 +18,14 @@ import hmac
 from dataclasses import dataclass
 from typing import Optional
 
+# Single source of truth for the strict scope order. Any new tier slots
+# in here exactly once; ``verify_scope`` and the per-route guards all
+# read from this mapping so the hierarchy is defined in one place.
 _SCOPE_ORDER = {"read": 0, "write": 1, "admin": 2}
 
-# Test-fixture API keys (declared here, not in env, per the GREEN TODO in
-# tests/test_fr01.py). These exist ONLY so the FR-01 contract tests can
-# exercise scope enforcement end-to-end without a real DB-backed key store.
+# Test-fixture API keys — declared in-process (NOT in environment) so
+# FR-01/02 contract tests can exercise scope enforcement end-to-end
+# without seeding the DB. The production path is :func:`_principal_from_db`.
 _TEST_KEYS: dict[str, str] = {
     "test-read-key": "read",
     "test-write-key": "write",
