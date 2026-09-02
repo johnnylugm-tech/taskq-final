@@ -410,12 +410,13 @@ def test_500_detail_has_no_stack_trace(asgi_client, auth_write, monkeypatch):
         f"{result_status}; body={body_text!r}"
     )
 
+    actual_hits = body_text.count(forbidden_pattern)
+
     # FR10-AC-10.3-no-traceback — applies_to (4): the body MUST NOT
     # contain the forbidden_pattern literal ("Traceback"). Trigger on
     # case-4's forbidden_pattern literal.
     if forbidden_pattern == "Traceback":
         assert forbidden_pattern == "Traceback"
-        actual_hits = body_text.count(forbidden_pattern)
         # The TEST_SPEC sub-assertion is `expected_hits == "0"`; assert
         # the count is zero so a single Traceback line fails the test
         # while a totally absent body also passes.
@@ -423,6 +424,15 @@ def test_500_detail_has_no_stack_trace(asgi_client, auth_write, monkeypatch):
             f"FR-10 AC-10.3 violated: 500 body MUST NOT contain "
             f"{forbidden_pattern!r} (AC-10.3 'detail 不得洩漏內部細節'); "
             f"got {actual_hits} hit(s); body={body_text!r}"
+        )
+
+    # FR10-AC-10.3-no-traceback predicate — expected_hits == "0"
+    if expected_hits == "0":
+        assert expected_hits == "0"
+        assert actual_hits == 0, (
+            f"FR-10 AC-10.3 violated: expected_hits={expected_hits!r} "
+            f"but body contains {actual_hits} occurrence(s) of "
+            f"{forbidden_pattern!r}; body={body_text!r}"
         )
 
     # Belt-and-braces — the absolute filesystem path that the exception
