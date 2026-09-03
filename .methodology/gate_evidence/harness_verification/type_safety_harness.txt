@@ -1,16 +1,33 @@
 # Harness-executed: pyright
-# returncode: 0
-# agent_score: 100.0 | threshold: 100.0
+# returncode: 1
+# agent_score: 100.0 | threshold: 85.0
 
 {
     "version": "1.1.409",
-    "time": "1788407380360",
-    "generalDiagnostics": [],
+    "time": "1788416997661",
+    "generalDiagnostics": [
+        {
+            "file": "/Users/johnny/projects/taskq-final/03-development/src/taskq_api/service/runner.py",
+            "severity": "error",
+            "message": "Argument of type \"set[Task[Unknown]]\" cannot be assigned to parameter \"still_pending\" of type \"list[Task[Unknown]]\" in function \"_cancel_and_await\"\n  \"set[Task[Unknown]]\" is not assignable to \"list[Task[Unknown]]\"",
+            "range": {
+                "start": {
+                    "line": 322,
+                    "character": 28
+                },
+                "end": {
+                    "line": 322,
+                    "character": 41
+                }
+            },
+            "rule": "reportArgumentType"
+        }
+    ],
     "summary": {
         "filesAnalyzed": 32,
-        "errorCount": 0,
+        "errorCount": 1,
         "warningCount": 0,
         "informationCount": 0,
-        "timeInSec": 1.125
+        "timeInSec": 1.114
     }
 }

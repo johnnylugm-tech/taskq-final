@@ -1,5 +1,5 @@
 # Harness-executed: ast-assertions
 # returncode: 0
-# agent_score: 93.3 | threshold: 60.0
+# agent_score: 98.4 | threshold: 60.0
 
-{"total": 150, "asserted": 148, "zero_assert": ["tests/test_nfr.py::test_docstring_coverage_100_percent", "tests/test_nfr.py::test_no_zero_assert_tests"], "neutralised": []}
+{"total": 214, "asserted": 211, "zero_assert": ["tests/test_p3_exit_coverage.py::test_lifespan_drain_swallows_failures", "tests/test_nfr.py::test_docstring_coverage_100_percent", "tests/test_nfr.py::test_no_zero_assert_tests"], "neutralised": []}

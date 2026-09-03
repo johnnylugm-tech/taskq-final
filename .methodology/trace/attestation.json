@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "1a8ddfeebe48849817d863360ed4f857e9751308",
-  "content_sha256": "ddd7d8fba33e4613d38ee731ca0fa83188d73c88d48807524fc04d11f1f98222",
+  "git_sha": "b5c871cbe11d6923dee09d23e7ff42cc0deeaaae",
+  "content_sha256": "5df5f97e7f1ba4a2afb0265d9cece0d175ab4f9da6561cf02a04e36ad8f25c9d",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -13,7 +13,7 @@
       "srs_coverage": "100.0%",
       "code_coverage": "100.0%",
       "test_coverage": "100.0%",
-      "verification_rate": "100.0%",
+      "verification_rate": "90.0%",
       "total_links": 71,
       "missing_mappings": {
         "fr_without_srs": [],
@@ -138,7 +138,7 @@
       },
       "FR-07": {
         "fr_id": "FR-07",
-        "status": "verified",
+        "status": "in_progress",
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/migrations/__init__.py",

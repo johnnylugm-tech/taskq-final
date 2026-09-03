@@ -1,0 +1,1 @@
+{"total": 188, "asserted": 185, "zero_assert": ["tests/test_p3_exit_coverage.py::test_lifespan_drain_swallows_failures", "tests/test_nfr.py::test_docstring_coverage_100_percent", "tests/test_nfr.py::test_no_zero_assert_tests"], "neutralised": []}
