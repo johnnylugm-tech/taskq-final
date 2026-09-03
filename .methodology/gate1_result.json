@@ -1,41 +1,41 @@
 {
   "gate": 1,
   "phase": 4,
-  "fr_id": "FR-05",
-  "overall_score": 98.25,
+  "fr_id": "FR-06",
+  "overall_score": 97.57,
   "quality_complete": true,
   "rounds_used": 1,
   "breakdown": {
     "linting": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "All checks passed! (ruff check 03-development/src/ --extend-ignore RUF001,RUF002,RUF003)",
+      "tool_evidence": "All checks passed!",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/linting_harness.txt"
     },
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\n    \"version\": \"1.1.409\",\n    \"time\": \"1788405544600\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 32,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 1.219\n    }\n}",
+      "tool_evidence": "{\n    \"version\": \"1.1.409\",\n    \"time\": \"1788405885378\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 32,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 1.207\n    }\n}",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/type_safety_harness.txt"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 80,
-      "tests_passed": 12,
+      "tests_passed": 19,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "pytest 03-development/tests/integration/test_fr05.py: 12 passed in 0.74s. Required tests present: test_rate_limit_burst_returns_429_with_retry_after (AC-5.1 boundary + AC-5.2 retry-after), test_rate_bucket_concurrent_no_overdraft, test_healthz_returns_200. coverage json totals: percent_covered=92.86%, spec_cov_pct=100% (4/4 required). score=min(92.86,100)=92.86→93.",
-      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-05.txt",
+      "tool_evidence": "tests/test_fr06.py ...................                                   [100%]\n======================== 19 passed, 1 warning in 0.14s =========================\ncoverage.json totals: percent_covered=90.29, covered_lines=465, num_statements=515. spec-coverage=[FR-06] 6/6 (100.0%) — delivery = ran-and-passed. score = min(coverage_pct=90.29, spec_cov_pct=100) = 90.29.",
+      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-06.txt",
       "coverage_scope": "per_fr",
-      "coverage_scope_fr": "FR-05",
+      "coverage_scope_fr": "FR-06",
       "score_source": "framework"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "PYTHONPATH=03-development/src lint-imports --config .importlinter: Analyzed 52 files, 122 dependencies. Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT. Contracts: 3 kept, 0 broken.",
+      "tool_evidence": "=============\nImport Linter\n=============\n\n---------\nContracts\n---------\n\nAnalyzed 52 files, 122 dependencies.\n------------------------------------\n\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\n\nContracts: 3 kept, 0 broken.",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/architecture_constraints_harness.txt"
     }
@@ -64,33 +64,33 @@
     "linting": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "a53a6b74d36094ab77e45ca49a2b162dd3a0c428fde9d5a8bdd9fece1b23890d",
-      "bytes": 88,
-      "head": "All checks passed! (ruff check 03-development/src/ --extend-ignore RUF001,RUF002,RUF003)"
+      "sha256": "f0d0b1081d9d3ebb26c4c93543053ecdc0a58998f22c071dc4ddb26021b57645",
+      "bytes": 18,
+      "head": "All checks passed!"
     },
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "fa7a5ecdcb6f80e2b840c43a5b01450fe6e9335ff61a363c347d235c4d2986dc",
+      "sha256": "8d3eb9decf65ce937d16f0d437d74e3018391adb85c415505587653b3822244c",
       "bytes": 250,
-      "head": "{\n    \"version\": \"1.1.409\",\n    \"time\": \"1788405544600\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 32,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 1.219\n    }\n}"
+      "head": "{\n    \"version\": \"1.1.409\",\n    \"time\": \"1788405885378\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 32,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 1.207\n    }\n}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "4a09a8285440e3576e0de10fdd69fccca144441ccc0355b109122197c78404eb",
+      "sha256": "e9b8a0cd5caa0792f7f7491c4567c34628d81cb2ee974821aa448e7e02e69024",
       "bytes": 369,
-      "head": "pytest 03-development/tests/integration/test_fr05.py: 12 passed in 0.74s. Required tests present: test_rate_limit_burst_returns_429_with_retry_after (AC-5.1 boundary + AC-5.2 retry-after), test_rate_bucket_concurrent_no_overdraft, test_healthz_returns_200. coverage json totals: percent_covered=92.86%, spec_cov_pct=100% (4/4 required). score=min(92.86,100)=92.86→93."
+      "head": "tests/test_fr06.py ...................                                   [100%]\n======================== 19 passed, 1 warning in 0.14s =========================\ncoverage.json totals: percent_covered=90.29, covered_lines=465, num_statements=515. spec-coverage=[FR-06] 6/6 (100.0%) — delivery = ran-and-passed. score = min(coverage_pct=90.29, spec_cov_pct=100) = 90.29."
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "452e5b5648ddef88ace84789459d2fe959b4e88979f4deaa4b78b489fe64af7c",
-      "bytes": 219,
-      "head": "PYTHONPATH=03-development/src lint-imports --config .importlinter: Analyzed 52 files, 122 dependencies. Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT. Contracts: 3 kept, 0 broken."
+      "sha256": "dc51fb5889002b13f94e1154c6b6db035ed7cba4d8ae5cef17113bd014ff4dd6",
+      "bytes": 262,
+      "head": "=============\nImport Linter\n=============\n\n---------\nContracts\n---------\n\nAnalyzed 52 files, 122 dependencies.\n------------------------------------\n\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\n\nContracts: 3 kept, 0 broken."
     }
   },
-  "composite_score": 98.25,
+  "composite_score": 97.57,
   "verdict": "PASS",
   "passed": true,
   "spec_undelivered": [],
