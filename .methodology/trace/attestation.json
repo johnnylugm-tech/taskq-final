@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "b5c871cbe11d6923dee09d23e7ff42cc0deeaaae",
-  "content_sha256": "5df5f97e7f1ba4a2afb0265d9cece0d175ab4f9da6561cf02a04e36ad8f25c9d",
+  "git_sha": "dfa16b4b9c841a59be08f252f16298360c8bac5a",
+  "content_sha256": "abf65f9a53057ce3ff1233ff6a3050e5d0d357cff9a4b7573ccefa803feb87f2",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -13,7 +13,7 @@
       "srs_coverage": "100.0%",
       "code_coverage": "100.0%",
       "test_coverage": "100.0%",
-      "verification_rate": "90.0%",
+      "verification_rate": "70.0%",
       "total_links": 71,
       "missing_mappings": {
         "fr_without_srs": [],
@@ -29,7 +29,7 @@
     "requirements": {
       "FR-01": {
         "fr_id": "FR-01",
-        "status": "verified",
+        "status": "in_progress",
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/taskq_api/api/tasks.py",
@@ -51,7 +51,7 @@
       },
       "FR-02": {
         "fr_id": "FR-02",
-        "status": "verified",
+        "status": "in_progress",
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/taskq_api/api/tasks.py",
@@ -124,7 +124,7 @@
       },
       "FR-06": {
         "fr_id": "FR-06",
-        "status": "verified",
+        "status": "in_progress",
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/taskq_api/repository/key_repo.py",
@@ -138,7 +138,7 @@
       },
       "FR-07": {
         "fr_id": "FR-07",
-        "status": "in_progress",
+        "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/migrations/__init__.py",
