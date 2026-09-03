@@ -1,8 +1,8 @@
 {
   "gate": 1,
   "phase": 4,
-  "fr_id": "FR-02",
-  "overall_score": 91.34,
+  "fr_id": "FR-03",
+  "overall_score": 99.5,
   "quality_complete": true,
   "rounds_used": 1,
   "breakdown": {
@@ -16,26 +16,26 @@
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\":\"1.1.409\",\"summary\":{\"filesAnalyzed\":32,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.209}}",
+      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1788404858234\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.211}}",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/type_safety_harness.txt"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 80,
-      "tests_passed": 7,
+      "tests_passed": 18,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "pytest tests/test_fr02.py: 7 passed, 0 failed, 0 skipped. Coverage on FR-02 source files (tasks.py, runner.py, task_repo.py) = 65.37%. Required tests present (test_task_run_returns_202_with_run_id x2 params, test_subprocess_no_shell_true x2 params, test_run_history_newest_first, test_task_results_row_has_v3_columns). All 6 required tests exist & pass; score capped by coverage at 65%.",
-      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-02.txt",
+      "tool_evidence": "18 passed, 1 warning in 0.17s; coverage 98% on FR-03 source files (deps.py, auth.py, key_repo.py, __main__.py); all 5 required tests exist and pass (test_missing_api_key_returns_401, test_invalid_api_key_returns_401[AC-3.4-forged-key-401], test_invalid_api_key_returns_401[AC-3.4-revoked-key-401], test_api_keys_table_has_no_plaintext, test_healthz_returns_200)",
+      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-03.txt",
       "coverage_scope": "per_fr",
-      "coverage_scope_fr": "FR-02",
+      "coverage_scope_fr": "FR-03",
       "score_source": "framework"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Import Linter: Analyzed 52 files, 122 dependencies. Contracts: 3 kept, 0 broken. Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT.",
+      "tool_evidence": "Analyzed 52 files, 122 dependencies. Layer ordering KEPT; SQLAlchemy containment KEPT; Config and errors independence KEPT. Contracts: 3 kept, 0 broken.",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/architecture_constraints_harness.txt"
     }
@@ -71,26 +71,26 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "d2593a44994e755a2ec0fa6392762e9569f58659ed3ea9e931f0c211ea0d8129",
-      "bytes": 123,
-      "head": "{\"version\":\"1.1.409\",\"summary\":{\"filesAnalyzed\":32,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.209}}"
+      "sha256": "67643d742b50b7dd4de00bc134112d348b4c589a6e18c619ad277de76dcfde40",
+      "bytes": 186,
+      "head": "{\"version\": \"1.1.409\", \"time\": \"1788404858234\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.211}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "62623a99fcac46ab300df188e5f3032fec0ff4b65339c3071db257953902a705",
-      "bytes": 386,
-      "head": "pytest tests/test_fr02.py: 7 passed, 0 failed, 0 skipped. Coverage on FR-02 source files (tasks.py, runner.py, task_repo.py) = 65.37%. Required tests present (test_task_run_returns_202_with_run_id x2 params, test_subprocess_no_shell_true x2 params, test_run_history_newest_first, test_task_results_row_has_v3_columns). All 6 required tests exist & pass; score capped by coverage at 65%."
+      "sha256": "1a670523a5baf011d255f468dc46a9c17d0b5d5e11f7e29100cd6d0b633ae901",
+      "bytes": 361,
+      "head": "18 passed, 1 warning in 0.17s; coverage 98% on FR-03 source files (deps.py, auth.py, key_repo.py, __main__.py); all 5 required tests exist and pass (test_missing_api_key_returns_401, test_invalid_api_key_returns_401[AC-3.4-forged-key-401], test_invalid_api_key_returns_401[AC-3.4-revoked-key-401], test_api_keys_table_has_no_plaintext, test_healthz_returns_200)"
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "98f014380c8e5bb1de810e44f93ebcc8aebaa0fdeaca13e10588b25b891c8bbe",
-      "bytes": 167,
-      "head": "Import Linter: Analyzed 52 files, 122 dependencies. Contracts: 3 kept, 0 broken. Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT."
+      "sha256": "3b2d748dac1159c15b94c99abe1aeb993816304b951612a09a8dd61cd821d65b",
+      "bytes": 152,
+      "head": "Analyzed 52 files, 122 dependencies. Layer ordering KEPT; SQLAlchemy containment KEPT; Config and errors independence KEPT. Contracts: 3 kept, 0 broken."
     }
   },
-  "composite_score": 91.34,
+  "composite_score": 99.5,
   "verdict": "PASS",
   "passed": true,
   "spec_undelivered": [],
