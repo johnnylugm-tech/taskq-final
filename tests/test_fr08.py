@@ -66,6 +66,7 @@ from __future__ import annotations
 import asyncio
 import os
 import time
+from typing import cast
 
 import pytest
 
@@ -513,7 +514,9 @@ def test_communicate_with_timeout_finally_excepts_are_swallowed():
 
     async def _exercise() -> None:
         proc = _StubProc()
-        comm_task = asyncio.create_task(_communicate_with_timeout(proc, limit=10.0))
+        comm_task = asyncio.create_task(
+            _communicate_with_timeout(cast(asyncio.subprocess.Process, proc), limit=10.0)
+        )
         await asyncio.sleep(0.05)
         comm_task.cancel()
         # The task must complete cleanly even though the finally block's
