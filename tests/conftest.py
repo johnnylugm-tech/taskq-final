@@ -64,7 +64,7 @@ class _FlexInt(int):
 
 
 if not isinstance(getattr(httpx.Response, "status_code", None), property) or \
-        httpx.Response.status_code.fget.__qualname__ != "_patched_status_code":
+        httpx.Response.status_code.fget.__qualname__ != "_patched_status_code":  # type: ignore[attr-defined]
     def _patched_status_code(self):  # type: ignore[no-redef]
         # httpx stores the status code as a regular instance attribute
         # (``status_code`` in ``__dict__``); reading it via ``self.__dict__``
@@ -81,7 +81,7 @@ if not isinstance(getattr(httpx.Response, "status_code", None), property) or \
 
     _patched_status_code.__qualname__ = "_patched_status_code"
     _patched_status_code_setter.__qualname__ = "_patched_status_code_setter"
-    httpx.Response.status_code = property(
+    httpx.Response.status_code = property(  # type: ignore[assignment]
         _patched_status_code, _patched_status_code_setter,
     )
 

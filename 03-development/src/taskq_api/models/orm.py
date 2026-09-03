@@ -50,7 +50,7 @@ task_tags = Table(
 )
 
 
-class Task(Base):
+class Task(Base):  # type: ignore[valid-type,misc]
     """[FR-01] A single task resource (the row behind `/v1/tasks`)."""
 
     __tablename__ = "tasks"
@@ -69,7 +69,7 @@ class Task(Base):
     )
 
 
-class TaskResult(Base):
+class TaskResult(Base):  # type: ignore[valid-type,misc]
     """[FR-02] One execution of a task (FR-07 v3 schema split)."""
 
     __tablename__ = "task_results"
@@ -85,7 +85,7 @@ class TaskResult(Base):
     task = relationship("Task", back_populates="results")
 
 
-class ApiKey(Base):
+class ApiKey(Base):  # type: ignore[valid-type,misc]
     """[FR-03] Hashed API-key row (`key_hash`, never plaintext)."""
 
     __tablename__ = "api_keys"
@@ -97,7 +97,7 @@ class ApiKey(Base):
     revoked_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
-class Tag(Base):
+class Tag(Base):  # type: ignore[valid-type,misc]
     """[FR-02] Free-form label attached to tasks via task_tags."""
 
     __tablename__ = "tags"
@@ -106,7 +106,7 @@ class Tag(Base):
     name = Column(String(64), nullable=False, unique=True)
 
 
-class RateBucket(Base):
+class RateBucket(Base):  # type: ignore[valid-type,misc]
     """[FR-05] Per-key token-bucket state (row-locked refill).
 
     ``key_id`` is the principal's SHA-256 hash prefix (the value

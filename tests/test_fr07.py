@@ -1923,11 +1923,11 @@ def test_fr07_property_v3_roundtrip_preserves_columns(tmp_path):
             ctx = MigrationContext.configure(conn)
             op = Operations(ctx)
             original_v1_op = v1.op
-            v1.op = op
+            v1.op = op  # type: ignore[assignment]
             try:
                 v1.upgrade()
             finally:
-                v1.op = original_v1_op
+                v1.op = original_v1_op  # type: ignore[assignment]
 
         # Seed ONE parent row with a single-run payload (the v1
         # shape that produces exactly one ``task_results`` row on
@@ -1962,18 +1962,18 @@ def test_fr07_property_v3_roundtrip_preserves_columns(tmp_path):
             ctx = MigrationContext.configure(conn)
             op = Operations(ctx)
             for mod, fn in ((v2, v2.upgrade), (v3, v3.upgrade)):
-                original_op = mod.op
-                mod.op = op
+                original_op = mod.op  # type: ignore[attr-defined]
+                mod.op = op  # type: ignore[attr-defined]
                 has_offline = hasattr(mod, "is_offline_mode")
                 original_offline = getattr(mod, "is_offline_mode", None)
                 if has_offline:
-                    mod.is_offline_mode = lambda: False
+                    mod.is_offline_mode = lambda: False  # type: ignore[attr-defined]
                 try:
                     fn()
                 finally:
-                    mod.op = original_op
+                    mod.op = original_op  # type: ignore[attr-defined]
                     if has_offline:
-                        mod.is_offline_mode = original_offline
+                        mod.is_offline_mode = original_offline  # type: ignore[attr-defined]
 
         # Snapshot the post-seed ``task_results`` row (just after
         # the initial v3.upgrade() — the baseline).
@@ -2002,13 +2002,13 @@ def test_fr07_property_v3_roundtrip_preserves_columns(tmp_path):
                 op = Operations(ctx)
                 original_op = mod.op
                 original_offline = mod.is_offline_mode
-                mod.op = op
-                mod.is_offline_mode = lambda: False
+                mod.op = op  # type: ignore[attr-defined]
+                mod.is_offline_mode = lambda: False  # type: ignore[attr-defined]
                 try:
                     fn()
                 finally:
-                    mod.op = original_op
-                    mod.is_offline_mode = original_offline
+                    mod.op = original_op  # type: ignore[attr-defined]
+                    mod.is_offline_mode = original_offline  # type: ignore[attr-defined]
 
         # The round-trip must restore the baseline row exactly.
         with engine.connect() as conn:

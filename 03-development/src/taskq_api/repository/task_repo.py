@@ -491,7 +491,7 @@ class TaskRepository:
             next_cursor = _cursor_encode(last_ts, last_id)
         return page_items, next_cursor
 
-    def list_results(self, task_id: str) -> list[dict]:
+    def list_results(self, task_id: str) -> list[dict]:  # type: ignore[valid-type]
         """[FR-02 AC-2.5, FR-06] Newest-first run history for one task via SQL."""
         with _session.transaction() as db_session:
             rows = db_session.execute(
