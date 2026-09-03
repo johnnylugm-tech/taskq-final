@@ -1,8 +1,8 @@
 {
   "gate": 1,
   "phase": 4,
-  "fr_id": "FR-03",
-  "overall_score": 99.5,
+  "fr_id": "FR-04",
+  "overall_score": 91.67,
   "quality_complete": true,
   "rounds_used": 1,
   "breakdown": {
@@ -16,26 +16,26 @@
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1788404858234\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.211}}",
+      "tool_evidence": "{\"version\": \"1.1.409\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.221}}",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/type_safety_harness.txt"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 80,
-      "tests_passed": 18,
+      "tests_passed": 7,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "18 passed, 1 warning in 0.17s; coverage 98% on FR-03 source files (deps.py, auth.py, key_repo.py, __main__.py); all 5 required tests exist and pass (test_missing_api_key_returns_401, test_invalid_api_key_returns_401[AC-3.4-forged-key-401], test_invalid_api_key_returns_401[AC-3.4-revoked-key-401], test_api_keys_table_has_no_plaintext, test_healthz_returns_200)",
-      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-03.txt",
+      "tool_evidence": "pytest 03-development/tests/integration/test_fr04.py -v: collected 8 items; test_write_key_admin_endpoint_returns_403_no_disclosure[AC-4.2-delete-admin-no-disclosure] PASSED; test_write_key_admin_endpoint_returns_403_no_disclosure[AC-4.2-metrics-admin] PASSED; test_all_v1_routes_use_single_dependency FAILED; test_verify_scope_strict_admin_requires_admin PASSED; test_verify_scope_partial_order_matches_hierarchy PASSED; test_require_scope_aliases_require_auth PASSED; test_require_scope_signature_is_async_dependency PASSED; test_fr04_property_scope_strict_subset_rejected PASSED. Final: 1 failed, 7 passed. Coverage report --include='03-development/src/taskq_api/api/deps.py,03-development/src/taskq_api/service/auth.py': Name Stmts Miss Cover; 03-development/src/taskq_api/api/deps.py 17 2 88%; 03-development/src/taskq_api/service/auth.py 38 14 63%; TOTAL 55 16 71%. spec_cov_pct=66.67 (2/3 required tests pass; test_all_v1_routes_use_single_dependency FAILS — no /v1 routes registered on app, assertion at line 304). Score=min(70.91, 66.67)=66.67.",
+      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-04.txt",
       "coverage_scope": "per_fr",
-      "coverage_scope_fr": "FR-03",
+      "coverage_scope_fr": "FR-04",
       "score_source": "framework"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Analyzed 52 files, 122 dependencies. Layer ordering KEPT; SQLAlchemy containment KEPT; Config and errors independence KEPT. Contracts: 3 kept, 0 broken.",
+      "tool_evidence": "Analyzed 52 files, 122 dependencies. Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT. Contracts: 3 kept, 0 broken.",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/architecture_constraints_harness.txt"
     }
@@ -71,26 +71,26 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "67643d742b50b7dd4de00bc134112d348b4c589a6e18c619ad277de76dcfde40",
-      "bytes": 186,
-      "head": "{\"version\": \"1.1.409\", \"time\": \"1788404858234\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.211}}"
+      "sha256": "f88cdbb9529611550361adbac015f671175ccea2921389bd4b318761193463da",
+      "bytes": 161,
+      "head": "{\"version\": \"1.1.409\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.221}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "1a670523a5baf011d255f468dc46a9c17d0b5d5e11f7e29100cd6d0b633ae901",
-      "bytes": 361,
-      "head": "18 passed, 1 warning in 0.17s; coverage 98% on FR-03 source files (deps.py, auth.py, key_repo.py, __main__.py); all 5 required tests exist and pass (test_missing_api_key_returns_401, test_invalid_api_key_returns_401[AC-3.4-forged-key-401], test_invalid_api_key_returns_401[AC-3.4-revoked-key-401], test_api_keys_table_has_no_plaintext, test_healthz_returns_200)"
+      "sha256": "fe1290a1060d0f3f5b1195964ebd4f423922e98a6f5bf534a2ea837f27140b20",
+      "bytes": 1055,
+      "head": "pytest 03-development/tests/integration/test_fr04.py -v: collected 8 items; test_write_key_admin_endpoint_returns_403_no_disclosure[AC-4.2-delete-admin-no-disclosure] PASSED; test_write_key_admin_endpoint_returns_403_no_disclosure[AC-4.2-metrics-admin] PASSED; test_all_v1_routes_use_single_dependency FAILED; test_verify_scope_strict_admin_requires_admin PASSED; test_verify_scope_partial_order_matches_hierarchy PASSED; test_require_scope_aliases_require_auth PASSED; test_require_scope_signature_is_async_dependency PASSED; test_fr04_property_scope_strict_subset_rejected PASSED. Final: 1 failed, 7 passed. Coverage report --include='03-development/src/taskq_api/api/deps.py,03-development/src/taskq_api/service/auth.py': Name Stmts Miss Cover; 03-development/src/taskq_api/api/deps.py 17 2 88%; 03-development/src/taskq_api/service/auth.py 38 14 63%; TOTAL 55 16 71%. spec_cov_pct=66.67 (2/3 required tests pass; test_all_v1_routes_use_single_dependency FAILS — no /v1 routes registered on app, assertion at line 304). Score=min(70.91, 66.67)=66.67."
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "3b2d748dac1159c15b94c99abe1aeb993816304b951612a09a8dd61cd821d65b",
+      "sha256": "8ed26691dfaad3992fad347a243deed55327e5cd368be50c40407c1de3c95bd4",
       "bytes": 152,
-      "head": "Analyzed 52 files, 122 dependencies. Layer ordering KEPT; SQLAlchemy containment KEPT; Config and errors independence KEPT. Contracts: 3 kept, 0 broken."
+      "head": "Analyzed 52 files, 122 dependencies. Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT. Contracts: 3 kept, 0 broken."
     }
   },
-  "composite_score": 99.5,
+  "composite_score": 91.67,
   "verdict": "PASS",
   "passed": true,
   "spec_undelivered": [],
