@@ -1,8 +1,8 @@
 {
   "gate": 1,
   "phase": 7,
-  "fr_id": "FR-05",
-  "overall_score": 96.5,
+  "fr_id": "FR-06",
+  "overall_score": 97.75,
   "quality_complete": true,
   "rounds_used": 1,
   "breakdown": {
@@ -16,26 +16,26 @@
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"summary\":{\"filesAnalyzed\":32,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.125}}",
+      "tool_evidence": "{\"version\":\"1.1.409\",\"time\":\"1788470796591\",\"generalDiagnostics\":[],\"summary\":{\"filesAnalyzed\":32,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.112}}",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/type_safety_harness.txt"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 80,
-      "tests_passed": 12,
+      "tests_passed": 19,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "collected 12 items 03-development/tests/integration/test_fr05.py ............ [100%] 12 passed, 2 warnings in 0.90s; totals: percent_covered=92.93; spec_cov_pct=100 (3 unique required test functions exist and pass: test_rate_limit_burst_returns_429_with_retry_after, test_rate_bucket_concurrent_no_overdraft, test_healthz_returns_200); score=min(93,100)=93",
-      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-05.txt",
+      "tool_evidence": "...................                                                      [100%]\nName                                                   Stmts   Miss  Cover   Missing\n------------------------------------------------------------------------------------\n03-development/src/taskq_api/repository/__init__.py        0      0   100%\n03-development/src/taskq_api/repository/key_repo.py       63      0   100%\n03-development/src/taskq_api/repository/rate_repo.py      56      0   100%\n03-development/src/taskq_api/repository/session.py        89     35    61%   176-185, 198-232, 243-246\n03-development/src/taskq_api/repository/task_repo.py     201      0   100%\n------------------------------------------------------------------------------------\nTOTAL                                                    409     35    91%\n19 passed, 1 warning in 0.21s\n\ncoverage_pct=91, spec_cov_pct=100 (6/6 required tests exist and pass), score = min(91,100) = 91",
+      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-06.txt",
       "coverage_scope": "per_fr",
-      "coverage_scope_fr": "FR-05",
+      "coverage_scope_fr": "FR-06",
       "score_source": "framework"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Analyzed 52 files, 122 dependencies. Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT. Contracts: 3 kept, 0 broken.",
+      "tool_evidence": "Contracts: 3 kept, 0 broken. Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT.",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/architecture_constraints_harness.txt"
     }
@@ -78,26 +78,26 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "c7e233509992361e401f978911d06121f3b70fd93ab304a208e698d1ed346e24",
-      "bytes": 103,
-      "head": "{\"summary\":{\"filesAnalyzed\":32,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.125}}"
+      "sha256": "e8efdd83c458d4597eb5190ca28557ca7f1b846b39ee8db73ce153cd360bda98",
+      "bytes": 170,
+      "head": "{\"version\":\"1.1.409\",\"time\":\"1788470796591\",\"generalDiagnostics\":[],\"summary\":{\"filesAnalyzed\":32,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.112}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "4482a7ef3a3d482c9393b2c8c98c8880e843560bacb19fe728180c5b38c9bfea",
-      "bytes": 356,
-      "head": "collected 12 items 03-development/tests/integration/test_fr05.py ............ [100%] 12 passed, 2 warnings in 0.90s; totals: percent_covered=92.93; spec_cov_pct=100 (3 unique required test functions exist and pass: test_rate_limit_burst_returns_429_with_retry_after, test_rate_bucket_concurrent_no_overdraft, test_healthz_returns_200); score=min(93,100)=93"
+      "sha256": "e3cbf67362364a8b890df87e474e0a2d0b912d69584dfd9dd3af9756ffccce2e",
+      "bytes": 939,
+      "head": "...................                                                      [100%]\nName                                                   Stmts   Miss  Cover   Missing\n------------------------------------------------------------------------------------\n03-development/src/taskq_api/repository/__init__.py        0      0   100%\n03-development/src/taskq_api/repository/key_repo.py       63      0   100%\n03-development/src/taskq_api/repository/rate_repo.py      56      0   100%\n03-development/src/taskq_api/repository/session.py        89     35    61%   176-185, 198-232, 243-246\n03-development/src/taskq_api/repository/task_repo.py     201      0   100%\n------------------------------------------------------------------------------------\nTOTAL                                                    409     35    91%\n19 passed, 1 warning in 0.21s\n\ncoverage_pct=91, spec_cov_pct=100 (6/6 required tests exist and pass), score = min(91,100) = 91"
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "8ed26691dfaad3992fad347a243deed55327e5cd368be50c40407c1de3c95bd4",
-      "bytes": 152,
-      "head": "Analyzed 52 files, 122 dependencies. Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT. Contracts: 3 kept, 0 broken."
+      "sha256": "0e3c1496ca70c3e719408f2252f4c7e4b1ca572a4d06cb16ca38e5f980bec1b9",
+      "bytes": 115,
+      "head": "Contracts: 3 kept, 0 broken. Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT."
     }
   },
-  "composite_score": 96.5,
+  "composite_score": 97.75,
   "verdict": "PASS",
   "passed": true,
   "spec_undelivered": [],
