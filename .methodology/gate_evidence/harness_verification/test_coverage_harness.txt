@@ -1,6 +1,6 @@
 # Harness-executed: pytest-cov
 # returncode: 0
-# agent_score: 100.0 | threshold: 80.0
+# agent_score: 95.9 | threshold: 80.0
 
 ........................................................................ [ 26%]
 ........................................................................ [ 53%]
@@ -55,7 +55,7 @@ Name                                                         Stmts   Miss  Cover
 ------------------------------------------------------------------------------------------
 TOTAL                                                         1203      0   100%
 267 passed, 2 warnings in 18.46s
-/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/_pytest/unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x10773a700>
+/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/_pytest/unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x10b8c2700>
 
 Traceback (most recent call last):
   File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/asyncio/base_subprocess.py", line 126, in __del__
