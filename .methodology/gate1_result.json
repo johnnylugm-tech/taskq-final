@@ -1,41 +1,41 @@
 {
   "gate": 1,
   "phase": 5,
-  "fr_id": "FR-10",
-  "overall_score": 97.5,
+  "fr_id": "FR-01",
+  "overall_score": 100.0,
   "quality_complete": true,
   "rounds_used": 1,
   "breakdown": {
     "linting": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "ruff check 03-development/src/ --extend-ignore RUF001,RUF002,RUF003: All checks passed! exit=0",
+      "tool_evidence": "All checks passed!",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/linting_harness.txt"
     },
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\n    \"version\": \"1.1.409\",\n    \"time\": \"1788424332004\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 32,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 1.131\n    }\n}",
+      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1788426195654\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.143}}",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/type_safety_harness.txt"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 80,
-      "tests_passed": 12,
+      "tests_passed": 31,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "coverage run pytest 03-development/tests/integration/test_fr10.py: 12 passed, 2 warnings in 0.40s. Coverage on taskq_api/errors.py=100%, taskq_api/app.py=84%, total 90% (98/109 lines). All 5 required tests present: test_422_404_429_all_problem_json (parametrized x3), test_500_detail_has_no_stack_trace, test_correlation_id_in_header_and_log. spec_cov=5/5=100%. score=min(90,100)=90.",
-      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-10.txt",
+      "tool_evidence": "31 passed, 2 warnings in 0.60s. Coverage for FR-01 modules: api/tasks.py 100%, service/tasks.py 100%, service/common.py 100%, repository/task_repo.py 100%, models/schemas.py 100%, models/orm.py 100%",
+      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-01.txt",
       "coverage_scope": "per_fr",
-      "coverage_scope_fr": "FR-10",
+      "coverage_scope_fr": "FR-01",
       "score_source": "framework"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "lint-imports: Analyzed 52 files, 122 dependencies. Layer ordering KEPT; SQLAlchemy containment KEPT; Config and errors independence KEPT. Contracts: 3 kept, 0 broken. exit=0",
+      "tool_evidence": "Analyzed 52 files, 122 dependencies. Layer ordering KEPT. SQLAlchemy containment KEPT. Config and errors independence KEPT. Contracts: 3 kept, 0 broken.",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/architecture_constraints_harness.txt"
     }
@@ -71,33 +71,33 @@
     "linting": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "95bf454fdc922d6d5ffb4d1b3a19fc8b8ecdb70dd0d805790dea0304a08681bb",
-      "bytes": 94,
-      "head": "ruff check 03-development/src/ --extend-ignore RUF001,RUF002,RUF003: All checks passed! exit=0"
+      "sha256": "f0d0b1081d9d3ebb26c4c93543053ecdc0a58998f22c071dc4ddb26021b57645",
+      "bytes": 18,
+      "head": "All checks passed!"
     },
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "24bcacdd59fc4ff9fb6ae1f1d63c5786186227376af2a4fe1db83eb8dc3c5572",
-      "bytes": 250,
-      "head": "{\n    \"version\": \"1.1.409\",\n    \"time\": \"1788424332004\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 32,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 1.131\n    }\n}"
+      "sha256": "16b678213d01bb8344282a19e55e4d0bdc1e194ae0bde6ce68fbbc2dd32804e7",
+      "bytes": 186,
+      "head": "{\"version\": \"1.1.409\", \"time\": \"1788426195654\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.143}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "24a72cc59d346081a9371308c72c91e3e7a18c123ee8948cebdc8cd49ee51730",
-      "bytes": 383,
-      "head": "coverage run pytest 03-development/tests/integration/test_fr10.py: 12 passed, 2 warnings in 0.40s. Coverage on taskq_api/errors.py=100%, taskq_api/app.py=84%, total 90% (98/109 lines). All 5 required tests present: test_422_404_429_all_problem_json (parametrized x3), test_500_detail_has_no_stack_trace, test_correlation_id_in_header_and_log. spec_cov=5/5=100%. score=min(90,100)=90."
+      "sha256": "8b0eee36e7696c7e71730f6b62dbe4b1abec405e078f118b7c7fce8a69da7b79",
+      "bytes": 198,
+      "head": "31 passed, 2 warnings in 0.60s. Coverage for FR-01 modules: api/tasks.py 100%, service/tasks.py 100%, service/common.py 100%, repository/task_repo.py 100%, models/schemas.py 100%, models/orm.py 100%"
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "965de7c8b16596f372630a86ea619fc919f2780b014a64b72b01b566dd452f35",
-      "bytes": 173,
-      "head": "lint-imports: Analyzed 52 files, 122 dependencies. Layer ordering KEPT; SQLAlchemy containment KEPT; Config and errors independence KEPT. Contracts: 3 kept, 0 broken. exit=0"
+      "sha256": "eb99e981f8caa3a09ef7706a02495778b955478a0c8e2d2e3e8d1b6079aecd0f",
+      "bytes": 152,
+      "head": "Analyzed 52 files, 122 dependencies. Layer ordering KEPT. SQLAlchemy containment KEPT. Config and errors independence KEPT. Contracts: 3 kept, 0 broken."
     }
   },
-  "composite_score": 97.5,
+  "composite_score": 100.0,
   "verdict": "PASS",
   "passed": true,
   "spec_undelivered": [],

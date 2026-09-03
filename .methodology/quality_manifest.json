@@ -72,75 +72,74 @@
   "gate_results": {
     "gate1": {
       "FR-01": {
-        "coverage_fallback": "inline-fallback@8abe4f9",
+        "score": 100.0,
+        "quality_complete": true,
+        "rounds_used": 2,
+        "open_critical": 0,
+        "open_high": 0
+      },
+      "FR-02": {
         "open_critical": 0,
         "open_high": 0,
         "quality_complete": true,
-        "rounds_used": 1,
-        "score": 100.0
-      },
-      "FR-02": {
-        "score": 95.37,
-        "quality_complete": true,
         "rounds_used": 2,
-        "open_critical": 0,
-        "open_high": 0
+        "score": 95.37
       },
       "FR-03": {
-        "score": 99.5,
+        "open_critical": 0,
+        "open_high": 0,
         "quality_complete": true,
         "rounds_used": 2,
-        "open_critical": 0,
-        "open_high": 0
+        "score": 99.5
       },
       "FR-04": {
-        "score": 92.86,
+        "open_critical": 0,
+        "open_high": 0,
         "quality_complete": true,
         "rounds_used": 2,
-        "open_critical": 0,
-        "open_high": 0
+        "score": 92.86
       },
       "FR-05": {
-        "score": 98.22,
+        "open_critical": 0,
+        "open_high": 0,
         "quality_complete": true,
         "rounds_used": 2,
-        "open_critical": 0,
-        "open_high": 0
+        "score": 98.22
       },
       "FR-06": {
-        "score": 95.85,
+        "open_critical": 0,
+        "open_high": 0,
         "quality_complete": true,
         "rounds_used": 2,
-        "open_critical": 0,
-        "open_high": 0
+        "score": 95.85
       },
       "FR-07": {
-        "score": 99.75,
+        "open_critical": 0,
+        "open_high": 0,
         "quality_complete": true,
         "rounds_used": 2,
-        "open_critical": 0,
-        "open_high": 0
+        "score": 99.75
       },
       "FR-08": {
-        "score": 92.0,
+        "open_critical": 0,
+        "open_high": 0,
         "quality_complete": true,
         "rounds_used": 2,
-        "open_critical": 0,
-        "open_high": 0
+        "score": 92.0
       },
       "FR-09": {
-        "score": 94.47,
+        "open_critical": 0,
+        "open_high": 0,
         "quality_complete": true,
         "rounds_used": 2,
-        "open_critical": 0,
-        "open_high": 0
+        "score": 94.47
       },
       "FR-10": {
-        "score": 97.5,
+        "open_critical": 0,
+        "open_high": 0,
         "quality_complete": true,
         "rounds_used": 2,
-        "open_critical": 0,
-        "open_high": 0
+        "score": 97.5
       }
     },
     "gate2": {
