@@ -1,41 +1,41 @@
 {
   "gate": 1,
   "phase": 4,
-  "fr_id": "FR-01",
-  "overall_score": 98.25,
+  "fr_id": "FR-02",
+  "overall_score": 91.34,
   "quality_complete": true,
   "rounds_used": 1,
   "breakdown": {
     "linting": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "All checks passed!\n",
+      "tool_evidence": "All checks passed!",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/linting_harness.txt"
     },
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0}}\n",
+      "tool_evidence": "{\"version\":\"1.1.409\",\"summary\":{\"filesAnalyzed\":32,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.209}}",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/type_safety_harness.txt"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 80,
-      "tests_passed": 24,
+      "tests_passed": 7,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "collected 24 items\n03-development/tests/integration/test_fr01.py ........................   [100%]\n======================== 24 passed, 1 warning in 0.34s =========================\nFR-01 source coverage 93.37% (366/392 lines) across api/tasks.py, service/tasks.py, service/common.py, repository/task_repo.py, models/schemas.py, models/orm.py.\n",
-      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-01.txt",
+      "tool_evidence": "pytest tests/test_fr02.py: 7 passed, 0 failed, 0 skipped. Coverage on FR-02 source files (tasks.py, runner.py, task_repo.py) = 65.37%. Required tests present (test_task_run_returns_202_with_run_id x2 params, test_subprocess_no_shell_true x2 params, test_run_history_newest_first, test_task_results_row_has_v3_columns). All 6 required tests exist & pass; score capped by coverage at 65%.",
+      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-02.txt",
       "coverage_scope": "per_fr",
-      "coverage_scope_fr": "FR-01",
+      "coverage_scope_fr": "FR-02",
       "score_source": "framework"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Analyzed 52 files, 122 dependencies.\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\nContracts: 3 kept, 0 broken.\n",
+      "tool_evidence": "Import Linter: Analyzed 52 files, 122 dependencies. Contracts: 3 kept, 0 broken. Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT.",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/architecture_constraints_harness.txt"
     }
@@ -71,26 +71,26 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "13ac6d571098785709732ce81f875322d473dad64f262dd18f935ee6194d1673",
-      "bytes": 115,
-      "head": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0}}"
+      "sha256": "d2593a44994e755a2ec0fa6392762e9569f58659ed3ea9e931f0c211ea0d8129",
+      "bytes": 123,
+      "head": "{\"version\":\"1.1.409\",\"summary\":{\"filesAnalyzed\":32,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.209}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "db57535b1ce6d45490564b90388e94e0a35bd463e71280d87000fd50c9ec8512",
-      "bytes": 341,
-      "head": "collected 24 items\n03-development/tests/integration/test_fr01.py ........................   [100%]\n======================== 24 passed, 1 warning in 0.34s =========================\nFR-01 source coverage 93.37% (366/392 lines) across api/tasks.py, service/tasks.py, service/common.py, repository/task_repo.py, models/schemas.py, models/orm.py."
+      "sha256": "62623a99fcac46ab300df188e5f3032fec0ff4b65339c3071db257953902a705",
+      "bytes": 386,
+      "head": "pytest tests/test_fr02.py: 7 passed, 0 failed, 0 skipped. Coverage on FR-02 source files (tasks.py, runner.py, task_repo.py) = 65.37%. Required tests present (test_task_run_returns_202_with_run_id x2 params, test_subprocess_no_shell_true x2 params, test_run_history_newest_first, test_task_results_row_has_v3_columns). All 6 required tests exist & pass; score capped by coverage at 65%."
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "c683995f998cdfb13cfa744bba1d90de86db49015cb498c26bfe929b575bfecd",
-      "bytes": 149,
-      "head": "Analyzed 52 files, 122 dependencies.\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\nContracts: 3 kept, 0 broken."
+      "sha256": "98f014380c8e5bb1de810e44f93ebcc8aebaa0fdeaca13e10588b25b891c8bbe",
+      "bytes": 167,
+      "head": "Import Linter: Analyzed 52 files, 122 dependencies. Contracts: 3 kept, 0 broken. Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT."
     }
   },
-  "composite_score": 98.25,
+  "composite_score": 91.34,
   "verdict": "PASS",
   "passed": true,
   "spec_undelivered": [],
