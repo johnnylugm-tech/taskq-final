@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "1d05a4dd6e8dd0ed38d9ab698383f71abe6e5fc1",
-  "content_sha256": "e57693b213e65a32e90a4dffb722540ce271931f0517a089bdfcc0eefade753d",
+  "git_sha": "956ee9d5f29309fd673d73c80be91d451e4fe5a5",
+  "content_sha256": "8af38032d3e418eb062b76944924e00a2e2117bee8080867b92313ac051800b3",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -13,7 +13,7 @@
       "srs_coverage": "100.0%",
       "code_coverage": "100.0%",
       "test_coverage": "100.0%",
-      "verification_rate": "40.0%",
+      "verification_rate": "60.0%",
       "total_links": 73,
       "missing_mappings": {
         "fr_without_srs": [],
@@ -90,7 +90,7 @@
       },
       "FR-04": {
         "fr_id": "FR-04",
-        "status": "in_progress",
+        "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/taskq_api/api/deps.py",
@@ -172,7 +172,7 @@
       },
       "FR-09": {
         "fr_id": "FR-09",
-        "status": "in_progress",
+        "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
           "03-development/src/taskq_api/api/health.py",
