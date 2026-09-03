@@ -164,7 +164,17 @@
       "rounds_used": 2,
       "score": 95.31
     },
-    "gate4": null
+    "gate4": {
+      "score": 97.61,
+      "quality_complete": true,
+      "rounds_used": 3,
+      "open_critical": 0,
+      "open_high": 0,
+      "phase": 6,
+      "gate": 4,
+      "fr_scope": "all",
+      "overall_score": 97.61
+    }
   },
   "gate_score_overrides": {
     "architecture_constraints": 100.0,

@@ -118,3 +118,46 @@ def _reset_api_keys_table():
         # The KeyRepository's own setup will create tables on demand.
         pass
     yield
+
+
+# ---------------------------------------------------------------------------
+# ASGI test fixtures — mirror of the definitions at
+# ``03-development/tests/conftest.py``. The project-root test files
+# (``tests/test_fr01.py`` etc.) run under this conftest when ``make
+# verify-system`` invokes ``pytest --ignore=harness/tests`` from the
+# project root; ``setup.cfg`` keeps ``03-development/tests`` out of
+# ``norecursedirs`` to prevent pytest from collecting the integration
+# symlinks twice, so the fixtures the root tests need have to live here.
+# The integration mirrors under ``03-development/tests/integration/``
+# still resolve these fixtures from the deeper conftest (pytest's
+# module-fixture-wins-over-conftest rule preserves both copies' behaviour).
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def asgi_client():
+    """In-process ASGI client — keeps subprocess coverage at 0% while still
+    exercising the real FastAPI route stack.
+
+    NFR-10 mandates ``httpx.AsyncClient(ASGITransport(...))`` — never direct
+    handler calls — so every FR-01 test that hits an endpoint goes through
+    this fixture.
+    """
+    from httpx import ASGITransport, AsyncClient
+
+    from taskq_api.app import app
+
+    transport = ASGITransport(app=app)
+    return AsyncClient(transport=transport, base_url="http://testserver")
+
+
+@pytest.fixture
+def auth_write():
+    """A request header carrying a write-scoped API key."""
+    return {"X-API-Key": "test-write-key"}
+
+
+@pytest.fixture
+def auth_read():
+    """A request header carrying a read-scoped API key."""
+    return {"X-API-Key": "test-read-key"}

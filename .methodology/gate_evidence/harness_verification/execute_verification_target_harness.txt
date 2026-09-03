@@ -10,24 +10,24 @@ benchmark: 4.0.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=
 rootdir: /Users/johnny/projects/taskq-final
 configfile: setup.cfg
 plugins: cov-7.1.0, anyio-4.14.2, benchmark-4.0.0, hypothesis-6.167.1
-collected 233 items
+collected 242 items
 
 tests/bench/test_bench_task_repo.py ..                                   [  0%]
 tests/test_bug_hunt_t07_subprocess_cancel.py .                           [  1%]
 tests/test_bug_hunt_t10_pydantic_input_echo.py .                         [  1%]
 tests/test_bug_hunt_t13_audit_log_principal.py .                         [  2%]
 tests/test_bug_hunt_t15_migration_finished_at.py .                       [  2%]
-tests/test_fr01.py ........................                              [ 12%]
-tests/test_fr02.py .......                                               [ 15%]
-tests/test_fr03.py ..................                                    [ 23%]
-tests/test_fr04.py ........                                              [ 27%]
-tests/test_fr05.py ............                                          [ 32%]
-tests/test_fr06.py ...................                                   [ 40%]
+tests/test_fr01.py ...............................                       [ 15%]
+tests/test_fr02.py .......                                               [ 18%]
+tests/test_fr03.py ..................                                    [ 25%]
+tests/test_fr04.py ........                                              [ 28%]
+tests/test_fr05.py ............                                          [ 33%]
+tests/test_fr06.py ...................                                   [ 41%]
 tests/test_fr07.py .......................................               [ 57%]
-tests/test_fr08.py .....                                                 [ 59%]
-tests/test_fr09.py ...........                                           [ 63%]
-tests/test_fr10.py ............                                          [ 69%]
-tests/test_nfr.py ................                                       [ 75%]
+tests/test_fr08.py .......                                               [ 60%]
+tests/test_fr09.py ...........                                           [ 65%]
+tests/test_fr10.py ............                                          [ 70%]
+tests/test_nfr.py ................                                       [ 76%]
 tests/test_nfr_supplemental.py ........................                  [ 86%]
 tests/test_p3_exit_coverage.py ................................          [100%]
 
@@ -40,60 +40,18 @@ tests/test_p3_exit_coverage.py ................................          [100%]
   /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
     import multipart
 
-tests/test_fr02.py::test_subprocess_no_shell_true[AC-2.2-shell-true-zero]
-  /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/_pytest/threadexception.py:58: PytestUnhandledThreadExceptionWarning: Exception in thread taskq-run-e6a70c32
+tests/test_nfr_supplemental.py::test_openapi_summary_description_present
+  /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/_pytest/unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x10ae10ea0>
   
   Traceback (most recent call last):
-    File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/threading.py", line 1045, in _bootstrap_inner
-      self.run()
-    File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/threading.py", line 982, in run
-      self._target(*self._args, **self._kwargs)
-    File "/Users/johnny/projects/taskq-final/03-development/src/taskq_api/service/runner.py", line 493, in _drive_run
-      repo.update_status(task_id, outcome.state)
-    File "/Users/johnny/projects/taskq-final/03-development/src/taskq_api/repository/task_repo.py", line 368, in update_status
-      with _session.transaction() as db_session:
-    File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/contextlib.py", line 144, in __exit__
-      next(self.gen)
-    File "/Users/johnny/projects/taskq-final/03-development/src/taskq_api/repository/session.py", line 141, in transaction
-      session.commit()
-    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2017, in commit
-      trans.commit(_to_root=True)
-    File "<string>", line 2, in commit
-    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py", line 139, in _go
-      ret_value = fn(self, *arg, **kw)
-                  ^^^^^^^^^^^^^^^^^^^^
-    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1302, in commit
-      self._prepare_impl()
-    File "<string>", line 2, in _prepare_impl
-    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py", line 139, in _go
-      ret_value = fn(self, *arg, **kw)
-                  ^^^^^^^^^^^^^^^^^^^^
-    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1277, in _prepare_impl
-      self.session.flush()
-    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 4341, in flush
-      self._flush(objects)
-    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 4476, in _flush
-      with util.safe_reraise():
-    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
-      raise exc_value.with_traceback(exc_tb)
-    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 4437, in _flush
-      flush_context.execute()
-    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/unitofwork.py", line 466, in execute
-      rec.execute(self)
-    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/unitofwork.py", line 642, in execute
-      util.preloaded.orm_persistence.save_obj(
-    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/persistence.py", line 85, in save_obj
-      _emit_update_statements(
-    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/persistence.py", line 948, in _emit_update_statements
-      raise orm_exc.StaleDataError(
-  sqlalchemy.orm.exc.StaleDataError: UPDATE statement on table 'tasks' expected to update 1 row(s); 0 were matched.
+    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/pydantic/type_adapter.py", line 210, in __init__
+      core_schema = _getattr_no_parents(type, '__pydantic_core_schema__')
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/pydantic/type_adapter.py", line 98, in _getattr_no_parents
+      raise AttributeError(attribute)
+  AttributeError: __pydantic_core_schema__
   
-  Enable tracemalloc to get traceback where the object was allocated.
-  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
-    warnings.warn(pytest.PytestUnhandledThreadExceptionWarning(msg))
-
-tests/test_p3_exit_coverage.py::test_current_alembic_revision_returns_row_value_when_present
-  /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/_pytest/unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x109569300>
+  During handling of the above exception, another exception occurred:
   
   Traceback (most recent call last):
     File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/asyncio/base_subprocess.py", line 126, in __del__
@@ -116,17 +74,17 @@ tests/test_p3_exit_coverage.py::test_current_alembic_revision_returns_row_value_
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
 
----------------------------------------------------------------------------------------------- benchmark: 2 tests ---------------------------------------------------------------------------------------------
-Name (time in us)                     Min                    Max                Mean              StdDev              Median                IQR            Outliers  OPS (Kops/s)            Rounds  Iterations
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-test_bench_task_repo_get         215.6250 (1.0)      16,408.2500 (1.17)     280.1204 (1.0)      937.5812 (1.23)     220.8750 (1.0)       4.7090 (1.0)          1;36        3.5699 (1.0)         298           1
-test_bench_task_repo_list_50     918.6670 (4.26)     13,983.0830 (1.0)      986.5977 (3.52)     762.1853 (1.0)      931.7915 (4.22)     18.3955 (3.91)         2;48        1.0136 (0.28)        572           1
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------------- benchmark: 2 tests ----------------------------------------------------------------------------------------------
+Name (time in us)                     Min                    Max                  Mean                StdDev              Median                IQR            Outliers         OPS            Rounds  Iterations
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+test_bench_task_repo_get         215.8330 (1.0)         633.5420 (1.0)        226.3292 (1.0)         24.6407 (1.0)      220.5830 (1.0)       3.8952 (1.0)         34;82  4,418.3437 (1.0)         539           1
+test_bench_task_repo_list_50     914.0420 (4.23)     16,987.3340 (26.81)    1,024.6142 (4.53)     1,082.3660 (43.93)    934.2910 (4.24)     21.0837 (5.41)         3;29    975.9771 (0.22)        521           1
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 Legend:
   Outliers: 1 Standard Deviation from Mean; 1.5 IQR (InterQuartile Range) from 1st Quartile and 3rd Quartile.
   OPS: Operations Per Second, computed as 1 / Mean
-======================= 233 passed, 4 warnings in 25.04s =======================
+======================= 242 passed, 3 warnings in 25.28s =======================
 ==> alembic upgrade head
 PYTHONPATH=03-development/src:$PYTHONPATH /Users/johnny/projects/taskq-final/.venv/bin/python -m alembic upgrade head
 ==> service smoke (/healthz, /readyz)

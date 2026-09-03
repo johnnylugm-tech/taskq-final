@@ -1,11 +1,11 @@
 # Harness-executed: pytest-cov-integration
 # returncode: 0
-# agent_score: 97.0 | threshold: 60.0
+# agent_score: 100.0 | threshold: 75.0
 
-........................................................................ [ 31%]
-........................................................................ [ 63%]
-........................................................................ [ 95%]
-...........                                                              [100%]
+........................................................................ [ 30%]
+........................................................................ [ 61%]
+........................................................................ [ 91%]
+....................                                                     [100%]
 =============================== warnings summary ===============================
 .venv/lib/python3.11/site-packages/_hypothesis_pytestplugin.py:487
   /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/_hypothesis_pytestplugin.py:487: UserWarning: Skipping collection of '.hypothesis' directory - this usually means you've explicitly set the `norecursedirs` pytest config option, replacing rather than extending the default ignores.
@@ -50,12 +50,12 @@ Name                                                         Stmts   Miss  Cover
 03-development/src/taskq_api/service/common.py                  25      0   100%
 03-development/src/taskq_api/service/health.py                  14      0   100%
 03-development/src/taskq_api/service/ratelimit.py               25      0   100%
-03-development/src/taskq_api/service/runner.py                 171      8    95%   405-415
+03-development/src/taskq_api/service/runner.py                 171      0   100%
 03-development/src/taskq_api/service/tasks.py                   29      0   100%
 ------------------------------------------------------------------------------------------
-TOTAL                                                         1203      8    99%
-227 passed, 2 warnings in 17.92s
-/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/_pytest/unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x108ddab60>
+TOTAL                                                         1203      0   100%
+236 passed, 2 warnings in 18.39s
+/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/_pytest/unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x108c2a700>
 
 Traceback (most recent call last):
   File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/asyncio/base_subprocess.py", line 126, in __del__
