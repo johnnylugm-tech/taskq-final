@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "791792d0ad0e734a6b8604d923f43078b288a51c",
-  "content_sha256": "1576063e774cbfca9c25986b727c7b044c8044ccd95960c7fbe1e54726b006c9",
+  "git_sha": "1a8ddfeebe48849817d863360ed4f857e9751308",
+  "content_sha256": "ddd7d8fba33e4613d38ee731ca0fa83188d73c88d48807524fc04d11f1f98222",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -14,7 +14,7 @@
       "code_coverage": "100.0%",
       "test_coverage": "100.0%",
       "verification_rate": "100.0%",
-      "total_links": 74,
+      "total_links": 71,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [],
@@ -77,7 +77,6 @@
           "03-development/src/taskq_api/api/deps.py",
           "03-development/src/taskq_api/errors.py",
           "03-development/src/taskq_api/models/orm.py",
-          "03-development/src/taskq_api/repository/_time.py",
           "03-development/src/taskq_api/repository/key_repo.py",
           "03-development/src/taskq_api/service/auth.py"
         ],
@@ -113,7 +112,6 @@
           "03-development/src/taskq_api/app.py",
           "03-development/src/taskq_api/errors.py",
           "03-development/src/taskq_api/models/orm.py",
-          "03-development/src/taskq_api/repository/_time.py",
           "03-development/src/taskq_api/repository/rate_repo.py",
           "03-development/src/taskq_api/service/__init__.py",
           "03-development/src/taskq_api/service/ratelimit.py"
@@ -129,7 +127,6 @@
         "status": "verified",
         "srs_section": "SAD.md",
         "code_files": [
-          "03-development/src/taskq_api/repository/_time.py",
           "03-development/src/taskq_api/repository/key_repo.py",
           "03-development/src/taskq_api/repository/task_repo.py"
         ],
