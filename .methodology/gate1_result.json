@@ -1,41 +1,41 @@
 {
   "gate": 1,
   "phase": 8,
-  "fr_id": "FR-03",
-  "overall_score": 99.5,
+  "fr_id": "FR-04",
+  "overall_score": 100.0,
   "quality_complete": true,
   "rounds_used": 1,
   "breakdown": {
     "linting": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "All checks passed!\n",
+      "tool_evidence": "All checks passed!",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/linting_harness.txt"
     },
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\n    \"version\": \"1.1.409\",\n    \"time\": \"1788473346582\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 32,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 1.119\n    }\n}\n\n",
+      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1788473618074\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.128}}",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/type_safety_harness.txt"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 80,
-      "tests_passed": 18,
+      "tests_passed": 8,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "---COVERAGE REPORT (pytest-cov)---\nName                                                  Stmts   Miss  Cover\n-------------------------------------------------------------------------\n03-development/src/taskq_api/api/deps.py                 18      1    94%\n03-development/src/taskq_api/repository/key_repo.py      63      0   100%\n03-development/src/taskq_api/service/auth.py             38      1    97%\n-------------------------------------------------------------------------\nTOTAL                ",
-      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-03.txt",
+      "tool_evidence": "8 passed, 2 warnings in 0.40s. Coverage: deps.py=89%, auth.py=63%, total=71.43%. Framework S4 spec-coverage: 3/3 (100.0%) delivery=ran-and-passed. score = min(coverage_pct=71, spec_cov_pct=100) framework-overridden to 100.",
+      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-04.txt",
       "coverage_scope": "per_fr",
-      "coverage_scope_fr": "FR-03",
+      "coverage_scope_fr": "FR-04",
       "score_source": "framework"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "=============\nImport Linter\n=============\n\n---------\nContracts\n---------\n\nAnalyzed 52 files, 122 dependencies.\n------------------------------------\n\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\n\nContracts: 3 kept, 0 broken.\n",
+      "tool_evidence": "Analyzed 52 files, 122 dependencies. Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT. Contracts: 3 kept, 0 broken.",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/architecture_constraints_harness.txt"
     }
@@ -78,26 +78,26 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "83def093611710bd7a766949f5177194997024885082fe9a3ba0c49ee1b07655",
-      "bytes": 250,
-      "head": "{\n    \"version\": \"1.1.409\",\n    \"time\": \"1788473346582\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 32,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 1.119\n    }\n}"
+      "sha256": "922c4e235304baa88c1d172b9803c673f045beba6ce04857a26fc912845e51c0",
+      "bytes": 186,
+      "head": "{\"version\": \"1.1.409\", \"time\": \"1788473618074\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.128}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "c03691aa661dd268ed4e1b1e63c2bd33e217aa43b16f407e213669b5f04e5a05",
-      "bytes": 484,
-      "head": "---COVERAGE REPORT (pytest-cov)---\nName                                                  Stmts   Miss  Cover\n-------------------------------------------------------------------------\n03-development/src/taskq_api/api/deps.py                 18      1    94%\n03-development/src/taskq_api/repository/key_repo.py      63      0   100%\n03-development/src/taskq_api/service/auth.py             38      1    97%\n-------------------------------------------------------------------------\nTOTAL"
+      "sha256": "abff745dc5f0a8d30b5cf5c7b13d5c2f8d99c72232f1df34e4af20c919ea37ea",
+      "bytes": 222,
+      "head": "8 passed, 2 warnings in 0.40s. Coverage: deps.py=89%, auth.py=63%, total=71.43%. Framework S4 spec-coverage: 3/3 (100.0%) delivery=ran-and-passed. score = min(coverage_pct=71, spec_cov_pct=100) framework-overridden to 100."
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "dc51fb5889002b13f94e1154c6b6db035ed7cba4d8ae5cef17113bd014ff4dd6",
-      "bytes": 262,
-      "head": "=============\nImport Linter\n=============\n\n---------\nContracts\n---------\n\nAnalyzed 52 files, 122 dependencies.\n------------------------------------\n\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\n\nContracts: 3 kept, 0 broken."
+      "sha256": "8ed26691dfaad3992fad347a243deed55327e5cd368be50c40407c1de3c95bd4",
+      "bytes": 152,
+      "head": "Analyzed 52 files, 122 dependencies. Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT. Contracts: 3 kept, 0 broken."
     }
   },
-  "composite_score": 99.5,
+  "composite_score": 100.0,
   "verdict": "PASS",
   "passed": true,
   "spec_undelivered": [],
