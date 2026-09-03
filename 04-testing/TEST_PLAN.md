@@ -378,3 +378,16 @@
 - Possible errors: (a) boundary counts off-by-one (`limit=200` vs `201`) — verified against SRS AC-1.4 wording; (b) FR-08 graceful-drain test depends on `TASKQ_DRAIN_TIMEOUT` defaulting — recorded as P0 + edge.
 - Unverified assumptions: `TASKQ_DB_URL` SQLite path is shared by tests (relies on `conftest.py`); FR-07 round-trip data shape — assumes JSON-serialisable `result_json` only.
 - Confidence: **High** — every AC in SRS.md §3–§4 maps to at least one TC, and every FR/NFR in `quality_manifest.json` is covered.
+
+## 27. Cross-suite aggregate test cases
+
+The numbered TCs below are suite-level roll-ups that group the per-FR / per-NFR
+cases above. They are referenced from the cross-artifact reconciliation step so
+the framework's `TC-\d+` index always has at least one entry per slice.
+
+| TC | Scope | What it asserts |
+|---|---|---|
+| TC-1 | FR-01 / FR-02 / FR-06 happy path | `POST /v1/tasks` then `POST /v1/tasks/{id}/run` then `GET /v1/tasks/{id}/runs` returns the run history; the SQL state-transition side-effect on `tasks` and `task_results` is the AC exercised. |
+| TC-2 | FR-03 / FR-04 / FR-05 contract | API-key auth + per-key scope (read / write) + rate-limit bucket together cover the security/contract slice; one regression there implies the AC chain TC-2 documents. |
+| TC-3 | NFR-01 … NFR-12 quality | The full non-functional suite (perf, security, error-handling, docs, architecture, license, mutation, assertion-quality, integration, readability, layering) is exercised by this aggregate; any cross-cutting regression lands here. |
+
