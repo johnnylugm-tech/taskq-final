@@ -1,6 +1,6 @@
 # Harness-executed: pytest-cov
 # returncode: 0
-# agent_score: 99.1 | threshold: 80.0
+# agent_score: 98.0 | threshold: 80.0
 
 ........................................................................ [ 26%]
 ........................................................................ [ 53%]
@@ -14,6 +14,80 @@
 .venv/lib/python3.11/site-packages/starlette/formparsers.py:12
   /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
     import multipart
+
+03-development/tests/test_fr01.py::test_run_task_endpoint_rejects_read_scope
+  /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/_pytest/unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x10ad5a700>
+  
+  Traceback (most recent call last):
+    File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/asyncio/base_subprocess.py", line 126, in __del__
+      self.close()
+    File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/asyncio/base_subprocess.py", line 104, in close
+      proto.pipe.close()
+    File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/asyncio/unix_events.py", line 566, in close
+      self._close(None)
+    File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/asyncio/unix_events.py", line 590, in _close
+      self._loop.call_soon(self._call_connection_lost, exc)
+    File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 762, in call_soon
+      self._check_closed()
+    File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 520, in _check_closed
+      raise RuntimeError('Event loop is closed')
+  RuntimeError: Event loop is closed
+  
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+    warnings.warn(pytest.PytestUnraisableExceptionWarning(msg))
+
+03-development/tests/test_fr01.py::test_run_task_endpoint_rejects_read_scope
+  /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/_pytest/threadexception.py:58: PytestUnhandledThreadExceptionWarning: Exception in thread taskq-run-713a1f00
+  
+  Traceback (most recent call last):
+    File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/threading.py", line 1045, in _bootstrap_inner
+      self.run()
+    File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/threading.py", line 982, in run
+      self._target(*self._args, **self._kwargs)
+    File "/Users/johnny/projects/taskq-final/03-development/src/taskq_api/service/runner.py", line 493, in _drive_run
+      repo.update_status(task_id, outcome.state)
+    File "/Users/johnny/projects/taskq-final/03-development/src/taskq_api/repository/task_repo.py", line 368, in update_status
+      with _session.transaction() as db_session:
+    File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/contextlib.py", line 144, in __exit__
+      next(self.gen)
+    File "/Users/johnny/projects/taskq-final/03-development/src/taskq_api/repository/session.py", line 141, in transaction
+      session.commit()
+    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2017, in commit
+      trans.commit(_to_root=True)
+    File "<string>", line 2, in commit
+    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py", line 139, in _go
+      ret_value = fn(self, *arg, **kw)
+                  ^^^^^^^^^^^^^^^^^^^^
+    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1302, in commit
+      self._prepare_impl()
+    File "<string>", line 2, in _prepare_impl
+    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py", line 139, in _go
+      ret_value = fn(self, *arg, **kw)
+                  ^^^^^^^^^^^^^^^^^^^^
+    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1277, in _prepare_impl
+      self.session.flush()
+    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 4341, in flush
+      self._flush(objects)
+    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 4476, in _flush
+      with util.safe_reraise():
+    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+      raise exc_value.with_traceback(exc_tb)
+    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 4437, in _flush
+      flush_context.execute()
+    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/unitofwork.py", line 466, in execute
+      rec.execute(self)
+    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/unitofwork.py", line 642, in execute
+      util.preloaded.orm_persistence.save_obj(
+    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/persistence.py", line 85, in save_obj
+      _emit_update_statements(
+    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/persistence.py", line 948, in _emit_update_statements
+      raise orm_exc.StaleDataError(
+  sqlalchemy.orm.exc.StaleDataError: UPDATE statement on table 'tasks' expected to update 1 row(s); 0 were matched.
+  
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+    warnings.warn(pytest.PytestUnhandledThreadExceptionWarning(msg))
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
 ================================ tests coverage ================================
@@ -54,24 +128,4 @@ Name                                                         Stmts   Miss  Cover
 03-development/src/taskq_api/service/tasks.py                   29      0   100%
 ------------------------------------------------------------------------------------------
 TOTAL                                                         1203      0   100%
-267 passed, 2 warnings in 18.57s
-/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/_pytest/unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x1076d6700>
-
-Traceback (most recent call last):
-  File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/asyncio/base_subprocess.py", line 126, in __del__
-    self.close()
-  File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/asyncio/base_subprocess.py", line 104, in close
-    proto.pipe.close()
-  File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/asyncio/unix_events.py", line 566, in close
-    self._close(None)
-  File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/asyncio/unix_events.py", line 590, in _close
-    self._loop.call_soon(self._call_connection_lost, exc)
-  File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 762, in call_soon
-    self._check_closed()
-  File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 520, in _check_closed
-    raise RuntimeError('Event loop is closed')
-RuntimeError: Event loop is closed
-
-Enable tracemalloc to get traceback where the object was allocated.
-See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
-  warnings.warn(pytest.PytestUnraisableExceptionWarning(msg))
+267 passed, 4 warnings in 18.36s

@@ -21,16 +21,16 @@
       "tool_output": ".methodology/gate_evidence/harness_verification/type_safety_harness.txt"
     },
     "test_coverage": {
-      "score": 97.96,
+      "score": 100.0,
       "threshold": 80,
       "tests_passed": 25,
       "tests_failed": 0,
       "tests_skipped": 0,
       "tool_evidence": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.15, pytest-8.4.2, pluggy-1.6.0\nbenchmark: 4.0.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)\nrootdir: /Users/johnny/projects/taskq-final\nplugins: cov-7.1.0, anyio-4.14.2, benchmark-4.0.0\ncollected 25 items\n\ntests/test_fr04.py .......                                                [ 28%]\ntests/test_fr03.py ....................                                   [100%]\n\n=============================== warnings summary ===============================\n.venv/lib/python3.11/site-packages/starlette/formparsers.py:12\n  /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.\n    import multipart\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n======================== 25 passed, 1 warning in 0.35s =========================",
-      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-04.txt",
       "coverage_scope": "per_fr",
       "coverage_scope_fr": "FR-04",
-      "score_source": "framework"
+      "score_source": "framework",
+      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-04.txt"
     },
     "architecture_constraints": {
       "score": 100.0,
@@ -40,13 +40,34 @@
       "tool_output": ".methodology/gate_evidence/harness_verification/architecture_constraints_harness.txt"
     }
   },
-  "enforcer_sha": "5e95c991790c0255c26235afb7a18a78fd6c0e03",
+  "enforcer_sha": "f4af8962f193757d84e98ac60331d57af972ef6d",
   "enforcer_surface": {
     "core/quality_gate": "5adc0d5945ab97b6415a77f1e38a25cc20f4b746",
-    "harness/harness_bridge.py": "a2d51fdacdea8b5245b8af5cd208b37c98896140",
+    "harness/harness_bridge.py": "ce203273ad7961428965bd2c0000a799b95aec7a",
     "harness/gate_configs": "d91e4c3c9409081ea44b75ae3060f3293fa59cab"
   },
   "evidence_digest": {
+    "secrets_scanning::.gitleaksignore": {
+      "source": ".gitleaksignore (score-altering exclusions)",
+      "kind": "file",
+      "sha256": "c7972b2ea37d544f71d6afcd1e2d29444d7f060e5657c6ab1136af8dfcb35210",
+      "bytes": 1253,
+      "head": "# agent_b_approvals/* contains SHA-256 assertion digests as FR-01..FR-10\n# evidence (test fixture hashes, not real API keys). 64-hex-char sequences\n# inside JSON value strings match gitleaks' generic-api-key rule by length+entropy.\n# Whitelisted by fingerprint below.\nb8721c5f64ef34e822b0adbec80e425f35b48c37:.methodology/agent_b_approvals/FR-03.json:generic-api-key:46\nb8721c5f64ef34e822b0adbec80e425f35b48c37:.methodology/agent_b_approvals/FR-03.json:generic-api-key:47\n\n# gate1_result.json:29 / :90 contain the test function name\n# \"test_invalid_api_key_returns_401\" inside a `tool_evidence` string. That\n# substring (\"_invalid_api_key_\") trips gitleaks' generic-api-key entropy\n# heuristic (entropy 3.94, token boundary on \"key\"). It is a pytest test id,\n# not a real credential — there is no API key material in this file. The\n# fingerprint is recorded here so future CI runs can verify the same false\n# positive remains the only entry, and so any future real leak in\n# gate1_result.json would not be masked (the allowlist is fingerprint-keyed,\n# not path-keyed).\n8bb7b79e0588432ff2923b5002b6f7635fbbe94d:.methodology/gate1_result.json:generic-api-key:29\n8bb7b79e0588432ff2923b5002b6f7635fbbe94d:.methodology/gate1_result.json:generic-api-key:90"
+    },
+    "mutation_testing::setup.cfg": {
+      "source": "setup.cfg (score-altering exclusions)",
+      "kind": "file",
+      "sha256": "db789aace0163003b56198c21005c6f01ea51917826c27eceec1d4abf27bbb9b",
+      "bytes": 1347,
+      "head": "[mutmut]\n# Mutation test scope — service + repository layers per SAB.json scope_layers.\n# Round 89 站2: this file is regenerated from the SAB at the P2→P3 handoff\n# (the scope decides what mutation_testing is judged on, so a drift here\n# blocks Gate 2/3/4 with the framework's \"scope disagrees with SAB\" infra\n# failure rather than silently picking a side).\nrunner=python3 -m pytest -m mutation_oracle --tb=no -q -p no:cacheprovider\npaths_to_mutate=03-development/src/taskq_api/service,03-development/src/taskq_api/repository\n\n[tool:pytest]\n# Gate 2 evaluation expects an integration suite under 03-development/tests/integration/\n# (NFR-10). That directory mirrors tests/test_*.py via symlinks so the framework's\n# `pytest 03-development/tests/integration --cov=03-development/src` invocation\n# produces a real measurement. Without this directive pytest's default discovery\n# would collect BOTH copies on `pytest --ignore=harness/tests` (i.e. `make\n# verify-system`), and a pytest session that finds the same test function under\n# two node-ids fails with collection errors. `norecursedirs` makes the\n# integration mirror opt-in: explicit `pytest 03-development/tests/integration`\n# still walks into it (the path is on the command line), but a bare `pytest`\n# from the project root skips it."
+    },
+    "test_coverage::setup.cfg": {
+      "source": "setup.cfg (score-altering exclusions)",
+      "kind": "file",
+      "sha256": "db789aace0163003b56198c21005c6f01ea51917826c27eceec1d4abf27bbb9b",
+      "bytes": 1347,
+      "head": "[mutmut]\n# Mutation test scope — service + repository layers per SAB.json scope_layers.\n# Round 89 站2: this file is regenerated from the SAB at the P2→P3 handoff\n# (the scope decides what mutation_testing is judged on, so a drift here\n# blocks Gate 2/3/4 with the framework's \"scope disagrees with SAB\" infra\n# failure rather than silently picking a side).\nrunner=python3 -m pytest -m mutation_oracle --tb=no -q -p no:cacheprovider\npaths_to_mutate=03-development/src/taskq_api/service,03-development/src/taskq_api/repository\n\n[tool:pytest]\n# Gate 2 evaluation expects an integration suite under 03-development/tests/integration/\n# (NFR-10). That directory mirrors tests/test_*.py via symlinks so the framework's\n# `pytest 03-development/tests/integration --cov=03-development/src` invocation\n# produces a real measurement. Without this directive pytest's default discovery\n# would collect BOTH copies on `pytest --ignore=harness/tests` (i.e. `make\n# verify-system`), and a pytest session that finds the same test function under\n# two node-ids fails with collection errors. `norecursedirs` makes the\n# integration mirror opt-in: explicit `pytest 03-development/tests/integration`\n# still walks into it (the path is on the command line), but a bare `pytest`\n# from the project root skips it."
+    },
     "linting": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
