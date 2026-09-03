@@ -886,6 +886,58 @@ def test_env_dispatch_routes_to_online(monkeypatch):
     offline_calls.assert_not_called()
 
 
+def test_env_inserts_project_src_into_sys_path_when_missing(monkeypatch):
+    """env.py inserts ``_PROJECT_SRC`` into ``sys.path`` when it is not
+    already present (the slow branch of
+    ``if str(_PROJECT_SRC) not in sys.path: sys.path.insert(0, ...)``).
+
+    The first-import path — ``03-development/tests/conftest.py`` already
+    adds the project src to ``sys.path`` before any test runs — is the
+    FAST path: the check evaluates False and the ``insert`` is skipped.
+    To cover the slow path (the insert itself), this test drops the path,
+    reloads ``migrations.env`` in-process via :func:`importlib.reload`,
+    and asserts the path was re-inserted. The ``_dispatch()`` call at
+    the bottom of env.py is guarded by ``try/except NameError`` so the
+    reload is safe under pytest (where the alembic runtime proxy is
+    not initialised).
+    """
+    import importlib
+    import sys
+    from pathlib import Path
+
+    import migrations.env as env_module
+
+    env_file = Path(env_module.__file__).resolve()
+    project_src = str(env_file.parent.parent)
+    assert Path(project_src).is_dir()
+
+    # Drop the project src from sys.path so the if-condition flips.
+    monkeypatch.setattr(
+        sys, "path", [p for p in sys.path if p != project_src],
+    )
+    assert project_src not in sys.path
+
+    # Reload env.py — the if-condition now evaluates True, so the
+    # ``sys.path.insert(0, str(_PROJECT_SRC))`` line runs.
+    reloaded = importlib.reload(env_module)
+    try:
+        assert project_src in sys.path, (
+            "env.py failed to insert _PROJECT_SRC into sys.path when it "
+            "was missing — the alembic ``python -m`` entry point would "
+            "fail to import migrations.env in any environment where the "
+            "src tree is not already on PYTHONPATH"
+        )
+        # The insert prepends (position 0) so the freshly-added entry is
+        # the first path consulted by subsequent ``import`` statements.
+        assert sys.path[0] == project_src
+    finally:
+        # Reload once more so the post-test state mirrors what the test
+        # saw at import time — downstream tests cached references to
+        # env_module._settings / _alembic_context etc. and would crash
+        # on a stale instance.
+        importlib.reload(reloaded)
+
+
 # ---------------------------------------------------------------------------
 # Direct coverage tests for ``migrations.versions._shared``.
 #
