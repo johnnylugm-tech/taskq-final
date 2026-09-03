@@ -85,3 +85,25 @@ def _reset_api_keys_table():
     except Exception:
         pass
     yield
+
+
+@pytest.fixture(autouse=True)
+def _reset_tasks_table():
+    """[NFR-03 / FR-06] Reset tasks + task_results between tests.
+
+    Prevents the ``StaleDataError`` and "wrong row count" failures the
+    FR-01 / FR-02 / FR-06 state-transition tests see when the harness's
+    suite runner lands inside a run whose preceding tests have already
+    mutated the schema-typed ``task_results.finished_at`` column. The
+    make-target's ``rm -f taskq.db`` step handles this on a fresh run;
+    this fixture covers the in-session case.
+    """
+    try:
+        from taskq_api.models.orm import Task, TaskResult
+        engine = get_engine()
+        with engine.begin() as conn:
+            conn.execute(delete(TaskResult))
+            conn.execute(delete(Task))
+    except Exception:
+        pass
+    yield
