@@ -1,6 +1,6 @@
 # Harness-executed: pytest-cov
 # returncode: 1
-# agent_score: 98.0 | threshold: 80.0
+# agent_score: 71.4 | threshold: 80.0
 
 ........................................................................ [ 26%]
 ........................................................................ [ 53%]
@@ -71,8 +71,8 @@ ERROR 03-development/tests/test_fr01.py::test_delete_nonexistent_task_returns_40
 ERROR 03-development/tests/test_fr01.py::test_cursor_points_outside_visible_window_returns_empty_page
 ERROR 03-development/tests/test_fr01.py::test_run_task_endpoint_returns_202
 ERROR 03-development/tests/test_fr01.py::test_run_task_endpoint_rejects_read_scope
-251 passed, 2 warnings, 16 errors in 18.23s
-/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/_pytest/unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x10b692340>
+251 passed, 2 warnings, 16 errors in 18.21s
+/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/_pytest/unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x107742340>
 
 Traceback (most recent call last):
   File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/asyncio/base_subprocess.py", line 126, in __del__
