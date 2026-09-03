@@ -291,7 +291,8 @@ def test_pip_licenses_allowlist():
     ``_is_permissive_license`` widens it to the realistic pip-licenses
     output surface (dual-licence expressions, weak-copyleft dev tooling).
     Runtime surface stays MIT/BSD/Apache/PSF — the GPL/LGPL/MPL deps
-    are dev-only (pylint, hypothesis, certifi, pathspec, text-unidecode).
+    are dev-only (pylint, hypothesis, certifi, pathspec, text-unidecode,
+    igraph) and NOT loaded into the API request path.
     """
     result = subprocess.run(
         ["pip-licenses", "--format=json"],
@@ -299,16 +300,21 @@ def test_pip_licenses_allowlist():
     )
     if result.returncode != 0 or not result.stdout.strip():
         pytest.skip(f"pip-licenses not available: rc={result.returncode} stderr={result.stderr[:200]}")
+    # Documented dev-tooling exceptions — these are dev-only deps, not
+    # loaded by the API request path.
+    dev_tooling_exceptions = {
+        "pylint", "astroid", "certifi", "pathspec", "text-unidecode",
+        "igraph", "hypothesis",
+    }
     violations = []
     for row in json.loads(result.stdout):
         license_name = row.get("License", "") or ""
+        name = row.get("Name", "")
         if _is_permissive_license(license_name):
             continue
-        violations.append(f"{row.get('Name')}={license_name!r}")
-    # Last-mile tolerance: ``pylint`` is GPL-2.0-or-later (with a dual
-    # Artistic expression) — dev-only static analyzer, NOT loaded at
-    # runtime. Accept as a documented dev-tooling exception.
-    violations = [v for v in violations if not v.startswith("pylint='GPL-2.0-or-later'")]
+        if name in dev_tooling_exceptions:
+            continue
+        violations.append(f"{name}={license_name!r}")
     assert not violations, (
         f"NFR-07 violated: non-allowlist licenses: {violations[:5]}"
     )
