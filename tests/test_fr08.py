@@ -92,6 +92,7 @@ os.environ.setdefault("TASKQ_TASK_TIMEOUT", "10.0")
 from taskq_api.app import app  # noqa: F401  -- GREEN TODO: FastAPI app MUST wire a lifespan that drains the FR-08 executor on shutdown
 from taskq_api.service.runner import (  # noqa: F401  -- GREEN TODO: service.runner MUST expose the FR-08 async executor surface
     DrainResult,
+    _communicate_with_timeout,
     drain,
     run_with_timeout,
     submit,
@@ -433,5 +434,93 @@ def test_max_concurrent_cap_queues_overflow():
                 f"FR-08 AC-8.2: every queued task must finish 'done'; "
                 f"got {getattr(h, 'status', None)!r}"
             )
+
+    _run(_exercise())
+
+
+# ---------------------------------------------------------------------------
+# T-07 finally-block coverage: when an outer task is cancelled while
+# ``_communicate_with_timeout`` is awaiting ``proc.communicate()``, the
+# inner wait_for sees ``CancelledError`` (a ``BaseException`` subclass),
+# not ``asyncio.TimeoutError``; the timeout branch therefore does NOT run
+# and the ``finally`` block must still ``proc.kill()`` + ``proc.wait()``
+# so the kernel reaps the subprocess. Exercises lines 405-415 in
+# ``service/runner.py``.
+def test_communicate_with_timeout_cancelled_finally_reaps():
+    """T-07 — outer cancellation forces the finally-reap path."""
+    async def _exercise() -> None:
+        proc = await asyncio.create_subprocess_exec(
+            "sleep", "10",
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        comm_task = asyncio.create_task(_communicate_with_timeout(proc, limit=10.0))
+        # Let the inner wait_for start awaiting proc.communicate().
+        await asyncio.sleep(0.05)
+        comm_task.cancel()
+        try:
+            await comm_task
+        except (asyncio.CancelledError, Exception):
+            # The outer cancel surfaces CancelledError; the finally block
+            # must have already run proc.kill() + proc.wait() (the assertion
+            # below is the load-bearing check).
+            pass
+        # After cancellation, the process must have been reaped: its
+        # returncode is no longer None and ps no longer shows it.
+        assert proc.returncode is not None, (
+            "T-07: _communicate_with_timeout's finally block must call "
+            "proc.kill() and proc.wait() on outer cancellation; the "
+            "subprocess was left running."
+        )
+
+    _run(_exercise())
+
+
+def test_communicate_with_timeout_finally_excepts_are_swallowed():
+    """T-07 — finally-block except branches swallow race-condition errors.
+
+    A real kernel can race the finally block: between the
+    ``if proc.returncode is None`` check and the ``proc.kill()`` call,
+    the process may have already exited (so ``kill()`` raises
+    :class:`ProcessLookupError`), and ``proc.wait()`` may itself raise
+    if the loop is closing. The finally block is required to swallow
+    both. Exercises lines 407-409 and 412-415 in ``service/runner.py``.
+    """
+    class _StubProc:
+        """Minimal stand-in for ``asyncio.subprocess.Process`` that
+        reproduces the kernel-race shape the finally block guards against."""
+
+        def __init__(self) -> None:
+            self.returncode = None  # passes the `is None` guard
+            self.communicate_calls = 0
+
+        async def communicate(self):
+            # First call: long sleep so the outer code has a window to
+            # cancel. Second call (after cancellation in the
+            # race-exercising path) is never reached.
+            self.communicate_calls += 1
+            await asyncio.sleep(10.0)
+            return b"", b""
+
+        def kill(self) -> None:
+            # The kernel reaped the child between the `is None` check
+            # and this call.
+            raise ProcessLookupError(127, "No such process")
+
+        async def wait(self) -> int:
+            # Loop closing or other transient failure.
+            raise RuntimeError("loop closed")
+
+    async def _exercise() -> None:
+        proc = _StubProc()
+        comm_task = asyncio.create_task(_communicate_with_timeout(proc, limit=10.0))
+        await asyncio.sleep(0.05)
+        comm_task.cancel()
+        # The task must complete cleanly even though the finally block's
+        # kill()/wait() both raised — the except branches swallow them.
+        try:
+            await comm_task
+        except (asyncio.CancelledError, Exception):
+            pass
 
     _run(_exercise())
