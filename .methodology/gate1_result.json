@@ -1,8 +1,8 @@
 {
   "gate": 1,
   "phase": 5,
-  "fr_id": "FR-08",
-  "overall_score": 100.0,
+  "fr_id": "FR-09",
+  "overall_score": 94.5,
   "quality_complete": true,
   "rounds_used": 1,
   "breakdown": {
@@ -16,27 +16,26 @@
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0}}",
+      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1788452389851\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.118}}",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/type_safety_harness.txt"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 80,
-      "tests_passed": 7,
+      "tests_passed": 11,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "evidence_file": ".sessi-work/round_1/tools/test_coverage.txt",
-      "tool_evidence": "[spec-coverage] [FR-08] 4/4 (100.0%) — delivery = ran-and-passed\n[S4] test_coverage: harness=100.0 (whole-project) | per-fr=100.0 (using per-fr scope)\n7 passed, 0 failed. Coverage report:\nName                                             Stmts   Miss Branch BrPart  Cover\n03-development/src/taskq_api/app.py                 70     35      4      0    47%\n03-development/src/taskq_api/service/runner.py     171     43     26      3    73%\nTOTAL                                              241     78     30      3    66%\nscore = min(coverage_pct, spec_cov_pct) = min(per-fr=100, 100) = 100",
-      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-08.txt",
+      "tool_evidence": "collected 11 items; 03-development/tests/integration/test_fr09.py ........... [100%]; 11 passed, 2 warnings in 0.38s; coverage_percent_covered=77.88 (78% over health.py+session.py)",
+      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-09.txt",
       "coverage_scope": "per_fr",
-      "coverage_scope_fr": "FR-08",
+      "coverage_scope_fr": "FR-09",
       "score_source": "framework"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Analyzed 52 files, 122 dependencies. Contracts: 3 kept, 0 broken. Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT.",
+      "tool_evidence": "Import Linter; Contracts: 3 kept, 0 broken (Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT)",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/architecture_constraints_harness.txt"
     }
@@ -79,26 +78,26 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "13ac6d571098785709732ce81f875322d473dad64f262dd18f935ee6194d1673",
-      "bytes": 115,
-      "head": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0}}"
+      "sha256": "24045743b823425e77ae15b1a93ee231ee4f1b3a7d5542ee4a88b0f3ceea5a1c",
+      "bytes": 186,
+      "head": "{\"version\": \"1.1.409\", \"time\": \"1788452389851\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.118}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "c5726670bbd14f4811f3bdb1cb1216f7dda21f4b2edc0eadbce6c8af338c2bd5",
-      "bytes": 590,
-      "head": "[spec-coverage] [FR-08] 4/4 (100.0%) — delivery = ran-and-passed\n[S4] test_coverage: harness=100.0 (whole-project) | per-fr=100.0 (using per-fr scope)\n7 passed, 0 failed. Coverage report:\nName                                             Stmts   Miss Branch BrPart  Cover\n03-development/src/taskq_api/app.py                 70     35      4      0    47%\n03-development/src/taskq_api/service/runner.py     171     43     26      3    73%\nTOTAL                                              241     78     30      3    66%\nscore = min(coverage_pct, spec_cov_pct) = min(per-fr=100, 100) = 100"
+      "sha256": "96d67b07bea81c81ce5e9db79119dd93cb8b799f513a228bbafc3a0de890b745",
+      "bytes": 180,
+      "head": "collected 11 items; 03-development/tests/integration/test_fr09.py ........... [100%]; 11 passed, 2 warnings in 0.38s; coverage_percent_covered=77.88 (78% over health.py+session.py)"
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "2d75c380e0d9c1394804410a0fccceb5ea52e28854e78d70a6974f083eeb4e51",
-      "bytes": 152,
-      "head": "Analyzed 52 files, 122 dependencies. Contracts: 3 kept, 0 broken. Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT."
+      "sha256": "da766d0247bec9e70235e52fa0aced74e9d01d37c1a2290ca42bb5531f75adb4",
+      "bytes": 130,
+      "head": "Import Linter; Contracts: 3 kept, 0 broken (Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT)"
     }
   },
-  "composite_score": 100.0,
+  "composite_score": 94.5,
   "verdict": "PASS",
   "passed": true,
   "spec_undelivered": [],
