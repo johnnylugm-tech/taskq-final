@@ -4,3 +4,15 @@
 # Whitelisted by fingerprint below.
 b8721c5f64ef34e822b0adbec80e425f35b48c37:.methodology/agent_b_approvals/FR-03.json:generic-api-key:46
 b8721c5f64ef34e822b0adbec80e425f35b48c37:.methodology/agent_b_approvals/FR-03.json:generic-api-key:47
+
+# gate1_result.json:29 / :90 contain the test function name
+# "test_invalid_api_key_returns_401" inside a `tool_evidence` string. That
+# substring ("_invalid_api_key_") trips gitleaks' generic-api-key entropy
+# heuristic (entropy 3.94, token boundary on "key"). It is a pytest test id,
+# not a real credential — there is no API key material in this file. The
+# fingerprint is recorded here so future CI runs can verify the same false
+# positive remains the only entry, and so any future real leak in
+# gate1_result.json would not be masked (the allowlist is fingerprint-keyed,
+# not path-keyed).
+8bb7b79e0588432ff2923b5002b6f7635fbbe94d:.methodology/gate1_result.json:generic-api-key:29
+8bb7b79e0588432ff2923b5002b6f7635fbbe94d:.methodology/gate1_result.json:generic-api-key:90

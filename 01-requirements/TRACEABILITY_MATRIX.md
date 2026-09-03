@@ -15,7 +15,7 @@
 | Code Coverage | 100.0% | 100% |
 | Test Coverage | 100.0% | 100% |
 | Verification Rate | 100.0% | 100% |
-| Total Links | 71 | — |
+| Total Links | 73 | — |
 
 ### ASPICE SWE.3 Compliance
 
@@ -29,7 +29,7 @@
 
 | Requirement | Status | Code Files | Test Files | SAD Module |
 |-------------|--------|------------|------------|------------|
-| FR-01 | verified | 03-development/src/taskq_api/api/tasks.py, 03-development/src/taskq_api/errors.py, 03-development/src/taskq_api/models/orm.py (+7) | 03-development/tests/integration/test_fr01.py | — |
+| FR-01 | verified | 03-development/src/taskq_api/api/tasks.py, 03-development/src/taskq_api/errors.py, 03-development/src/taskq_api/models/orm.py (+8) | 03-development/tests/integration/test_fr01.py, 03-development/tests/test_fr01.py | — |
 | FR-02 | verified | 03-development/src/taskq_api/api/tasks.py, 03-development/src/taskq_api/models/orm.py, 03-development/src/taskq_api/models/schemas.py (+4) | 03-development/tests/integration/test_fr02.py | — |
 | FR-03 | verified | 03-development/src/taskq_api/__main__.py, 03-development/src/taskq_api/api/deps.py, 03-development/src/taskq_api/errors.py (+3) | 03-development/tests/integration/test_fr03.py | — |
 | FR-04 | verified | 03-development/src/taskq_api/api/deps.py, 03-development/src/taskq_api/api/metrics.py, 03-development/src/taskq_api/errors.py (+3) | 03-development/tests/integration/test_fr04.py | — |
@@ -46,16 +46,16 @@
 
 | NFR ID | Test Coverage | Status |
 |--------|--------------|--------|
-| NFR-01 | test_fr01.py, test_fr06.py, test_nfr_supplemental.py | VERIFIED |
-| NFR-02 | test_fr01.py, test_fr02.py, test_fr03.py, test_fr04.py, test_fr05.py, test_fr06.py, test_fr07.py, test_fr09.py, test_fr10.py, test_nfr.py, test_nfr_supplemental.py | VERIFIED |
-| NFR-03 | test_fr01.py, test_fr02.py, test_fr05.py, test_fr06.py, test_fr07.py, test_fr08.py, test_fr09.py, test_fr10.py, test_nfr.py, test_nfr_supplemental.py | VERIFIED |
-| NFR-04 | test_fr01.py, test_fr03.py, test_fr09.py, test_fr10.py, test_nfr.py, test_nfr_supplemental.py | VERIFIED |
-| NFR-05 | test_fr01.py, test_fr02.py, test_fr03.py, test_fr04.py, test_fr05.py, test_fr09.py, test_nfr.py, test_nfr_supplemental.py | VERIFIED |
-| NFR-06 | test_fr01.py, test_fr02.py, test_fr03.py, test_fr04.py, test_fr05.py, test_fr06.py, test_fr09.py, test_fr10.py, test_nfr.py, test_nfr_supplemental.py | VERIFIED |
+| NFR-01 | test_fr01.py, test_fr06.py, test_nfr_supplemental.py, test_fr01.py | VERIFIED |
+| NFR-02 | test_fr01.py, test_fr02.py, test_fr03.py, test_fr04.py, test_fr05.py, test_fr06.py, test_fr07.py, test_fr09.py, test_fr10.py, test_nfr.py, test_nfr_supplemental.py, test_fr01.py | VERIFIED |
+| NFR-03 | test_fr01.py, test_fr02.py, test_fr05.py, test_fr06.py, test_fr07.py, test_fr08.py, test_fr09.py, test_fr10.py, test_nfr.py, test_nfr_supplemental.py, test_fr01.py | VERIFIED |
+| NFR-04 | test_fr01.py, test_fr03.py, test_fr09.py, test_fr10.py, test_nfr.py, test_nfr_supplemental.py, test_fr01.py | VERIFIED |
+| NFR-05 | test_fr01.py, test_fr02.py, test_fr03.py, test_fr04.py, test_fr05.py, test_fr09.py, test_nfr.py, test_nfr_supplemental.py, test_fr01.py | VERIFIED |
+| NFR-06 | test_fr01.py, test_fr02.py, test_fr03.py, test_fr04.py, test_fr05.py, test_fr06.py, test_fr09.py, test_fr10.py, test_nfr.py, test_nfr_supplemental.py, test_fr01.py | VERIFIED |
 | NFR-07 | test_nfr.py, test_nfr_supplemental.py | VERIFIED |
 | NFR-08 | test_nfr.py, test_nfr_supplemental.py | VERIFIED |
 | NFR-09 | test_fr06.py, test_fr07.py, test_fr09.py, test_nfr.py, test_nfr_supplemental.py | VERIFIED |
-| NFR-10 | test_fr01.py, test_fr02.py, test_fr03.py, test_fr07.py, test_fr10.py, test_nfr.py, test_nfr_supplemental.py | VERIFIED |
+| NFR-10 | test_fr01.py, test_fr02.py, test_fr03.py, test_fr07.py, test_fr10.py, test_nfr.py, test_nfr_supplemental.py, test_fr01.py | VERIFIED |
 | NFR-11 | test_nfr_supplemental.py | VERIFIED |
 | NFR-12 | test_fr07.py, test_nfr.py | VERIFIED |
 | NFR-99 | — | PENDING |
