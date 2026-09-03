@@ -79,11 +79,11 @@
         "open_high": 0
       },
       "FR-02": {
-        "open_critical": 0,
-        "open_high": 0,
+        "score": 92.25,
         "quality_complete": true,
         "rounds_used": 2,
-        "score": 95.37
+        "open_critical": 0,
+        "open_high": 0
       },
       "FR-03": {
         "open_critical": 0,
