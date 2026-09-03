@@ -156,7 +156,16 @@ def create_app() -> FastAPI:
     async def _handle_validation(
         request: Request, exc: RequestValidationError,
     ) -> JSONResponse:
-        problem = ValidationProblem(detail=str(exc.errors()))
+        # [NFR-04 / T-10] Pydantic v2's errors() default to include_input=True,
+        # which echoes the rejected value verbatim into the response body. A
+        # caller POSTing a bearer token in a wrong-typed field would get the
+        # secret reflected back in the 422 detail. Strip every error dict to
+        # the safe subset {type, loc, msg} before stringifying.
+        safe_errors = [
+            {"type": e.get("type"), "loc": e.get("loc"), "msg": e.get("msg")}
+            for e in exc.errors()
+        ]
+        problem = ValidationProblem(detail=str(safe_errors))
         # Reuse the middleware-set correlation_id so the response header
         # and the audit-log record carry the same token (AC-10.4).
         problem.correlation_id = _request_correlation_id(request)
