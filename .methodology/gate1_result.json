@@ -1,8 +1,8 @@
 {
   "gate": 1,
   "phase": 8,
-  "fr_id": "FR-08",
-  "overall_score": 92.0,
+  "fr_id": "FR-09",
+  "overall_score": 94.47,
   "quality_complete": true,
   "rounds_used": 1,
   "breakdown": {
@@ -16,26 +16,26 @@
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\": \"1.1.409\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0}}",
+      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1788475854840\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.125}}",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/type_safety_harness.txt"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 80,
-      "tests_passed": 7,
+      "tests_passed": 11,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "collected 7 items; 03-development/tests/integration/test_fr08.py ....... [100%]; 7 passed, 2 warnings in 2.72s; coverage totals: covered_lines=165, num_statements=241, percent_covered=68.46",
-      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-08.txt",
+      "tool_evidence": "11 passed, 2 warnings in 0.38s. coverage of health.py=100%, session.py=74%, totals=78%. spec_cov=4/4=100% (test_healthz_returns_200 + test_readyz_returns_503_when_migration_not_at_head[migration-not-at-head] + test_readyz_returns_503_when_migration_not_at_head[database-unavailable] + test_metrics_requires_admin_scope all present and passing). score=min(77.88, 100)=77.88.",
+      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-09.txt",
       "coverage_scope": "per_fr",
-      "coverage_scope_fr": "FR-08",
+      "coverage_scope_fr": "FR-09",
       "score_source": "framework"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Analyzed 52 files, 122 dependencies. Layer ordering KEPT. SQLAlchemy containment KEPT. Config and errors independence KEPT. Contracts: 3 kept, 0 broken. EXIT: 0",
+      "tool_evidence": "Analyzed 52 files, 122 dependencies. Layer ordering KEPT. SQLAlchemy containment KEPT. Config and errors independence KEPT. Contracts: 3 kept, 0 broken.",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/architecture_constraints_harness.txt"
     }
@@ -78,26 +78,26 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "64af87d0cd78f60d2044993b976dcaa49fb7a53a48ebaca5edc93533667234d1",
-      "bytes": 141,
-      "head": "{\"version\": \"1.1.409\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0}}"
+      "sha256": "a1faf994995c399461b24f116e5a2f5345e1ff2ffd4d70ff43e7e076dd8f65f1",
+      "bytes": 186,
+      "head": "{\"version\": \"1.1.409\", \"time\": \"1788475854840\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.125}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "dd80fe0c66c9db8bc67804175d6cdfa61af27fb0439095b9c009253a4dbafc9e",
-      "bytes": 189,
-      "head": "collected 7 items; 03-development/tests/integration/test_fr08.py ....... [100%]; 7 passed, 2 warnings in 2.72s; coverage totals: covered_lines=165, num_statements=241, percent_covered=68.46"
+      "sha256": "6a4d94aa1a007049fb2cbaa70788c6f0d6131633cbf4649dc49e064c1c520d25",
+      "bytes": 373,
+      "head": "11 passed, 2 warnings in 0.38s. coverage of health.py=100%, session.py=74%, totals=78%. spec_cov=4/4=100% (test_healthz_returns_200 + test_readyz_returns_503_when_migration_not_at_head[migration-not-at-head] + test_readyz_returns_503_when_migration_not_at_head[database-unavailable] + test_metrics_requires_admin_scope all present and passing). score=min(77.88, 100)=77.88."
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "b6fc78d4a6b3aa3b70c986841dad7c9e6b965fca86478c9a61e7374c4995bd22",
-      "bytes": 160,
-      "head": "Analyzed 52 files, 122 dependencies. Layer ordering KEPT. SQLAlchemy containment KEPT. Config and errors independence KEPT. Contracts: 3 kept, 0 broken. EXIT: 0"
+      "sha256": "eb99e981f8caa3a09ef7706a02495778b955478a0c8e2d2e3e8d1b6079aecd0f",
+      "bytes": 152,
+      "head": "Analyzed 52 files, 122 dependencies. Layer ordering KEPT. SQLAlchemy containment KEPT. Config and errors independence KEPT. Contracts: 3 kept, 0 broken."
     }
   },
-  "composite_score": 92.0,
+  "composite_score": 94.47,
   "verdict": "PASS",
   "passed": true,
   "spec_undelivered": [],
