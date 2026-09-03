@@ -320,7 +320,7 @@ async def drain(timeout: float) -> DrainResult:
 
     tasks = [h.asyncio_task for h in pending]
     _done, still_pending = await asyncio.wait(tasks, timeout=timeout_s)
-    await _cancel_and_await(still_pending)
+    await _cancel_and_await(list(still_pending))
     drained, interrupted = _tally_pending(pending)
 
     return DrainResult(
