@@ -73,7 +73,64 @@ import pytest  # noqa: E402
 from sqlalchemy import delete  # noqa: E402
 
 from taskq_api.repository.session import get_engine  # noqa: E402
-from taskq_api.models.orm import ApiKey  # noqa: E402
+from taskq_api.models.orm import ApiKey, Task, TaskResult  # noqa: E402
+
+
+# ---------------------------------------------------------------------------
+# FR-01 fixtures: lifted out of tests/test_fr01.py so the unit copy
+# (``03-development/tests/test_fr01.py``) and the integration mirror
+# (``03-development/tests/integration/test_fr01.py`` — symlinked to the
+# project-root copy) resolve the same fixtures from one place. When pytest
+# discovers both paths and imports the underlying test module twice
+# (``tests.test_fr01`` and ``tests.integration.test_fr01``), module-local
+# fixture definitions get registered for each instance; if only one
+# registration wins, the other copy's tests fail with
+# ``fixture 'asgi_client' not found``. Anchoring the fixtures here lets the
+# conftest hierarchy hand the same ``asgi_client`` to both module instances,
+# so neither side errors at setup. The other FR test files (test_fr02.py
+# etc.) still define their own ``asgi_client`` locally — pytest's module
+# fixture wins over the conftest's, so they keep their existing behaviour.
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def asgi_client():
+    """In-process ASGI client — keeps subprocess coverage at 0% while still
+    exercising the real FastAPI route stack.
+
+    NFR-10 mandates ``httpx.AsyncClient(ASGITransport(...))`` — never direct
+    handler calls — so every FR-01 test that hits an endpoint goes through
+    this fixture.
+    """
+    from httpx import ASGITransport, AsyncClient
+
+    from taskq_api.app import app
+
+    transport = ASGITransport(app=app)
+    return AsyncClient(transport=transport, base_url="http://testserver")
+
+
+@pytest.fixture
+def auth_write():
+    """A request header carrying a write-scoped API key.
+
+    ``taskq_api.service.auth.verify_key`` accepts
+    ``{"X-API-Key": "<write-scoped-key>"}`` and returns a principal with
+    ``scope == "write"``. The FR-01 POST path is gated on
+    ``scope == "write"``.
+    """
+    return {"X-API-Key": "test-write-key"}
+
+
+@pytest.fixture
+def auth_read():
+    """A request header carrying a read-scoped API key.
+
+    Same as ``auth_write`` but with ``scope == "read"``. Used by the GET
+    endpoints AND by the negative authz case that asserts a write request
+    under a read key returns 403 (NP-02).
+    """
+    return {"X-API-Key": "test-read-key"}
 
 
 @pytest.fixture(autouse=True)
@@ -103,14 +160,28 @@ def _reset_tasks_table():
     cursor-pagination tests rely on (otherwise the second test in the
     run sees an empty tasks table because the previous test already
     consumed the one-shot seed).
+
+    The in-memory mirror (``_TASKS`` / ``_TASK_ORDER`` / ``_RESULTS``) is
+    truncated in the same step. Clearing SQL while leaving the mirror
+    populated makes the two stores disagree, and ``_ensure_seeded``
+    appends another 100 rows to the mirror on every reset, so rows leak
+    forward across the whole session. Concretely: FR-06's projection-helper
+    test calls ``_insert_task_memory`` with the all-zeros UUID, which then
+    survives into FR-01's ``test_delete_nonexistent_task_returns_404`` and
+    makes ``TaskRepository.delete`` report a hit (204) where AC-1.3's
+    not-found contract requires 404. Truncating both stores together keeps
+    the mirror consistent with SQL.
     """
     try:
-        from taskq_api.models.orm import Task, TaskResult
         from taskq_api.repository import task_repo
         engine = get_engine()
         with engine.begin() as conn:
             conn.execute(delete(TaskResult))
             conn.execute(delete(Task))
+        with task_repo._LOCK:
+            task_repo._TASKS.clear()
+            task_repo._TASK_ORDER.clear()
+            task_repo._RESULTS.clear()
         task_repo._SEEDED = False
     except Exception:
         pass

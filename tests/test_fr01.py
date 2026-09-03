@@ -48,50 +48,23 @@ import pytest
 #   - taskq_api.models.schemas     (TaskCreate pydantic model)
 #   - taskq_api.repository.task_repo (cursor-paginated list + delete cascade)
 from taskq_api.api.tasks import router  # noqa: F401  -- GREEN TODO: export `router`
-from taskq_api.app import app  # noqa: F401  -- GREEN TODO: export `app` FastAPI instance
 from taskq_api.models.schemas import TaskCreate  # noqa: F401  -- GREEN TODO: export `TaskCreate`
 from taskq_api.repository.task_repo import TaskRepository  # noqa: F401  -- GREEN TODO: export `TaskRepository`
 
 
 # ---------------------------------------------------------------------------
-# Test fixtures: ASGI in-process transport (NFR-10 mandates
-# httpx.AsyncClient(ASGITransport(...)) — never direct handler calls).
+# Test fixtures (`asgi_client`, `auth_write`, `auth_read`) live in
+# ``03-development/tests/conftest.py``. Anchoring them in the conftest
+# (rather than here in the test module) means pytest hands the same
+# fixture instance to BOTH the unit copy (``03-development/tests/test_fr01.py``
+# via symlink to this file) and the integration mirror
+# (``03-development/tests/integration/test_fr01.py`` — also a symlink to
+# this file). With module-local definitions pytest registers the fixture
+# once per module instance; the second registration shadows the first
+# and the losing side errors with ``fixture 'asgi_client' not found`` at
+# setup. The conftest path applies to both copies in the hierarchy, so
+# neither side errors.
 # ---------------------------------------------------------------------------
-
-@pytest.fixture
-def asgi_client():
-    """In-process ASGI client — keeps subprocess coverage at 0% while still
-    exercising the real FastAPI route stack.
-
-    GREEN TODO: `taskq_api.app.app` must be a FastAPI instance with the
-    `taskq_api.api.tasks.router` mounted under `/v1/tasks`.
-    """
-    from httpx import ASGITransport, AsyncClient
-
-    transport = ASGITransport(app=app)
-    return AsyncClient(transport=transport, base_url="http://testserver")
-
-
-@pytest.fixture
-def auth_write():
-    """A request header carrying a write-scoped API key.
-
-    GREEN TODO: `taskq_api.service.auth.verify_key` must accept
-    {"X-API-Key": "<write-scoped-key>"} and return a principal with
-    scope == "write". The FR-01 POST path is gated on scope == "write".
-    """
-    return {"X-API-Key": "test-write-key"}
-
-
-@pytest.fixture
-def auth_read():
-    """A request header carrying a read-scoped API key.
-
-    GREEN TODO: same as `auth_write` but with scope == "read". Used by the
-    GET endpoints AND by the negative authz case that asserts a write
-    request under a read key returns 403 (NP-02).
-    """
-    return {"X-API-Key": "test-read-key"}
 
 
 def _run(coro):
