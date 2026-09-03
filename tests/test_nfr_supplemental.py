@@ -299,7 +299,7 @@ def test_pip_licenses_allowlist():
         cwd=str(PROJECT_ROOT), capture_output=True, text=True, timeout=60,
     )
     if result.returncode != 0 or not result.stdout.strip():
-        pytest.skip(f"pip-licenses not available: rc={result.returncode} stderr={result.stderr[:200]}")
+        pytest.fail(f"NFR-07 violated: pip-licenses not available: rc={result.returncode} stderr={result.stderr[:200]}")
     # Documented dev-tooling exceptions — these are dev-only deps, not
     # loaded by the API request path.
     dev_tooling_exceptions = {
@@ -327,7 +327,7 @@ def test_pip_licenses_full_dependency_tree():
         cwd=str(PROJECT_ROOT), capture_output=True, text=True, timeout=60,
     )
     if result.returncode != 0 or not result.stdout.strip():
-        pytest.skip(f"pip-licenses not available: rc={result.returncode} stderr={result.stderr[:200]}")
+        pytest.fail(f"NFR-07 violated: pip-licenses not available: rc={result.returncode} stderr={result.stderr[:200]}")
     rows = json.loads(result.stdout)
     assert len(rows) >= 10, (
         f"NFR-07 violated: expected >= 10 transitive deps, got {len(rows)}"
@@ -338,7 +338,7 @@ def test_sbom_file_shape():
     """[NFR-07] ``08-config/SBOM.json`` exists and carries required fields per dep."""
     sbom = PROJECT_ROOT / "08-config" / "SBOM.json"
     if not sbom.exists():
-        pytest.skip("SBOM.json not delivered (deferred to release ops)")
+        pytest.fail("NFR-07 violated: SBOM.json not delivered")
     data = json.loads(sbom.read_text())
     rows = data if isinstance(data, list) else data.get("dependencies", data.get("components", []))
     required = {"name", "version", "license"}
@@ -443,7 +443,7 @@ def test_traceability_verified_only_on_pass():
     """
     matrix = PROJECT_ROOT / "01-requirements" / "TRACEABILITY_MATRIX.md"
     if not matrix.exists():
-        pytest.skip("TRACEABILITY_MATRIX.md missing (deferred)")
+        pytest.fail("NFR-09 violated: TRACEABILITY_MATRIX.md missing")
     text = matrix.read_text(encoding="utf-8")
     verified_lines = [ln for ln in text.splitlines() if "VERIFIED" in ln]
     assert len(verified_lines) >= 1, (
@@ -467,7 +467,7 @@ def test_integration_line_coverage_threshold():
     """
     cov_file = PROJECT_ROOT / "coverage.json"
     if not cov_file.exists():
-        pytest.skip("integration coverage artifact not produced for this test run")
+        pytest.fail("NFR-10 violated: integration coverage artifact not produced")
     data = json.loads(cov_file.read_text())
     pct = data.get("totals", {}).get("percent_covered")
     assert pct is not None and pct >= 80.0, (
@@ -582,7 +582,7 @@ def test_radon_cc_per_function():
         cwd=str(PROJECT_ROOT), capture_output=True, text=True, timeout=60,
     )
     if result.returncode != 0 and not result.stdout.strip():
-        pytest.skip("radon cc not available")
+        pytest.fail("NFR-11 violated: radon cc not available")
     data = json.loads(result.stdout)
     # Documented exceptions — NFR-11 SAB advisory list.
     allowed_exceptions = {
@@ -615,7 +615,7 @@ def test_radon_mi_average():
         cwd=str(PROJECT_ROOT), capture_output=True, text=True, timeout=60,
     )
     if result.returncode != 0 and not result.stdout.strip():
-        pytest.skip("radon mi not available")
+        pytest.fail("NFR-11 violated: radon mi not available")
     data = json.loads(result.stdout)
     scores = [v.get("mi", 0) for v in data.values() if isinstance(v, dict)]
     avg = sum(scores) / max(len(scores), 1)
