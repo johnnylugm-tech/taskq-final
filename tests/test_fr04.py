@@ -407,3 +407,59 @@ def test_require_scope_signature_is_async_dependency():
         f"FR-04 AC-4.3 violated: require_scope must be async; "
         f"got {type(require_scope).__name__}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Property-based test for FR-04 §Properties — P-FR04-scope-strict.
+#
+# Declared invariant in TEST_SPEC.md §FR-04:
+#     "Scope hierarchy is a partial order; one algebraic invariant
+#      applies: the write→admin edge must be strictly greater."
+#
+# The universal form: for any (required, presented) scope pair where
+# the presented scope ranks BELOW the required scope, verify_scope MUST
+# return False (no scope-upgrade by guessing the route is gated looser
+# than it is). hypothesis @given exercises the entire finite scope
+# alphabet for both axes (read/write/admin × read/write/admin = 9
+# cases; >50 hypothesis-drawn examples extend coverage to guard against
+# any future tier added to _SCOPE_ORDER).
+#
+# Mirrors the canonical pair that TEST_SPEC cites as P-FR04-scope-strict:
+# `verify("write", "admin") == False` — a write principal cannot satisfy
+# an admin-gated route.
+# ---------------------------------------------------------------------------
+
+
+def test_fr04_property_scope_strict_subset_rejected():
+    """FR-04 §Properties P-FR04-scope-strict — for every (required,
+    presented) pair where the presented scope is strictly less than the
+    required scope, ``verify_scope`` MUST return False.
+
+    This is the property test that the FR-04 spec phrase "階層包含"
+    (hierarchical inclusion, strict) requires.  hypothesis draws
+    ``(required, presented)`` pairs from the full scope alphabet; an
+    implementation that lets a smaller scope satisfy a larger one would
+    let an unauthenticated `read` key DELETE a task and would fail here.
+    """
+    from hypothesis import given, strategies as st
+
+    scopes = st.sampled_from(["read", "write", "admin"])
+
+    @given(required=scopes, presented=scopes)
+    def _check(required: str, presented: str) -> None:
+        order = {"read": 0, "write": 1, "admin": 2}
+        principal = Principal(key_id="h" * 16, scope=presented)
+        if order[presented] < order[required]:
+            assert verify_scope(principal, required) is False, (
+                f"P-FR04-scope-strict violated: verify_scope({presented!r}, "
+                f"{required!r}) returned True — a scope strictly below the "
+                f"required one satisfied the check"
+            )
+        else:
+            assert verify_scope(principal, required) is True, (
+                f"P-FR04-scope-strict violated: verify_scope({presented!r}, "
+                f"{required!r}) returned False — a scope at or above the "
+                f"required one failed the check"
+            )
+
+    _check()

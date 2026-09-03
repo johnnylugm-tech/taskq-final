@@ -1837,3 +1837,214 @@ def test_v3_isoformat_or_none_when_non_datetime_string():
     from migrations.versions.v3_split_results import _isoformat_or_none
 
     assert _isoformat_or_none("plain string") == "plain string"
+
+
+# ---------------------------------------------------------------------------
+# Property-based test for FR-07 §Properties — P-FR07-v3-roundtrip.
+#
+# Declared invariant in TEST_SPEC.md §FR-07:
+#     "Migration round-trip is the canonical algebraic invariant of
+#      FR-07. The same sample column values must survive both
+#      directions of the v3 split/restore cycle."
+#
+# Universal form: for every (exit_code, stdout_tail, stderr_tail,
+# duration_ms, finished_at) row drawn from the canonical column
+# domain, after a ``v3.upgrade() → v3.downgrade() → v3.upgrade()``
+# cycle, the corresponding ``task_results`` row carries the SAME
+# column values. The split / merge cycle must be the identity over
+# the row payload — hypothesis generates diverse column values so any
+# path that loses or coerces a column would surface here.
+#
+# In-process: drives the migration via the Operations-proxy pattern
+# (the same one the v1 / v2 direct tests use), so the round-trip is
+# milliseconds per example — hypothesis can draw hundreds of cases
+# in the time the subprocess-based test takes for one.
+# ---------------------------------------------------------------------------
+
+
+def test_fr07_property_v3_roundtrip_preserves_columns(tmp_path):
+    """FR-07 §Properties P-FR07-v3-roundtrip — column-by-column
+    equality through ``v3.upgrade() → v3.downgrade() → v3.upgrade()``.
+
+    hypothesis draws ``(exit_code, stdout_tail, stderr_tail,
+    duration_ms)`` from the canonical column domain; each example
+    becomes a single ``task_results`` row under the v3 schema, the
+    round-trip runs, and the surviving row's column values must
+    match the seed. The "stdout_tail" axis exercises the
+    SQLAlchemy ``String(4096)`` truncation contract (a v3 split that
+    silently widened the column would still pass here; a v3 merge
+    that dropped a non-empty ``stdout_tail`` would fail).
+    """
+    from hypothesis import given, strategies as st
+
+    text_strategy = st.text(
+        alphabet=st.characters(
+            whitelist_categories=("Lu", "Ll", "Nd"),
+            max_codepoint=0x7E,
+        ),
+        min_size=0,
+        max_size=64,
+    )
+
+    @given(
+        exit_code=st.integers(min_value=-2**31, max_value=2**31 - 1),
+        stdout_tail=text_strategy,
+        stderr_tail=text_strategy,
+        duration_ms=st.integers(min_value=0, max_value=2**31 - 1),
+    )
+    def _check(
+        exit_code: int,
+        stdout_tail: str,
+        stderr_tail: str,
+        duration_ms: int,
+    ) -> None:
+        import json as _json
+        import uuid
+        from alembic.operations import Operations
+        from alembic.runtime.migration import MigrationContext
+        from sqlalchemy import create_engine, text
+
+        import migrations.versions.v1_initial as v1
+        import migrations.versions.v2_tags as v2
+        import migrations.versions.v3_split_results as v3
+
+        # Unique SQLite file per hypothesis example — pytest's
+        # ``tmp_path`` is per-test, not per-example, so a fresh
+        # filename per draw avoids the "table already exists"
+        # collision when v1.upgrade() runs against a re-used file.
+        db_path = tmp_path / f"prop_{uuid.uuid4().hex}.db"
+        engine = create_engine(f"sqlite:///{db_path}", future=True)
+
+        # Apply v1 only (so ``tasks.result_json`` exists), seed the
+        # v1-shaped payload, then apply v2 + v3. v3.upgrade() will
+        # then split the seeded ``result_json`` into ``task_results``
+        # — the baseline of the round-trip.
+        with engine.begin() as conn:
+            ctx = MigrationContext.configure(conn)
+            op = Operations(ctx)
+            original_v1_op = v1.op
+            v1.op = op
+            try:
+                v1.upgrade()
+            finally:
+                v1.op = original_v1_op
+
+        # Seed ONE parent row with a single-run payload (the v1
+        # shape that produces exactly one ``task_results`` row on
+        # the v3 upgrade — round-trip identity is cleanest here).
+        payload = _json.dumps({
+            "exit_code": exit_code,
+            "stdout_tail": stdout_tail,
+            "stderr_tail": stderr_tail,
+            "duration_ms": duration_ms,
+            "finished_at": "2026-09-02T00:00:00+00:00",
+        })
+
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    "INSERT INTO tasks (id, name, command, status, result_json) "
+                    "VALUES (:tid, :n, :c, :s, :rj)"
+                ),
+                {
+                    "tid": "fr07-prop",
+                    "n": "prop",
+                    "c": "echo p",
+                    "s": "pending",
+                    "rj": payload,
+                },
+            )
+
+        # Now apply v2 + v3 (in-process). v3.upgrade() will split the
+        # seeded ``result_json`` into ``task_results`` — that is the
+        # baseline of the round-trip.
+        with engine.begin() as conn:
+            ctx = MigrationContext.configure(conn)
+            op = Operations(ctx)
+            for mod, fn in ((v2, v2.upgrade), (v3, v3.upgrade)):
+                original_op = mod.op
+                mod.op = op
+                has_offline = hasattr(mod, "is_offline_mode")
+                original_offline = getattr(mod, "is_offline_mode", None)
+                if has_offline:
+                    mod.is_offline_mode = lambda: False
+                try:
+                    fn()
+                finally:
+                    mod.op = original_op
+                    if has_offline:
+                        mod.is_offline_mode = original_offline
+
+        # Snapshot the post-seed ``task_results`` row (just after
+        # the initial v3.upgrade() — the baseline).
+        with engine.connect() as conn:
+            baseline = conn.execute(
+                text(
+                    "SELECT exit_code, stdout_tail, stderr_tail, duration_ms "
+                    "FROM task_results WHERE task_id = 'fr07-prop'"
+                )
+            ).first()
+
+        assert baseline is not None, (
+            "P-FR07-v3-roundtrip: initial v3.upgrade() left no "
+            "task_results row for the seeded task — the v3 split "
+            "step is broken, not the round-trip"
+        )
+
+        # Round trip: downgrade -1 (merge task_results → result_json)
+        # then upgrade head (split result_json → task_results again).
+        for mod, fn in (
+            (v3, v3.downgrade),
+            (v3, v3.upgrade),
+        ):
+            with engine.begin() as conn:
+                ctx = MigrationContext.configure(conn)
+                op = Operations(ctx)
+                original_op = mod.op
+                original_offline = mod.is_offline_mode
+                mod.op = op
+                mod.is_offline_mode = lambda: False
+                try:
+                    fn()
+                finally:
+                    mod.op = original_op
+                    mod.is_offline_mode = original_offline
+
+        # The round-trip must restore the baseline row exactly.
+        with engine.connect() as conn:
+            after = conn.execute(
+                text(
+                    "SELECT exit_code, stdout_tail, stderr_tail, duration_ms "
+                    "FROM task_results WHERE task_id = 'fr07-prop'"
+                )
+            ).first()
+
+        assert after is not None, (
+            f"P-FR07-v3-roundtrip violated: round-trip lost the "
+            f"task_results row for the seeded task"
+        )
+
+        # Column-by-column equality (the algebraic invariant the
+        # TEST_SPEC note states: "the same sample column values must
+        # survive both directions of the v3 split/restore cycle").
+        if (
+            after[0] != baseline[0]
+            or after[1] != baseline[1]
+            or after[2] != baseline[2]
+            or after[3] != baseline[3]
+        ):
+            raise AssertionError(
+                f"P-FR07-v3-roundtrip violated: column drift after "
+                f"v3.upgrade() → v3.downgrade() → v3.upgrade(): "
+                f"baseline={baseline!r} after={after!r} "
+                f"(seed exit_code={exit_code!r}, "
+                f"stdout_tail={stdout_tail!r}, "
+                f"stderr_tail={stderr_tail!r}, "
+                f"duration_ms={duration_ms!r})"
+            )
+
+        # Dispose the engine so SQLite releases the tmp_path file
+        # before the next hypothesis example creates a fresh one.
+        engine.dispose()
+
+    _check()

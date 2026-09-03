@@ -1,7 +1,7 @@
 {
   "schema": "harness/traceability/attestation/v1",
-  "git_sha": "febd55187c9b331cd6c99abacd1eb6f14fdf272f",
-  "content_sha256": "736efe80cbb84acc51e57276ad77aecb40a4410cf431cbcee5ae961dc4e125cb",
+  "git_sha": "791792d0ad0e734a6b8604d923f43078b288a51c",
+  "content_sha256": "1576063e774cbfca9c25986b727c7b044c8044ccd95960c7fbe1e54726b006c9",
   "tool": "scripts/build_trace_attestation.py",
   "overlay_used": null,
   "overlay_errors": [],
@@ -14,7 +14,7 @@
       "code_coverage": "100.0%",
       "test_coverage": "100.0%",
       "verification_rate": "100.0%",
-      "total_links": 72,
+      "total_links": 74,
       "missing_mappings": {
         "fr_without_srs": [],
         "fr_without_code": [],
@@ -40,10 +40,11 @@
           "03-development/src/taskq_api/service/__init__.py",
           "03-development/src/taskq_api/service/common.py",
           "03-development/src/taskq_api/service/tasks.py",
+          "03-development/tests/integration/test_fr01.py",
           "tests/test_fr01.py"
         ],
         "test_files": [
-          "tests/test_fr01.py"
+          "03-development/tests/integration/test_fr01.py"
         ],
         "sad_module": "—",
         "priority": "HIGH"
@@ -62,7 +63,7 @@
           "03-development/src/taskq_api/service/tasks.py"
         ],
         "test_files": [
-          "tests/test_fr02.py"
+          "03-development/tests/integration/test_fr02.py"
         ],
         "sad_module": "—",
         "priority": "HIGH"
@@ -81,7 +82,7 @@
           "03-development/src/taskq_api/service/auth.py"
         ],
         "test_files": [
-          "tests/test_fr03.py"
+          "03-development/tests/integration/test_fr03.py"
         ],
         "sad_module": "—",
         "priority": "HIGH"
@@ -95,10 +96,11 @@
           "03-development/src/taskq_api/api/metrics.py",
           "03-development/src/taskq_api/errors.py",
           "03-development/src/taskq_api/service/auth.py",
+          "03-development/tests/integration/test_fr04.py",
           "tests/test_fr04.py"
         ],
         "test_files": [
-          "tests/test_fr04.py"
+          "03-development/tests/integration/test_fr04.py"
         ],
         "sad_module": "—",
         "priority": "HIGH"
@@ -117,7 +119,7 @@
           "03-development/src/taskq_api/service/ratelimit.py"
         ],
         "test_files": [
-          "tests/test_fr05.py"
+          "03-development/tests/integration/test_fr05.py"
         ],
         "sad_module": "—",
         "priority": "HIGH"
@@ -132,7 +134,7 @@
           "03-development/src/taskq_api/repository/task_repo.py"
         ],
         "test_files": [
-          "tests/test_fr06.py"
+          "03-development/tests/integration/test_fr06.py"
         ],
         "sad_module": "—",
         "priority": "HIGH"
@@ -151,7 +153,7 @@
           "03-development/src/migrations/versions/v3_split_results.py"
         ],
         "test_files": [
-          "tests/test_fr07.py"
+          "03-development/tests/integration/test_fr07.py"
         ],
         "sad_module": "—",
         "priority": "HIGH"
@@ -164,7 +166,7 @@
           "03-development/src/taskq_api/service/runner.py"
         ],
         "test_files": [
-          "tests/test_fr08.py"
+          "03-development/tests/integration/test_fr08.py"
         ],
         "sad_module": "—",
         "priority": "HIGH"
@@ -179,7 +181,7 @@
           "03-development/src/taskq_api/service/health.py"
         ],
         "test_files": [
-          "tests/test_fr09.py"
+          "03-development/tests/integration/test_fr09.py"
         ],
         "sad_module": "—",
         "priority": "HIGH"
@@ -194,7 +196,7 @@
           "03-development/src/taskq_api/models/schemas.py"
         ],
         "test_files": [
-          "tests/test_fr10.py"
+          "03-development/tests/integration/test_fr10.py"
         ],
         "sad_module": "—",
         "priority": "HIGH"

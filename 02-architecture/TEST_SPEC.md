@@ -222,6 +222,7 @@ combinations.
 | 3 | `test_no_string_sql_concat` | scanned_path="03-development/src"; forbidden_pattern="f\".*SELECT"; expected_hits="0" | security | Q5, NP-08 |
 | 4 | `test_no_string_sql_concat` | scanned_path="03-development/src"; forbidden_pattern='"\s*%\s*"'; expected_hits="0" | security | Q5, NP-08 |
 | 5 | `test_eager_loading_no_n_plus_one` | seed_count="50"; expected_statement_count="3" | performance | Q6 |
+| 6 | `test_pool_config_uses_settings` | expected_pool_size="5"; expected_pre_ping="True" | static | Q3, NP-08 |
 
 **Sub-assertions**
 
@@ -234,8 +235,8 @@ combinations.
 | FR06-AC-6.3-fstring-zero | `expected_hits == "0"` | 3 |
 | FR06-AC-6.3-percent-zero | `expected_hits == "0"` | 4 |
 | FR06-AC-6.4-statement-cap | `expected_statement_count <= "3"` | 5 |
-
-Deferred: AC-6.5 — engine pool config (`pool_size=TASKQ_DB_POOL_SIZE` default 5, `pool_pre_ping=True`) lives at app startup; verified by `core.db.engine` config audit, not a TEST_SPEC case.
+| FR06-AC-6.5-pool-size | `expected_pool_size == "5"` | 6 |
+| FR06-AC-6.5-pre-ping | `expected_pre_ping == "True"` | 6 |
 
 ---
 
@@ -251,19 +252,22 @@ Deferred: AC-6.5 — engine pool config (`pool_size=TASKQ_DB_POOL_SIZE` default 
 | 3 | `test_v3_data_migration_round_trip_preserves_columns` | sample_command="echo seeded"; sample_exit_code="0"; sample_stdout_tail="seeded"; expected_field_equality="all_columns" | round_trip | Q1, NP-10 |
 | 4 | `test_v3_data_migration_round_trip_preserves_columns` | sample_count="3"; expected_row_count_after="3" | round_trip | Q1, NP-10 |
 | 5 | `test_alembic_upgrade_downgrade_base` | scanned_path="migrations/versions"; forbidden_pattern="op.execute(.DROP TABLE"; expected_hits="0" | security | Q5, NP-08 |
+| 6 | `test_v2_tags_upgrade_creates_tags_task_tags_and_unique` | expected_tables="["tags", "task_tags"]"; expected_tasks_name_unique="True" | state_transition | Q4, NP-10 |
+| 7 | `test_v2_tags_downgrade_drops_v2_only` | seeded_v1_row="task-keep"; expected_v1_row_count="1"; expected_tables_after="["api_keys", "tasks"]" | state_transition | Q4, NP-10 |
 
 **Sub-assertions**
 
 | rule_id | predicate (over Inputs / result) | applies_to (case #) |
 |---|---|---|
 | FR07-AC-7.1-upgrade-head | `target_revision == "head"` | 1 |
+| FR07-AC-7.2-tags-tables | `expected_tables == "["tags", "task_tags"]"` | 6 |
+| FR07-AC-7.2-tasks-name-unique | `expected_tasks_name_unique == "True"` | 6 |
+| FR07-AC-7.2-v1-intact | `expected_v1_row_count == "1"` | 7 |
 | FR07-AC-7.4-downgrade-exit | `expected_downgrade_exit == "0"` | 2 |
 | FR07-AC-7.3-column-preserved | `expected_field_equality == "all_columns"` | 3 |
 | FR07-AC-7.5-row-count-after | `expected_row_count_after == sample_count` | 4 |
 | FR07-AC-7.6-no-drop-shortcut | `expected_hits == "0"` | 5 |
 | FR07-AC-7.7-offline-sql | `target_revision == "head"` | 1 |
-
-Deferred: AC-7.2 — alembic v2 migration (tags + task_tags M2M + tasks.name unique index; downgrade drops without affecting v1) covered by case #1 alembic upgrade head; v1-impact sub-assertion is P3+.
 
 **Properties** — Migration round-trip is the canonical algebraic invariant
 of FR-07. The same sample column values must survive both directions of the
