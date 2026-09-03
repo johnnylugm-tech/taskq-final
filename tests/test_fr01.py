@@ -663,3 +663,205 @@ def test_models_orm_task_columns():
     name_col = Task.__table__.columns["name"]
     assert name_col.unique is True
 
+
+def test_create_with_duplicate_name_evicts_existing_rows():
+    """Coverage: repository/task_repo.py:168 + 181-185 — second ``create``
+    with the same ``name`` evicts the existing SQL row (db_session.delete)
+    and the in-memory mirror row (defensive except ValueError branch
+    when the row is absent from ``_TASK_ORDER``).
+
+    The FR-02 parametrize set creates the same ``name`` twice; this
+    covers the FR-01-visible eviction path so the eviction helpers stay
+    green across all FRs that reuse the repository.
+    """
+    import uuid as _uuid
+
+    from taskq_api.repository.task_repo import (
+        _LOCK,
+        _TASKS,
+        _TASK_ORDER,
+    )
+
+    repo = TaskRepository()
+    name = f"cov-dup-{_uuid.uuid4().hex[:8]}"
+    first = repo.create(name=name, command="echo a")
+    first_id = first["id"]
+
+    # Force the in-memory mirror into the state where the row is in
+    # ``_TASKS`` but NOT in ``_TASK_ORDER`` so the eviction loop hits
+    # its ``except ValueError: pass`` branch.
+    with _LOCK:
+        assert first_id in _TASKS
+        _TASK_ORDER.remove(first_id)
+        assert first_id not in _TASK_ORDER
+
+    # Second create with the same name — eviction runs in both stores.
+    second = repo.create(name=name, command="echo b")
+    assert second["id"] != first_id, (
+        f"expected a fresh id, got duplicate {second['id']!r}"
+    )
+
+    # The first row is gone from both stores after eviction.
+    with _LOCK:
+        assert first_id not in _TASKS, (
+            "first row should be evicted from in-memory mirror"
+        )
+
+
+def test_cursor_points_outside_visible_window_returns_empty_page(asgi_client, auth_read):
+    """Coverage: repository/task_repo.py:485 — ``return [], None`` when a
+    valid cursor decodes to a (ts, id) pair outside the loaded snapshot
+    window (cursor-walk for-loop completes without ``break``).
+
+    A future-timestamp cursor decodes successfully but matches no row in
+    the SQL-bounded snapshot list, triggering the ``else`` branch of the
+    cursor-resolution loop.
+    """
+    import base64
+
+    future_ts = "2099-12-31T23:59:59+00:00"
+    fake_id = "ffffffff-ffff-ffff-ffff-ffffffffffff"
+    payload = f"{future_ts}|{fake_id}".encode("utf-8")
+    cursor = base64.urlsafe_b64encode(payload).decode("ascii").rstrip("=")
+
+    response = _run(asgi_client.get(
+        "/v1/tasks",
+        headers=auth_read,
+        params={"cursor": cursor},
+    ))
+    assert response.status_code == 200, (
+        f"expected 200, got {response.status_code}: {response.text!r}"
+    )
+    body = response.json()
+    assert body.get("items") == [], (
+        f"outside-window cursor must return empty items, got {body!r}"
+    )
+    assert body.get("next_cursor") is None, (
+        f"outside-window cursor must not produce a next cursor, got {body!r}"
+    )
+
+
+def test_repository_update_status_moves_task_to_new_state():
+    """Coverage: repository/task_repo.py:368-379 — ``update_status`` writes
+    the new status to the SQL row AND mirrors it to the in-memory store.
+
+    FR-02 owns the state-machine contract (pending → running → done/failed),
+    but the repository method is part of the FR-01 module set per
+    fr_module_traceability, so the coverage gate requires an FR-01 test
+    that exercises it. Calling it directly from the FR-01 layer is the
+    cleanest way to keep the FR-02 state-machine test surface focused
+    on the API boundary.
+    """
+    import uuid as _uuid
+
+    repo = TaskRepository()
+    seeded = repo.create(name=f"cov-update-{_uuid.uuid4().hex[:8]}",
+                         command="echo hi")
+
+    ok = repo.update_status(seeded["id"], "running")
+    assert ok is True, "update_status should return True for an existing task"
+
+    # The mirror reflects the new status.
+    fresh = repo.get(seeded["id"])
+    assert fresh["status"] == "running", (
+        f"expected status=running, got {fresh['status']!r}"
+    )
+
+
+def test_repository_update_status_returns_false_for_missing_task():
+    """Coverage: repository/task_repo.py:368-379 — ``update_status``
+    short-circuits when the SQL row does not exist (return False branch)."""
+    missing_id = "00000000-0000-0000-0000-000000000000"
+    ok = TaskRepository().update_status(missing_id, "running")
+    assert ok is False, (
+        f"update_status should return False for missing task, got {ok!r}"
+    )
+
+
+def test_repository_add_result_persists_run_and_mirrors_to_memory():
+    """Coverage: repository/task_repo.py:391-416 — ``add_result`` writes a
+    new ``task_results`` row in SQL and mirrors the row into ``_RESULTS``.
+
+    FR-02 owns the run-history state machine but the repository method
+    lives in the FR-01 module set, so the coverage gate requires an
+    FR-01 test that exercises it.
+    """
+    import uuid as _uuid
+
+    repo = TaskRepository()
+    seeded = repo.create(name=f"cov-result-{_uuid.uuid4().hex[:8]}",
+                         command="echo hi")
+
+    result = repo.add_result(
+        task_id=seeded["id"],
+        exit_code=0,
+        stdout_tail="hello",
+        stderr_tail="",
+        duration_ms=42,
+    )
+    assert result["task_id"] == seeded["id"], (
+        f"add_result returned foreign task_id={result['task_id']!r}"
+    )
+    assert result["exit_code"] == 0
+    assert result["stdout_tail"] == "hello"
+    assert result["duration_ms"] == 42
+
+
+def test_run_task_endpoint_returns_202(asgi_client, auth_write):
+    """Coverage: api/tasks.py:183-185 — ``POST /v1/tasks/{id}/run`` handler
+    body (the ``_require_scope(principal, "write")`` guard,
+    ``service_runner.start_run(task_id)`` dispatch, and the
+    ``JSONResponse(status_code=202, content={"run_id": run_id})`` reply).
+
+    The endpoint itself is FR-02's contract, but the file
+    ``api/tasks.py`` is in the FR-01 module set, so Gate 1 expects every
+    reachable line to be exercised by an FR-01 test. We seed a fresh task
+    via the repository, post to the endpoint, and assert the 202 + run_id
+    contract.
+    """
+    import uuid as _uuid
+
+    repo = TaskRepository()
+    seeded = repo.create(
+        name=f"cov-run-{_uuid.uuid4().hex[:8]}",
+        command="echo hi",
+    )
+
+    response = _run(asgi_client.post(
+        f"/v1/tasks/{seeded['id']}/run", headers=auth_write,
+    ))
+    assert response.status_code == 202, (
+        f"expected 202, got {response.status_code}: {response.text!r}"
+    )
+    body = response.json()
+    assert "run_id" in body, (
+        f"202 response missing 'run_id' field; body={body!r}"
+    )
+    assert isinstance(body["run_id"], str) and len(body["run_id"]) > 0
+
+
+def test_run_task_endpoint_rejects_read_scope(asgi_client, auth_read):
+    """Coverage: api/tasks.py:183 — ``_require_scope(principal, "write")``
+    guard raises ``ForbiddenProblem`` (403 + problem+json) when the
+    caller presents a read-scoped key.
+    """
+    import uuid as _uuid
+
+    repo = TaskRepository()
+    seeded = repo.create(
+        name=f"cov-run-403-{_uuid.uuid4().hex[:8]}",
+        command="echo hi",
+    )
+
+    response = _run(asgi_client.post(
+        f"/v1/tasks/{seeded['id']}/run", headers=auth_read,
+    ))
+    assert response.status_code == 403, (
+        f"expected 403 for read scope, got {response.status_code}: "
+        f"{response.text!r}"
+    )
+    ctype = response.headers.get("content-type", "")
+    assert ctype.startswith("application/problem+json"), (
+        f"expected problem+json, got content-type={ctype!r}"
+    )
+
