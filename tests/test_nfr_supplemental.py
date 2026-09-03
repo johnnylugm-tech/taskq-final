@@ -36,10 +36,10 @@ def test_perf_p95_get_task_under_30ms():
 
     Delegates to the pytest-benchmark suite seeded with 200 tasks. The
     benchmark is the same surface as the FR-06 AC-6.4 (eager-loading
-    no-N+1) contract — the benchmark fixture in ``03-development/tests/
-    bench/test_bench_task_repo.py`` exercises the same SQL path.
+    no-N+1) contract — the benchmark fixture in ``tests/bench/
+    test_bench_task_repo.py`` exercises the same SQL path.
     """
-    bench = PROJECT_ROOT / "03-development" / "tests" / "bench" / "test_bench_task_repo.py"
+    bench = PROJECT_ROOT / "tests" / "bench" / "test_bench_task_repo.py"
     assert bench.exists(), f"NFR-01 violated: benchmark file missing at {bench}"
     result = subprocess.run(
         [sys.executable, "-m", "pytest", str(bench),
@@ -73,7 +73,7 @@ def test_perf_p95_list_tasks_under_80ms():
     exercises the SQL path with ``selectinload(Task.results)`` for
     constant statement count (FR-06 AC-6.4 / NFR-01).
     """
-    bench = PROJECT_ROOT / "03-development" / "tests" / "bench" / "test_bench_task_repo.py"
+    bench = PROJECT_ROOT / "tests" / "bench" / "test_bench_task_repo.py"
     assert bench.exists(), f"NFR-01 violated: benchmark file missing at {bench}"
     result = subprocess.run(
         [sys.executable, "-m", "pytest", str(bench),
@@ -121,7 +121,7 @@ def test_pytest_benchmark_suite_runs():
     Gate 2 framework's mutation_testing path is treated as a third
     benchmark slot by the integration harness.
     """
-    bench = PROJECT_ROOT / "03-development" / "tests" / "bench" / "test_bench_task_repo.py"
+    bench = PROJECT_ROOT / "tests" / "bench" / "test_bench_task_repo.py"
     assert bench.exists(), f"NFR-01 violated: benchmark file missing at {bench}"
     result = subprocess.run(
         [sys.executable, "-m", "pytest", str(bench),
