@@ -1,8 +1,8 @@
 {
   "gate": 1,
   "phase": 3,
-  "fr_id": "FR-07",
-  "overall_score": 100.0,
+  "fr_id": "FR-08",
+  "overall_score": 96.445,
   "quality_complete": true,
   "rounds_used": 1,
   "breakdown": {
@@ -16,26 +16,26 @@
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\": \"1.1.409\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 33, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0}}",
+      "tool_evidence": "{\"version\":\"1.1.409\",\"time\":\"1788389021913\",\"generalDiagnostics\":[],\"summary\":{\"filesAnalyzed\":33,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.101}}",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/type_safety_harness.txt"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 80,
-      "tests_passed": 38,
+      "tests_passed": 11,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "collected 38 items\ntests/test_fr07.py ...................................... [100%]\n============================== 38 passed in 2.12s ===============================\nCoverage pct: 99.39",
+      "tool_evidence": "11 passed, 1 warning in 1.50s. covered=175 num=204 pct=85.78. Required tests: test_graceful_drain_waits_running, test_task_timeout_kills_orphan_subprocess, test_cancelled_error_propagates all PASSED. spec_cov_pct=100% (0 missing). score=min(85.78,100)=85.78",
       "coverage_scope": "per_fr",
-      "coverage_scope_fr": "FR-07",
+      "coverage_scope_fr": "FR-08",
       "score_source": "framework",
-      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-07.txt"
+      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-08.txt"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Analyzed 50 files, 113 dependencies.\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\nContracts: 3 kept, 0 broken.",
+      "tool_evidence": "Analyzed 50 files, 117 dependencies. Layer ordering KEPT. SQLAlchemy containment KEPT. Config and errors independence KEPT. Contracts: 3 kept, 0 broken.",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/architecture_constraints_harness.txt"
     }
@@ -78,26 +78,26 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "bf8170347d351316634e1a134871681630c272c3e23c835e7a2905ae2ca876a0",
-      "bytes": 141,
-      "head": "{\"version\": \"1.1.409\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 33, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0}}"
+      "sha256": "77f13e10a76fd1d24d9e58c91ab38aee2f7160d064012802010d8e8ca8092d19",
+      "bytes": 170,
+      "head": "{\"version\":\"1.1.409\",\"time\":\"1788389021913\",\"generalDiagnostics\":[],\"summary\":{\"filesAnalyzed\":33,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.101}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "5bd7aa1f80259369175cc03654dd6d0fa999713d5a411a2be9cf3efdf5f2982f",
-      "bytes": 185,
-      "head": "collected 38 items\ntests/test_fr07.py ...................................... [100%]\n============================== 38 passed in 2.12s ===============================\nCoverage pct: 99.39"
+      "sha256": "492480a0bf06c28d2c74072bac0e0b4dbf9e953f6d07b31803154275e305bebb",
+      "bytes": 257,
+      "head": "11 passed, 1 warning in 1.50s. covered=175 num=204 pct=85.78. Required tests: test_graceful_drain_waits_running, test_task_timeout_kills_orphan_subprocess, test_cancelled_error_propagates all PASSED. spec_cov_pct=100% (0 missing). score=min(85.78,100)=85.78"
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "615fe950dd8faf5b756df505ea4ff62d2ef646b28d62959502b547755cbd9488",
-      "bytes": 149,
-      "head": "Analyzed 50 files, 113 dependencies.\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\nContracts: 3 kept, 0 broken."
+      "sha256": "6ca43afd91128b316ae2867cf2872bf6bbacd94807d6812ae177f9d7d6a2627b",
+      "bytes": 152,
+      "head": "Analyzed 50 files, 117 dependencies. Layer ordering KEPT. SQLAlchemy containment KEPT. Config and errors independence KEPT. Contracts: 3 kept, 0 broken."
     }
   },
-  "composite_score": 100.0,
+  "composite_score": 96.445,
   "verdict": "PASS",
   "passed": true,
   "spec_undelivered": [],
