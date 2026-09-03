@@ -1,9 +1,9 @@
 {
   "state": "RUNNING",
-  "current_phase": 7,
-  "last_gate": 1,
+  "current_phase": 8,
+  "last_gate": 4,
   "last_fr": "FR-10",
-  "last_update": "2026-09-03T21:48:05.466698+00:00",
+  "last_update": "2026-09-03T21:58:57.691355+00:00",
   "language": "python",
   "phase_completed": {
     "1": {
@@ -75,10 +75,11 @@
   },
   "test_inventory_checksum": "d16e95b5819e23b11926790a2e31783c6f1f3cba02398b713073804c0d88e77d",
   "phase_truth_passed": true,
-  "last_milestone_command": "push-milestone --type p7",
+  "last_milestone_command": "advance-phase --completed-phase 7",
   "last_milestone_head": {
     "p3-post-gate2": "210cb03900167f1a4313ca7b77f6000060e2eae2",
     "p4-pre-gate3": "0efd0b9b7877622a418afffac24d67b929f505c6",
-    "p5-baseline": "5bd8f9729964adbf0384d40cd933023b2ff3e7f7"
+    "p5-baseline": "5bd8f9729964adbf0384d40cd933023b2ff3e7f7",
+    "p7": "46b484124196a3f47904caa5534aa93ee29c0187"
   }
 }
