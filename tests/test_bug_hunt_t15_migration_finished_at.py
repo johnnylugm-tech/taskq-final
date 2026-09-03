@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 import os
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 
 _ROOT = Path(__file__).resolve().parent.parent
@@ -24,8 +24,6 @@ if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 os.environ.setdefault("TASKQ_DB_URL", "sqlite:///./taskq.db")
-
-import pytest  # noqa: E402
 
 
 def test_t15_missing_finished_at_does_not_substitute_now(tmp_path):
