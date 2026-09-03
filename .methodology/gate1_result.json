@@ -1,8 +1,8 @@
 {
   "gate": 1,
   "phase": 3,
-  "fr_id": "FR-08",
-  "overall_score": 96.445,
+  "fr_id": "FR-09",
+  "overall_score": 95.67,
   "quality_complete": true,
   "rounds_used": 1,
   "breakdown": {
@@ -16,26 +16,26 @@
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\":\"1.1.409\",\"time\":\"1788389021913\",\"generalDiagnostics\":[],\"summary\":{\"filesAnalyzed\":33,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.101}}",
+      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1788389904901\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 33, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.101}}",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/type_safety_harness.txt"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 80,
-      "tests_passed": 11,
+      "tests_passed": 28,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "11 passed, 1 warning in 1.50s. covered=175 num=204 pct=85.78. Required tests: test_graceful_drain_waits_running, test_task_timeout_kills_orphan_subprocess, test_cancelled_error_propagates all PASSED. spec_cov_pct=100% (0 missing). score=min(85.78,100)=85.78",
+      "tool_evidence": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.15, pytest-8.4.2, pluggy-1.6.0\ncollected 28 items\n\ntests/test_fr09.py .........                                             [ 32%]\ntests/test_fr06.py ...................                                   [100%]\n\n======================== 28 passed, 1 warning in 0.41s =========================\ntotals: percent_covered=82.69 (health.py=93.33%, session.py=80.90%)",
       "coverage_scope": "per_fr",
-      "coverage_scope_fr": "FR-08",
+      "coverage_scope_fr": "FR-09",
       "score_source": "framework",
-      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-08.txt"
+      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-09.txt"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Analyzed 50 files, 117 dependencies. Layer ordering KEPT. SQLAlchemy containment KEPT. Config and errors independence KEPT. Contracts: 3 kept, 0 broken.",
+      "tool_evidence": "=============\nImport Linter\n=============\n\nContracts: 3 kept, 0 broken.\n\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/architecture_constraints_harness.txt"
     }
@@ -78,26 +78,26 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "77f13e10a76fd1d24d9e58c91ab38aee2f7160d064012802010d8e8ca8092d19",
-      "bytes": 170,
-      "head": "{\"version\":\"1.1.409\",\"time\":\"1788389021913\",\"generalDiagnostics\":[],\"summary\":{\"filesAnalyzed\":33,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.101}}"
+      "sha256": "2cef1b7acebaf61131ff8222c2f184cc7649606676daec60a833872afd4034c8",
+      "bytes": 186,
+      "head": "{\"version\": \"1.1.409\", \"time\": \"1788389904901\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 33, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.101}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "492480a0bf06c28d2c74072bac0e0b4dbf9e953f6d07b31803154275e305bebb",
-      "bytes": 257,
-      "head": "11 passed, 1 warning in 1.50s. covered=175 num=204 pct=85.78. Required tests: test_graceful_drain_waits_running, test_task_timeout_kills_orphan_subprocess, test_cancelled_error_propagates all PASSED. spec_cov_pct=100% (0 missing). score=min(85.78,100)=85.78"
+      "sha256": "12878ab31c7f16d0d17e679e9127446924d7c638d31168470c23bcf23a3378ce",
+      "bytes": 472,
+      "head": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.15, pytest-8.4.2, pluggy-1.6.0\ncollected 28 items\n\ntests/test_fr09.py .........                                             [ 32%]\ntests/test_fr06.py ...................                                   [100%]\n\n======================== 28 passed, 1 warning in 0.41s =========================\ntotals: percent_covered=82.69 (health.py=93.33%, session.py=80.90%)"
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "6ca43afd91128b316ae2867cf2872bf6bbacd94807d6812ae177f9d7d6a2627b",
-      "bytes": 152,
-      "head": "Analyzed 50 files, 117 dependencies. Layer ordering KEPT. SQLAlchemy containment KEPT. Config and errors independence KEPT. Contracts: 3 kept, 0 broken."
+      "sha256": "a2c089cbe4e75300bdc8a5d0e48213bed6ab4dbe8ed8a46aa779368166f78a26",
+      "bytes": 156,
+      "head": "=============\nImport Linter\n=============\n\nContracts: 3 kept, 0 broken.\n\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT"
     }
   },
-  "composite_score": 96.445,
+  "composite_score": 95.67,
   "verdict": "PASS",
   "passed": true,
   "spec_undelivered": [],
