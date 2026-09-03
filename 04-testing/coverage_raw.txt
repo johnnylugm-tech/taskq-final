@@ -1,0 +1,1135 @@
+........................................................................ [ 35%]
+................F..FF....................FFF..F...F...F................. [ 70%]
+..............F............................................              [100%]
+=================================== FAILURES ===================================
+_ test_alembic_upgrade_downgrade_base[AC-7.4-upgrade-head-then-downgrade-base] _
+
+scenario = 'alembic_round_trip', start_revision = 'base'
+target_revision = 'head', expected_round_trip_exit = '0'
+expected_downgrade_exit = '0', scanned_path = None, forbidden_pattern = None
+expected_hits = None
+alembic_db_url = 'sqlite:////private/var/folders/9s/865m2mg544z72d_5q423mlmm0000gn/T/pytest-of-johnny/pytest-1862/test_alembic_upgrade_downgrade0/taskq.db'
+
+    @pytest.mark.parametrize(
+        (
+            # Discriminator: which scenario this instance exercises.
+            # ``"alembic_round_trip"``  -> cases #1, #2 (alembic subprocess)
+            # ``"source_scan"``         -> case  #5 (AC-7.6 forbidden-pattern scan)
+            "scenario",
+            # Alembic scenario inputs.
+            "start_revision", "target_revision",
+            "expected_round_trip_exit", "expected_downgrade_exit",
+            # Source-scan inputs (only meaningful when scenario=="source_scan").
+            "scanned_path", "forbidden_pattern", "expected_hits",
+        ),
+        [
+            # AC-7.4 + AC-7.7 — happy path: upgrade head then downgrade base.
+            # Both must succeed (expected_round_trip_exit == "0"); the test
+            # also pins that the offline SQL generation works (AC-7.7) by
+            # additionally running ``alembic upgrade head --sql`` which is
+            # the canonical offline mode alembic supports.
+            (
+                "alembic_round_trip",
+                "base", "head", "0", "0",
+                None, None, None,
+            ),
+            # AC-7.2 / AC-7.4 — state transition: downgrade from v2 -> v1
+            # without affecting v1 data. The downgrade must succeed
+            # (expected_downgrade_exit == "0") and ``tasks`` rows seeded
+            # under v1 must survive the round trip through v2 and back.
+            (
+                "alembic_round_trip",
+                "v2", "v1", "0", "0",
+                None, None, None,
+            ),
+            # AC-7.6 — security: the migrations must not contain a
+            # destructive ``op.execute("DROP TABLE ...`` shortcut. The
+            # pattern is the canonical forbidden form; ``expected_hits``
+            # must be "0".
+            (
+                "source_scan",
+                None, None, None, None,
+                "migrations/versions", "op.execute(.DROP TABLE", "0",
+            ),
+        ],
+        ids=[
+            "AC-7.4-upgrade-head-then-downgrade-base",
+            "AC-7.2-downgrade-v2-v1-keeps-v1-data",
+            "AC-7.6-no-drop-shortcut",
+        ],
+    )
+    def test_alembic_upgrade_downgrade_base(
+        scenario,
+        start_revision, target_revision,
+        expected_round_trip_exit, expected_downgrade_exit,
+        scanned_path, forbidden_pattern, expected_hits,
+        alembic_db_url,
+    ):
+        """FR-07 AC-7.4 / AC-7.2 / AC-7.6 / AC-7.7 — alembic migration
+        round-trip and source-scan invariants.
+    
+        Three scenarios share this function symbol:
+    
+          - AC-7.4 + AC-7.7 (happy_path): upgrade from ``base`` to
+            ``head`` then downgrade from ``head`` back to ``base``. Both
+            alembic invocations must exit 0. The test also runs
+            ``alembic upgrade head --sql`` (offline SQL generation) to
+            pin the AC-7.7 contract that migration files can be
+            inspected without a live database connection.
+          - AC-7.2 (state_transition): downgrade from ``v2`` to ``v1``
+            must exit 0 and not affect v1 data (the ``tasks`` rows
+            seeded under v1 must still be present after the round trip).
+          - AC-7.6 (security): no ``op.execute("DROP TABLE ...``
+            shortcut in any migration file — the canonical destructive
+            pattern the AC explicitly forbids.
+    
+        The alembic scenarios run alembic as an OUT-OF-PROCESS subprocess
+        (``subprocess_mode="out_of_process"``) and propagate
+        ``PYTHONPATH`` + ``TASKQ_DB_URL`` via the env dict
+        (``shared_TASKQ_HOME="true"``). The choice is recorded explicitly
+        below — alembic itself MUST be a fresh process so its
+        ``env.py`` reads ``TASKQ_DB_URL`` from the child env, exactly
+        as it does in production ``alembic upgrade head`` runs.
+    
+        Sub-assertions (all bound to TOP-LEVEL ifs so MIRROR sees them):
+          - FR07-AC-7.1-upgrade-head   : target_revision == "head"
+          - FR07-AC-7.4-downgrade-exit : expected_downgrade_exit == "0"
+          - FR07-AC-7.6-no-drop-shortcut : expected_hits == "0"
+          - FR07-AC-7.7-offline-sql    : target_revision == "head"
+        """
+        # NFR-09 — testability: real SQLite migration round-trip
+        # NFR-10 — integration coverage: alembic is exercised as a real
+        #         subprocess (mirrors production ``alembic upgrade head``).
+        # NFR-03 — error handling: downgrade path is the canonical migration
+        #         rollback surface; the round-trip asserts the migration
+        #         failure mode reverts to the previous revision cleanly.
+        # NFR-12 — verify-system: this test is one of the chain steps the
+        #         ``make verify-system`` target runs against a real SQLite
+        #         file.
+    
+        env = _alembic_env_with(alembic_db_url)
+    
+        # ------------------------------------------------------------------
+        # FR07-AC-7.1-upgrade-head — applies_to (1): target_revision is
+        # "head". Triggers for case 1 (target_revision="head"). Cases 2
+        # and 5 carry different target_revision values (case 2 has "v1",
+        # case 5 has None) so this if-block does NOT execute for them.
+        # ------------------------------------------------------------------
+        if target_revision == "head":
+            assert target_revision == "head"
+            upgrade_proc = subprocess.run(
+                [sys.executable, "-m", "alembic", "upgrade", target_revision],
+                env=env,
+                cwd=str(_PROJECT_ROOT),
+                capture_output=True,
+                text=True,
+            )
+>           assert upgrade_proc.returncode == int(expected_round_trip_exit), (
+                f"FR-07 AC-7.4 violated: alembic upgrade {target_revision} "
+                f"exited {upgrade_proc.returncode}; expected "
+                f"{expected_round_trip_exit}. stdout=\n{upgrade_proc.stdout}\n"
+                f"stderr=\n{upgrade_proc.stderr}"
+            )
+E           AssertionError: FR-07 AC-7.4 violated: alembic upgrade head exited 1; expected 0. stdout=
+E             
+E             stderr=
+E             INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+E             INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+E             INFO  [alembic.runtime.migration] Running upgrade  -> v1, [FR-07] v1_initial — create ``tasks`` and ``api_keys``.
+E             INFO  [alembic.runtime.migration] Running upgrade v1 -> v2, [FR-07] v2_tags — add ``tags``, ``task_tags`` and UNIQUE on ``tasks.name``.
+E             INFO  [alembic.runtime.migration] Running upgrade v2 -> v3, [FR-07] v3_split_results — split ``tasks.result_json`` into ``task_results``.
+E             Traceback (most recent call last):
+E               File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/sql/base.py", line 1617, in __getattr__
+E                 return self._index[key][1]
+E                        ~~~~~~~~~~~^^^^^
+E             KeyError: 'created_at'
+E             
+E             The above exception was the direct cause of the following exception:
+E             
+E             Traceback (most recent call last):
+E               File "<frozen runpy>", line 198, in _run_module_as_main
+E               File "<frozen runpy>", line 88, in _run_code
+E               File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/alembic/__main__.py", line 4, in <module>
+E                 main(prog="alembic")
+E               File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/alembic/config.py", line 630, in main
+E                 CommandLine(prog=prog).main(argv=argv)
+E               File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/alembic/config.py", line 624, in main
+E                 self.run_cmd(cfg, options)
+E               File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/alembic/config.py", line 601, in run_cmd
+E                 fn(
+E               File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/alembic/command.py", line 401, in upgrade
+E                 script.run_env()
+E               File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/alembic/script/base.py", line 585, in run_env
+E                 util.load_python_file(self.dir, "env.py")
+E               File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 93, in load_python_file
+E                 module = load_module_py(module_id, path)
+E                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 109, in load_module_py
+E                 spec.loader.exec_module(module)  # type: ignore
+E                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+E               File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+E               File "/Users/johnny/projects/taskq-final/03-development/src/migrations/env.py", line 155, in <module>
+E                 _dispatch()
+E               File "/Users/johnny/projects/taskq-final/03-development/src/migrations/env.py", line 152, in _dispatch
+E                 run_migrations_online()
+E               File "/Users/johnny/projects/taskq-final/03-development/src/migrations/env.py", line 124, in run_migrations_online
+E                 context.run_migrations()
+E               File "<string>", line 8, in run_migrations
+E               File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/alembic/runtime/environment.py", line 939, in run_migrations
+E                 self.get_context().run_migrations(**kw)
+E               File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/alembic/runtime/migration.py", line 624, in run_migrations
+E                 step.migration_fn(**kw)
+E               File "/Users/johnny/projects/taskq-final/03-development/src/migrations/versions/v3_split_results.py", line 151, in upgrade
+E                 sa.select(tasks.c.id, tasks.c.result_json, tasks.c.created_at).select_from(tasks)
+E                                                            ^^^^^^^^^^^^^^^^^^
+E               File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/sql/base.py", line 1619, in __getattr__
+E                 raise AttributeError(key) from err
+E             AttributeError: created_at
+E             
+E           assert 1 == 0
+E            +  where 1 = CompletedProcess(args=['/Users/johnny/projects/taskq-final/.venv/bin/python', '-m', 'alembic', 'upgrade', 'head'], ret...alchemy/sql/base.py", line 1619, in __getattr__\n    raise AttributeError(key) from err\nAttributeError: created_at\n').returncode
+E            +  and   0 = int('0')
+
+03-development/tests/integration/test_fr07.py:277: AssertionError
+_ test_v3_data_migration_round_trip_preserves_columns[AC-7.5-round-trip-preserves-column-values] _
+
+sample_command = 'echo seeded', sample_exit_code = '0'
+sample_stdout_tail = 'seeded', expected_field_equality = 'all_columns'
+sample_count = None, expected_row_count_after = None
+alembic_db_url = 'sqlite:////private/var/folders/9s/865m2mg544z72d_5q423mlmm0000gn/T/pytest-of-johnny/pytest-1862/test_v3_data_migration_round_t0/taskq.db'
+
+    @pytest.mark.parametrize(
+        (
+            "sample_command", "sample_exit_code", "sample_stdout_tail",
+            "expected_field_equality", "sample_count",
+            "expected_row_count_after",
+        ),
+        [
+            # AC-7.5 — round trip with one sample row. After
+            # upgrade -> downgrade -1 -> upgrade the task_results row
+            # must carry the same command / exit_code / stdout_tail /
+            # stderr_tail / duration_ms column values as before the
+            # round trip.
+            ("echo seeded", "0", "seeded", "all_columns", None, None),
+            # AC-7.5 — round trip preserves row count. Seed three rows,
+            # run upgrade -> downgrade -1 -> upgrade, expect the three
+            # rows to still be present.
+            (None, None, None, None, "3", "3"),
+        ],
+        ids=[
+            "AC-7.5-round-trip-preserves-column-values",
+            "AC-7.5-round-trip-preserves-row-count",
+        ],
+    )
+    def test_v3_data_migration_round_trip_preserves_columns(
+        sample_command, sample_exit_code, sample_stdout_tail,
+        expected_field_equality, sample_count,
+        expected_row_count_after,
+        alembic_db_url,
+    ):
+        """FR-07 AC-7.5 — v3 data migration round trip preserves columns.
+    
+        Two scenarios share this function symbol:
+    
+          - AC-7.5 (round_trip, single row): seed one task with
+            ``sample_command="echo seeded"``, ``sample_exit_code="0"``,
+            ``sample_stdout_tail="seeded"``; perform
+            ``upgrade head -> downgrade -1 -> upgrade head``; assert
+            that the row in ``task_results`` carries the same column
+            values column-by-column
+            (``expected_field_equality == "all_columns"``).
+          - AC-7.5 (round_trip, row count): seed ``sample_count="3"``
+            rows; perform the same round trip; assert
+            ``expected_row_count_after == "3"``.
+    
+        The test drives alembic as a SUBPROCESS (out-of-process) and
+        inspects the resulting SQLite file via SQLAlchemy. The PYTHONPATH
+        is propagated so ``alembic`` can ``import migrations.env`` from
+        the child env.
+    
+        Sub-assertions:
+          - FR07-AC-7.3-column-preserved : expected_field_equality == "all_columns"
+          - FR07-AC-7.5-row-count-after   : expected_row_count_after == sample_count
+          - P-FR07-v3-roundtrip           : result_after_roundtrip_command == sample_command
+        """
+        # NFR-09 — testability: real SQLite migration round-trip
+        # NFR-10 — integration coverage: alembic + SQLAlchemy engine exercised
+        # NFR-03 — error handling: the v3 data migration split / merge
+        #         exercises the migration's transactional boundary; an
+        #         interrupted upgrade must leave the database in a coherent
+        #         state (rollback to v2 keeps the column intact).
+        # NFR-12 — verify-system: this test is the chain step that proves
+        #         ``downgrade -1`` followed by ``upgrade head`` round-trips
+        #         a real SQLite file.
+        from sqlalchemy import create_engine, text
+    
+        env = _alembic_env_with(alembic_db_url)
+    
+        # ---- AC-7.5 — seed sample rows under the v3 schema ----------
+        # First upgrade all the way to head so the v3 split is in place
+        # AND the ``task_results`` table exists. Then seed rows directly
+        # into ``task_results`` via SQLAlchemy (bypassing any application
+        # code so the seed is independent of GREEN's repository surface).
+        upgrade_head = subprocess.run(
+            [sys.executable, "-m", "alembic", "upgrade", "head"],
+            env=env,
+            cwd=str(_PROJECT_ROOT),
+            capture_output=True,
+            text=True,
+        )
+>       assert upgrade_head.returncode == 0, (
+            f"FR-07 AC-7.5 violated: alembic upgrade head (seed step) "
+            f"exited {upgrade_head.returncode}; stderr=\n{upgrade_head.stderr}"
+        )
+E       AssertionError: FR-07 AC-7.5 violated: alembic upgrade head (seed step) exited 1; stderr=
+E         INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+E         INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+E         INFO  [alembic.runtime.migration] Running upgrade  -> v1, [FR-07] v1_initial — create ``tasks`` and ``api_keys``.
+E         INFO  [alembic.runtime.migration] Running upgrade v1 -> v2, [FR-07] v2_tags — add ``tags``, ``task_tags`` and UNIQUE on ``tasks.name``.
+E         INFO  [alembic.runtime.migration] Running upgrade v2 -> v3, [FR-07] v3_split_results — split ``tasks.result_json`` into ``task_results``.
+E         Traceback (most recent call last):
+E           File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/sql/base.py", line 1617, in __getattr__
+E             return self._index[key][1]
+E                    ~~~~~~~~~~~^^^^^
+E         KeyError: 'created_at'
+E         
+E         The above exception was the direct cause of the following exception:
+E         
+E         Traceback (most recent call last):
+E           File "<frozen runpy>", line 198, in _run_module_as_main
+E           File "<frozen runpy>", line 88, in _run_code
+E           File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/alembic/__main__.py", line 4, in <module>
+E             main(prog="alembic")
+E           File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/alembic/config.py", line 630, in main
+E             CommandLine(prog=prog).main(argv=argv)
+E           File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/alembic/config.py", line 624, in main
+E             self.run_cmd(cfg, options)
+E           File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/alembic/config.py", line 601, in run_cmd
+E             fn(
+E           File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/alembic/command.py", line 401, in upgrade
+E             script.run_env()
+E           File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/alembic/script/base.py", line 585, in run_env
+E             util.load_python_file(self.dir, "env.py")
+E           File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 93, in load_python_file
+E             module = load_module_py(module_id, path)
+E                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 109, in load_module_py
+E             spec.loader.exec_module(module)  # type: ignore
+E             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+E           File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+E           File "/Users/johnny/projects/taskq-final/03-development/src/migrations/env.py", line 155, in <module>
+E             _dispatch()
+E           File "/Users/johnny/projects/taskq-final/03-development/src/migrations/env.py", line 152, in _dispatch
+E             run_migrations_online()
+E           File "/Users/johnny/projects/taskq-final/03-development/src/migrations/env.py", line 124, in run_migrations_online
+E             context.run_migrations()
+E           File "<string>", line 8, in run_migrations
+E           File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/alembic/runtime/environment.py", line 939, in run_migrations
+E             self.get_context().run_migrations(**kw)
+E           File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/alembic/runtime/migration.py", line 624, in run_migrations
+E             step.migration_fn(**kw)
+E           File "/Users/johnny/projects/taskq-final/03-development/src/migrations/versions/v3_split_results.py", line 151, in upgrade
+E             sa.select(tasks.c.id, tasks.c.result_json, tasks.c.created_at).select_from(tasks)
+E                                                        ^^^^^^^^^^^^^^^^^^
+E           File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/sql/base.py", line 1619, in __getattr__
+E             raise AttributeError(key) from err
+E         AttributeError: created_at
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/Users/johnny/projects/taskq-final/.venv/bin/python', '-m', 'alembic', 'upgrade', 'head'], ret...alchemy/sql/base.py", line 1619, in __getattr__\n    raise AttributeError(key) from err\nAttributeError: created_at\n').returncode
+
+03-development/tests/integration/test_fr07.py:522: AssertionError
+_ test_v3_data_migration_round_trip_preserves_columns[AC-7.5-round-trip-preserves-row-count] _
+
+sample_command = None, sample_exit_code = None, sample_stdout_tail = None
+expected_field_equality = None, sample_count = '3'
+expected_row_count_after = '3'
+alembic_db_url = 'sqlite:////private/var/folders/9s/865m2mg544z72d_5q423mlmm0000gn/T/pytest-of-johnny/pytest-1862/test_v3_data_migration_round_t1/taskq.db'
+
+    @pytest.mark.parametrize(
+        (
+            "sample_command", "sample_exit_code", "sample_stdout_tail",
+            "expected_field_equality", "sample_count",
+            "expected_row_count_after",
+        ),
+        [
+            # AC-7.5 — round trip with one sample row. After
+            # upgrade -> downgrade -1 -> upgrade the task_results row
+            # must carry the same command / exit_code / stdout_tail /
+            # stderr_tail / duration_ms column values as before the
+            # round trip.
+            ("echo seeded", "0", "seeded", "all_columns", None, None),
+            # AC-7.5 — round trip preserves row count. Seed three rows,
+            # run upgrade -> downgrade -1 -> upgrade, expect the three
+            # rows to still be present.
+            (None, None, None, None, "3", "3"),
+        ],
+        ids=[
+            "AC-7.5-round-trip-preserves-column-values",
+            "AC-7.5-round-trip-preserves-row-count",
+        ],
+    )
+    def test_v3_data_migration_round_trip_preserves_columns(
+        sample_command, sample_exit_code, sample_stdout_tail,
+        expected_field_equality, sample_count,
+        expected_row_count_after,
+        alembic_db_url,
+    ):
+        """FR-07 AC-7.5 — v3 data migration round trip preserves columns.
+    
+        Two scenarios share this function symbol:
+    
+          - AC-7.5 (round_trip, single row): seed one task with
+            ``sample_command="echo seeded"``, ``sample_exit_code="0"``,
+            ``sample_stdout_tail="seeded"``; perform
+            ``upgrade head -> downgrade -1 -> upgrade head``; assert
+            that the row in ``task_results`` carries the same column
+            values column-by-column
+            (``expected_field_equality == "all_columns"``).
+          - AC-7.5 (round_trip, row count): seed ``sample_count="3"``
+            rows; perform the same round trip; assert
+            ``expected_row_count_after == "3"``.
+    
+        The test drives alembic as a SUBPROCESS (out-of-process) and
+        inspects the resulting SQLite file via SQLAlchemy. The PYTHONPATH
+        is propagated so ``alembic`` can ``import migrations.env`` from
+        the child env.
+    
+        Sub-assertions:
+          - FR07-AC-7.3-column-preserved : expected_field_equality == "all_columns"
+          - FR07-AC-7.5-row-count-after   : expected_row_count_after == sample_count
+          - P-FR07-v3-roundtrip           : result_after_roundtrip_command == sample_command
+        """
+        # NFR-09 — testability: real SQLite migration round-trip
+        # NFR-10 — integration coverage: alembic + SQLAlchemy engine exercised
+        # NFR-03 — error handling: the v3 data migration split / merge
+        #         exercises the migration's transactional boundary; an
+        #         interrupted upgrade must leave the database in a coherent
+        #         state (rollback to v2 keeps the column intact).
+        # NFR-12 — verify-system: this test is the chain step that proves
+        #         ``downgrade -1`` followed by ``upgrade head`` round-trips
+        #         a real SQLite file.
+        from sqlalchemy import create_engine, text
+    
+        env = _alembic_env_with(alembic_db_url)
+    
+        # ---- AC-7.5 — seed sample rows under the v3 schema ----------
+        # First upgrade all the way to head so the v3 split is in place
+        # AND the ``task_results`` table exists. Then seed rows directly
+        # into ``task_results`` via SQLAlchemy (bypassing any application
+        # code so the seed is independent of GREEN's repository surface).
+        upgrade_head = subprocess.run(
+            [sys.executable, "-m", "alembic", "upgrade", "head"],
+            env=env,
+            cwd=str(_PROJECT_ROOT),
+            capture_output=True,
+            text=True,
+        )
+>       assert upgrade_head.returncode == 0, (
+            f"FR-07 AC-7.5 violated: alembic upgrade head (seed step) "
+            f"exited {upgrade_head.returncode}; stderr=\n{upgrade_head.stderr}"
+        )
+E       AssertionError: FR-07 AC-7.5 violated: alembic upgrade head (seed step) exited 1; stderr=
+E         INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+E         INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+E         INFO  [alembic.runtime.migration] Running upgrade  -> v1, [FR-07] v1_initial — create ``tasks`` and ``api_keys``.
+E         INFO  [alembic.runtime.migration] Running upgrade v1 -> v2, [FR-07] v2_tags — add ``tags``, ``task_tags`` and UNIQUE on ``tasks.name``.
+E         INFO  [alembic.runtime.migration] Running upgrade v2 -> v3, [FR-07] v3_split_results — split ``tasks.result_json`` into ``task_results``.
+E         Traceback (most recent call last):
+E           File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/sql/base.py", line 1617, in __getattr__
+E             return self._index[key][1]
+E                    ~~~~~~~~~~~^^^^^
+E         KeyError: 'created_at'
+E         
+E         The above exception was the direct cause of the following exception:
+E         
+E         Traceback (most recent call last):
+E           File "<frozen runpy>", line 198, in _run_module_as_main
+E           File "<frozen runpy>", line 88, in _run_code
+E           File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/alembic/__main__.py", line 4, in <module>
+E             main(prog="alembic")
+E           File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/alembic/config.py", line 630, in main
+E             CommandLine(prog=prog).main(argv=argv)
+E           File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/alembic/config.py", line 624, in main
+E             self.run_cmd(cfg, options)
+E           File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/alembic/config.py", line 601, in run_cmd
+E             fn(
+E           File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/alembic/command.py", line 401, in upgrade
+E             script.run_env()
+E           File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/alembic/script/base.py", line 585, in run_env
+E             util.load_python_file(self.dir, "env.py")
+E           File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 93, in load_python_file
+E             module = load_module_py(module_id, path)
+E                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/alembic/util/pyfiles.py", line 109, in load_module_py
+E             spec.loader.exec_module(module)  # type: ignore
+E             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+E           File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+E           File "/Users/johnny/projects/taskq-final/03-development/src/migrations/env.py", line 155, in <module>
+E             _dispatch()
+E           File "/Users/johnny/projects/taskq-final/03-development/src/migrations/env.py", line 152, in _dispatch
+E             run_migrations_online()
+E           File "/Users/johnny/projects/taskq-final/03-development/src/migrations/env.py", line 124, in run_migrations_online
+E             context.run_migrations()
+E           File "<string>", line 8, in run_migrations
+E           File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/alembic/runtime/environment.py", line 939, in run_migrations
+E             self.get_context().run_migrations(**kw)
+E           File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/alembic/runtime/migration.py", line 624, in run_migrations
+E             step.migration_fn(**kw)
+E           File "/Users/johnny/projects/taskq-final/03-development/src/migrations/versions/v3_split_results.py", line 151, in upgrade
+E             sa.select(tasks.c.id, tasks.c.result_json, tasks.c.created_at).select_from(tasks)
+E                                                        ^^^^^^^^^^^^^^^^^^
+E           File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/sql/base.py", line 1619, in __getattr__
+E             raise AttributeError(key) from err
+E         AttributeError: created_at
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/Users/johnny/projects/taskq-final/.venv/bin/python', '-m', 'alembic', 'upgrade', 'head'], ret...alchemy/sql/base.py", line 1619, in __getattr__\n    raise AttributeError(key) from err\nAttributeError: created_at\n').returncode
+
+03-development/tests/integration/test_fr07.py:522: AssertionError
+_______________ test_v3_split_results_upgrade_splits_and_copies ________________
+
+self = <sqlalchemy.sql.base.ReadOnlyColumnCollection object at 0x1098f7100>
+key = 'created_at'
+
+    def __getattr__(self, key: str) -> _COL_co:
+        try:
+>           return self._index[key][1]
+                   ^^^^^^^^^^^^^^^^
+E           KeyError: 'created_at'
+
+.venv/lib/python3.11/site-packages/sqlalchemy/sql/base.py:1617: KeyError
+
+The above exception was the direct cause of the following exception:
+
+tmp_path = PosixPath('/private/var/folders/9s/865m2mg544z72d_5q423mlmm0000gn/T/pytest-of-johnny/pytest-1862/test_v3_split_results_upgrade_0')
+
+    def test_v3_split_results_upgrade_splits_and_copies(tmp_path):
+        """v3_split_results.upgrade() creates ``task_results``, copies every
+        ``tasks.result_json`` row into it (splitting the JSON blob into the
+        v3 column set), then drops ``tasks.result_json``.
+        """
+        import json as _json
+        from alembic.operations import Operations
+        from alembic.runtime.migration import MigrationContext
+        from sqlalchemy import create_engine, inspect, text
+    
+        import migrations.versions.v1_initial as v1
+        import migrations.versions.v2_tags as v2
+        import migrations.versions.v3_split_results as v3
+    
+        engine = create_engine(f"sqlite:///{tmp_path}/v3.db", future=True)
+    
+        # ``engine.begin()`` is required so the migration DDL / DML commits
+        # before the next block runs — ``engine.connect()`` leaves an open
+        # transaction whose DDL is rolled back when the block exits.
+        with engine.begin() as conn:
+            ctx = MigrationContext.configure(conn)
+            op = Operations(ctx)
+            original_v1_op = v1.op
+            v1.op = op
+            try:
+                v1.upgrade()
+            finally:
+                v1.op = original_v1_op
+    
+        with engine.begin() as conn:
+            ctx = MigrationContext.configure(conn)
+            op = Operations(ctx)
+            original_v2_op = v2.op
+            v2.op = op
+            try:
+                v2.upgrade()
+            finally:
+                v2.op = original_v2_op
+    
+        # Build the v1-shaped result_json payloads via ``json.dumps`` and
+        # bind them as SQL parameters — avoids the ``:0`` / ``:1`` bind-param
+        # trap when JSON literals are interpolated directly into SQL strings.
+        single_payload = _json.dumps({
+            "exit_code": 0,
+            "stdout_tail": "a",
+            "stderr_tail": "",
+            "duration_ms": 1,
+            "finished_at": "2026-09-02T00:00:00+00:00",
+        })
+        runs_payload = _json.dumps({
+            "runs": [
+                {
+                    "exit_code": 1, "stdout_tail": "b1", "stderr_tail": "e1",
+                    "duration_ms": 2, "finished_at": "2026-09-02T00:00:01+00:00",
+                },
+                {
+                    "exit_code": 2, "stdout_tail": "b2", "stderr_tail": "e2",
+                    "duration_ms": 3, "finished_at": "2026-09-02T00:00:02+00:00",
+                },
+            ],
+        })
+    
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    "INSERT INTO tasks (id, name, command, status, result_json) "
+                    "VALUES (:id1, :n1, :c1, :s1, :rj1), "
+                    "       (:id2, :n2, :c2, :s2, :rj2)"
+                ),
+                {
+                    "id1": "t-single", "n1": "single", "c1": "echo a",
+                    "s1": "pending", "rj1": single_payload,
+                    "id2": "t-runs", "n2": "runs", "c2": "echo b",
+                    "s2": "pending", "rj2": runs_payload,
+                },
+            )
+    
+        # Apply v3 (online mode) — ``engine.begin()`` auto-commits the DDL
+        # (create_table / drop_column) AND the data migration DML.
+        with engine.begin() as conn:
+            ctx = MigrationContext.configure(conn)
+            op = Operations(ctx)
+            original_v3_op = v3.op
+            original_offline = v3.is_offline_mode
+            v3.op = op
+            v3.is_offline_mode = lambda: False
+            try:
+>               v3.upgrade()
+
+03-development/tests/integration/test_fr07.py:1433: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+03-development/src/migrations/versions/v3_split_results.py:151: in upgrade
+    sa.select(tasks.c.id, tasks.c.result_json, tasks.c.created_at).select_from(tasks)
+                                               ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.sql.base.ReadOnlyColumnCollection object at 0x1098f7100>
+key = 'created_at'
+
+    def __getattr__(self, key: str) -> _COL_co:
+        try:
+            return self._index[key][1]
+        except KeyError as err:
+>           raise AttributeError(key) from err
+E           AttributeError: created_at
+
+.venv/lib/python3.11/site-packages/sqlalchemy/sql/base.py:1619: AttributeError
+_____________ test_v3_split_results_upgrade_skips_payloadless_rows _____________
+
+self = <sqlalchemy.sql.base.ReadOnlyColumnCollection object at 0x109a6f6a0>
+key = 'created_at'
+
+    def __getattr__(self, key: str) -> _COL_co:
+        try:
+>           return self._index[key][1]
+                   ^^^^^^^^^^^^^^^^
+E           KeyError: 'created_at'
+
+.venv/lib/python3.11/site-packages/sqlalchemy/sql/base.py:1617: KeyError
+
+The above exception was the direct cause of the following exception:
+
+tmp_path = PosixPath('/private/var/folders/9s/865m2mg544z72d_5q423mlmm0000gn/T/pytest-of-johnny/pytest-1862/test_v3_split_results_upgrade_1')
+
+    def test_v3_split_results_upgrade_skips_payloadless_rows(tmp_path):
+        """v3_split_results.upgrade() skips rows whose ``result_json`` is
+        ``NULL`` (the v1 schema allowed NULL; the migration must not crash
+        on these rows — AC-7.5 robustness).
+        """
+        from alembic.operations import Operations
+        from alembic.runtime.migration import MigrationContext
+        from sqlalchemy import create_engine, text
+    
+        import migrations.versions.v1_initial as v1
+        import migrations.versions.v2_tags as v2
+        import migrations.versions.v3_split_results as v3
+    
+        engine = create_engine(f"sqlite:///{tmp_path}/v3_null.db", future=True)
+    
+        with engine.begin() as conn:
+            ctx = MigrationContext.configure(conn)
+            op = Operations(ctx)
+            original_v1_op = v1.op
+            v1.op = op
+            try:
+                v1.upgrade()
+            finally:
+                v1.op = original_v1_op
+    
+        with engine.begin() as conn:
+            ctx = MigrationContext.configure(conn)
+            op = Operations(ctx)
+            original_v2_op = v2.op
+            v2.op = op
+            try:
+                v2.upgrade()
+            finally:
+                v2.op = original_v2_op
+    
+        with engine.begin() as conn:
+            conn.execute(text(
+                "INSERT INTO tasks (id, name, command, status) "
+                "VALUES ('t-null', 'no-result', 'echo x', 'pending')"
+            ))
+    
+        with engine.begin() as conn:
+            ctx = MigrationContext.configure(conn)
+            op = Operations(ctx)
+            original_v3_op = v3.op
+            original_offline = v3.is_offline_mode
+            v3.op = op
+            v3.is_offline_mode = lambda: False
+            try:
+>               v3.upgrade()
+
+03-development/tests/integration/test_fr07.py:1513: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+03-development/src/migrations/versions/v3_split_results.py:151: in upgrade
+    sa.select(tasks.c.id, tasks.c.result_json, tasks.c.created_at).select_from(tasks)
+                                               ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.sql.base.ReadOnlyColumnCollection object at 0x109a6f6a0>
+key = 'created_at'
+
+    def __getattr__(self, key: str) -> _COL_co:
+        try:
+            return self._index[key][1]
+        except KeyError as err:
+>           raise AttributeError(key) from err
+E           AttributeError: created_at
+
+.venv/lib/python3.11/site-packages/sqlalchemy/sql/base.py:1619: AttributeError
+_________________ test_v3_split_results_downgrade_merges_back __________________
+
+self = <sqlalchemy.sql.base.ReadOnlyColumnCollection object at 0x1099e5030>
+key = 'created_at'
+
+    def __getattr__(self, key: str) -> _COL_co:
+        try:
+>           return self._index[key][1]
+                   ^^^^^^^^^^^^^^^^
+E           KeyError: 'created_at'
+
+.venv/lib/python3.11/site-packages/sqlalchemy/sql/base.py:1617: KeyError
+
+The above exception was the direct cause of the following exception:
+
+tmp_path = PosixPath('/private/var/folders/9s/865m2mg544z72d_5q423mlmm0000gn/T/pytest-of-johnny/pytest-1862/test_v3_split_results_downgrad0')
+
+    def test_v3_split_results_downgrade_merges_back(tmp_path):
+        """v3_split_results.downgrade() re-adds ``tasks.result_json``,
+        merges every ``task_results`` row back into the parent task's JSON
+        blob (a single dict when one row, a ``{"runs": [...]}`` array when
+        multiple), then drops ``task_results``.
+        """
+        from alembic.operations import Operations
+        from alembic.runtime.migration import MigrationContext
+        from sqlalchemy import create_engine, inspect, text
+    
+        import migrations.versions.v1_initial as v1
+        import migrations.versions.v2_tags as v2
+        import migrations.versions.v3_split_results as v3
+    
+        engine = create_engine(f"sqlite:///{tmp_path}/v3_dn.db", future=True)
+    
+        with engine.begin() as conn:
+            ctx = MigrationContext.configure(conn)
+            op = Operations(ctx)
+            original_v1_op = v1.op
+            v1.op = op
+            try:
+                v1.upgrade()
+            finally:
+                v1.op = original_v1_op
+    
+        with engine.begin() as conn:
+            ctx = MigrationContext.configure(conn)
+            op = Operations(ctx)
+            original_v2_op = v2.op
+            v2.op = op
+            try:
+                v2.upgrade()
+            finally:
+                v2.op = original_v2_op
+    
+        with engine.begin() as conn:
+            conn.execute(text(
+                "INSERT INTO tasks (id, name, command, status) "
+                "VALUES "
+                "('t-single', 'single', 'echo a', 'pending'), "
+                "('t-multi', 'multi', 'echo b', 'pending')"
+            ))
+    
+        with engine.begin() as conn:
+            ctx = MigrationContext.configure(conn)
+            op = Operations(ctx)
+            original_v3_op = v3.op
+            original_offline = v3.is_offline_mode
+            v3.op = op
+            v3.is_offline_mode = lambda: False
+            try:
+>               v3.upgrade()
+
+03-development/tests/integration/test_fr07.py:1577: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+03-development/src/migrations/versions/v3_split_results.py:151: in upgrade
+    sa.select(tasks.c.id, tasks.c.result_json, tasks.c.created_at).select_from(tasks)
+                                               ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.sql.base.ReadOnlyColumnCollection object at 0x1099e5030>
+key = 'created_at'
+
+    def __getattr__(self, key: str) -> _COL_co:
+        try:
+            return self._index[key][1]
+        except KeyError as err:
+>           raise AttributeError(key) from err
+E           AttributeError: created_at
+
+.venv/lib/python3.11/site-packages/sqlalchemy/sql/base.py:1619: AttributeError
+_________________ test_v3_now_or_default_when_none_returns_now _________________
+
+    def test_v3_now_or_default_when_none_returns_now():
+        """v3._now_or_default(None) returns ``datetime.now(tz=utc)``."""
+        from datetime import datetime
+    
+        from migrations.versions.v3_split_results import _now_or_default
+    
+        result = _now_or_default(None)
+>       assert isinstance(result, datetime)
+E       AssertionError: assert False
+E        +  where False = isinstance(None, <class 'datetime.datetime'>)
+
+03-development/tests/integration/test_fr07.py:1767: AssertionError
+____________ test_v3_now_or_default_when_string_invalid_returns_now ____________
+
+    def test_v3_now_or_default_when_string_invalid_returns_now():
+        """v3._now_or_default(non-iso string) falls back to ``datetime.now``."""
+        from datetime import datetime
+    
+        from migrations.versions.v3_split_results import _now_or_default
+    
+        result = _now_or_default("not-an-iso-date")
+>       assert isinstance(result, datetime)
+E       AssertionError: assert False
+E        +  where False = isinstance(None, <class 'datetime.datetime'>)
+
+03-development/tests/integration/test_fr07.py:1812: AssertionError
+______________ test_fr07_property_v3_roundtrip_preserves_columns _______________
+
+self = <sqlalchemy.sql.base.ReadOnlyColumnCollection object at 0x109a9f600>
+key = 'created_at'
+
+    def __getattr__(self, key: str) -> _COL_co:
+        try:
+>           return self._index[key][1]
+                   ^^^^^^^^^^^^^^^^
+E           KeyError: 'created_at'
+
+.venv/lib/python3.11/site-packages/sqlalchemy/sql/base.py:1617: KeyError
+
+The above exception was the direct cause of the following exception:
+
+tmp_path = PosixPath('/private/var/folders/9s/865m2mg544z72d_5q423mlmm0000gn/T/pytest-of-johnny/pytest-1862/test_fr07_property_v3_roundtri0')
+
+    def test_fr07_property_v3_roundtrip_preserves_columns(tmp_path):
+        """FR-07 §Properties P-FR07-v3-roundtrip — column-by-column
+        equality through ``v3.upgrade() → v3.downgrade() → v3.upgrade()``.
+    
+        hypothesis draws ``(exit_code, stdout_tail, stderr_tail,
+        duration_ms)`` from the canonical column domain; each example
+        becomes a single ``task_results`` row under the v3 schema, the
+        round-trip runs, and the surviving row's column values must
+        match the seed. The "stdout_tail" axis exercises the
+        SQLAlchemy ``String(4096)`` truncation contract (a v3 split that
+        silently widened the column would still pass here; a v3 merge
+        that dropped a non-empty ``stdout_tail`` would fail).
+        """
+        from hypothesis import given, strategies as st
+    
+        text_strategy = st.text(
+            alphabet=st.characters(
+                whitelist_categories=("Lu", "Ll", "Nd"),
+                max_codepoint=0x7E,
+            ),
+            min_size=0,
+            max_size=64,
+        )
+    
+        @given(
+            exit_code=st.integers(min_value=-2**31, max_value=2**31 - 1),
+            stdout_tail=text_strategy,
+            stderr_tail=text_strategy,
+            duration_ms=st.integers(min_value=0, max_value=2**31 - 1),
+        )
+        def _check(
+            exit_code: int,
+            stdout_tail: str,
+            stderr_tail: str,
+            duration_ms: int,
+        ) -> None:
+            import json as _json
+            import uuid
+            from alembic.operations import Operations
+            from alembic.runtime.migration import MigrationContext
+            from sqlalchemy import create_engine, text
+    
+            import migrations.versions.v1_initial as v1
+            import migrations.versions.v2_tags as v2
+            import migrations.versions.v3_split_results as v3
+    
+            # Unique SQLite file per hypothesis example — pytest's
+            # ``tmp_path`` is per-test, not per-example, so a fresh
+            # filename per draw avoids the "table already exists"
+            # collision when v1.upgrade() runs against a re-used file.
+            db_path = tmp_path / f"prop_{uuid.uuid4().hex}.db"
+            engine = create_engine(f"sqlite:///{db_path}", future=True)
+    
+            # Apply v1 only (so ``tasks.result_json`` exists), seed the
+            # v1-shaped payload, then apply v2 + v3. v3.upgrade() will
+            # then split the seeded ``result_json`` into ``task_results``
+            # — the baseline of the round-trip.
+            with engine.begin() as conn:
+                ctx = MigrationContext.configure(conn)
+                op = Operations(ctx)
+                original_v1_op = v1.op
+                v1.op = op  # type: ignore[assignment]
+                try:
+                    v1.upgrade()
+                finally:
+                    v1.op = original_v1_op  # type: ignore[assignment]
+    
+            # Seed ONE parent row with a single-run payload (the v1
+            # shape that produces exactly one ``task_results`` row on
+            # the v3 upgrade — round-trip identity is cleanest here).
+            payload = _json.dumps({
+                "exit_code": exit_code,
+                "stdout_tail": stdout_tail,
+                "stderr_tail": stderr_tail,
+                "duration_ms": duration_ms,
+                "finished_at": "2026-09-02T00:00:00+00:00",
+            })
+    
+            with engine.begin() as conn:
+                conn.execute(
+                    text(
+                        "INSERT INTO tasks (id, name, command, status, result_json) "
+                        "VALUES (:tid, :n, :c, :s, :rj)"
+                    ),
+                    {
+                        "tid": "fr07-prop",
+                        "n": "prop",
+                        "c": "echo p",
+                        "s": "pending",
+                        "rj": payload,
+                    },
+                )
+    
+            # Now apply v2 + v3 (in-process). v3.upgrade() will split the
+            # seeded ``result_json`` into ``task_results`` — that is the
+            # baseline of the round-trip.
+            with engine.begin() as conn:
+                ctx = MigrationContext.configure(conn)
+                op = Operations(ctx)
+                for mod, fn in ((v2, v2.upgrade), (v3, v3.upgrade)):
+                    original_op = mod.op  # type: ignore[attr-defined]
+                    mod.op = op  # type: ignore[attr-defined]
+                    has_offline = hasattr(mod, "is_offline_mode")
+                    original_offline = getattr(mod, "is_offline_mode", None)
+                    if has_offline:
+                        mod.is_offline_mode = lambda: False  # type: ignore[attr-defined]
+                    try:
+                        fn()
+                    finally:
+                        mod.op = original_op  # type: ignore[attr-defined]
+                        if has_offline:
+                            mod.is_offline_mode = original_offline  # type: ignore[attr-defined]
+    
+            # Snapshot the post-seed ``task_results`` row (just after
+            # the initial v3.upgrade() — the baseline).
+            with engine.connect() as conn:
+                baseline = conn.execute(
+                    text(
+                        "SELECT exit_code, stdout_tail, stderr_tail, duration_ms "
+                        "FROM task_results WHERE task_id = 'fr07-prop'"
+                    )
+                ).first()
+    
+            assert baseline is not None, (
+                "P-FR07-v3-roundtrip: initial v3.upgrade() left no "
+                "task_results row for the seeded task — the v3 split "
+                "step is broken, not the round-trip"
+            )
+    
+            # Round trip: downgrade -1 (merge task_results → result_json)
+            # then upgrade head (split result_json → task_results again).
+            for mod, fn in (
+                (v3, v3.downgrade),
+                (v3, v3.upgrade),
+            ):
+                with engine.begin() as conn:
+                    ctx = MigrationContext.configure(conn)
+                    op = Operations(ctx)
+                    original_op = mod.op
+                    original_offline = mod.is_offline_mode
+                    mod.op = op  # type: ignore[attr-defined]
+                    mod.is_offline_mode = lambda: False  # type: ignore[attr-defined]
+                    try:
+                        fn()
+                    finally:
+                        mod.op = original_op  # type: ignore[attr-defined]
+                        mod.is_offline_mode = original_offline  # type: ignore[attr-defined]
+    
+            # The round-trip must restore the baseline row exactly.
+            with engine.connect() as conn:
+                after = conn.execute(
+                    text(
+                        "SELECT exit_code, stdout_tail, stderr_tail, duration_ms "
+                        "FROM task_results WHERE task_id = 'fr07-prop'"
+                    )
+                ).first()
+    
+            assert after is not None, (
+                "P-FR07-v3-roundtrip violated: round-trip lost the "
+                "task_results row for the seeded task"
+            )
+    
+            # Column-by-column equality (the algebraic invariant the
+            # TEST_SPEC note states: "the same sample column values must
+            # survive both directions of the v3 split/restore cycle").
+            if (
+                after[0] != baseline[0]
+                or after[1] != baseline[1]
+                or after[2] != baseline[2]
+                or after[3] != baseline[3]
+            ):
+                raise AssertionError(
+                    f"P-FR07-v3-roundtrip violated: column drift after "
+                    f"v3.upgrade() → v3.downgrade() → v3.upgrade(): "
+                    f"baseline={baseline!r} after={after!r} "
+                    f"(seed exit_code={exit_code!r}, "
+                    f"stdout_tail={stdout_tail!r}, "
+                    f"stderr_tail={stderr_tail!r}, "
+                    f"duration_ms={duration_ms!r})"
+                )
+    
+            # Dispose the engine so SQLite releases the tmp_path file
+            # before the next hypothesis example creates a fresh one.
+            engine.dispose()
+    
+>       _check()
+
+03-development/tests/integration/test_fr07.py:2050: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+03-development/tests/integration/test_fr07.py:1890: in _check
+    exit_code=st.integers(min_value=-2**31, max_value=2**31 - 1),
+           ^^^
+03-development/tests/integration/test_fr07.py:1972: in _check
+    fn()
+03-development/src/migrations/versions/v3_split_results.py:151: in upgrade
+    sa.select(tasks.c.id, tasks.c.result_json, tasks.c.created_at).select_from(tasks)
+                                               ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.sql.base.ReadOnlyColumnCollection object at 0x109a9f600>
+key = 'created_at'
+
+    def __getattr__(self, key: str) -> _COL_co:
+        try:
+            return self._index[key][1]
+        except KeyError as err:
+>           raise AttributeError(key) from err
+E           AttributeError: created_at
+E           Failing test case: _check(
+E               exit_code=0,
+E               stdout_tail='',
+E               stderr_tail='',
+E               duration_ms=0,
+E           )
+
+.venv/lib/python3.11/site-packages/sqlalchemy/sql/base.py:1619: AttributeError
+______________________ test_migration_rollback_on_failure ______________________
+
+    def test_migration_rollback_on_failure():
+        """NFR-03 — alembic round-trip preserves prior revision (delegates to FR-07)."""
+        # Verified structurally by test_fr07.test_alembic_upgrade_downgrade_base;
+        # this row asserts the contract by running pytest -k alembic_upgrade_downgrade.
+        result = subprocess.run(
+            [sys.executable, "-m", "pytest",
+             "tests/test_fr07.py", "-k", "alembic_upgrade_downgrade_base",
+             "-q", "--no-header", "--tb=no"],
+            cwd=str(PROJECT_ROOT), capture_output=True, text=True, timeout=60,
+        )
+>       assert result.returncode == 0, (
+            f"NFR-03 violated: FR-07 AC-7.4 round-trip test failed: {result.stdout[-200:]}"
+        )
+E       AssertionError: NFR-03 violated: FR-07 AC-7.4 round-trip test failed: summary info ============================
+E         FAILED tests/test_fr07.py::test_alembic_upgrade_downgrade_base[AC-7.4-upgrade-head-then-downgrade-base]
+E         1 failed, 2 passed, 36 deselected, 1 warning in 0.68s
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/Users/johnny/projects/taskq-final/.venv/bin/python', '-m', 'pytest', 'tests/test_fr07.py', '-...ade_base[AC-7.4-upgrade-head-then-downgrade-base]\n1 failed, 2 passed, 36 deselected, 1 warning in 0.68s\n", stderr='').returncode
+
+03-development/tests/integration/test_nfr.py:101: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/_hypothesis_pytestplugin.py:487
+  /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/_hypothesis_pytestplugin.py:487: UserWarning: Skipping collection of '.hypothesis' directory - this usually means you've explicitly set the `norecursedirs` pytest config option, replacing rather than extending the default ignores.
+    warnings.warn(
+
+.venv/lib/python3.11/site-packages/starlette/formparsers.py:12
+  /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+______________ coverage: platform darwin, python 3.11.15-final-0 _______________
+
+Name                                                         Stmts   Miss  Cover   Missing
+------------------------------------------------------------------------------------------
+03-development/src/migrations/__init__.py                        0      0   100%
+03-development/src/migrations/env.py                            49      0   100%
+03-development/src/migrations/versions/__init__.py               0      0   100%
+03-development/src/migrations/versions/_shared/__init__.py      23      0   100%
+03-development/src/migrations/versions/v1_initial.py            15      0   100%
+03-development/src/migrations/versions/v2_tags.py               15      0   100%
+03-development/src/migrations/versions/v3_split_results.py      64     22    66%   154-197, 214-262
+03-development/src/taskq_api/__init__.py                         0      0   100%
+03-development/src/taskq_api/api/__init__.py                     0      0   100%
+03-development/src/taskq_api/api/deps.py                        18      0   100%
+03-development/src/taskq_api/api/health.py                      15      0   100%
+03-development/src/taskq_api/api/metrics.py                     11      0   100%
+03-development/src/taskq_api/api/tasks.py                       55      0   100%
+03-development/src/taskq_api/app.py                             70      0   100%
+03-development/src/taskq_api/config.py                          33      0   100%
+03-development/src/taskq_api/errors.py                          39      0   100%
+03-development/src/taskq_api/models/__init__.py                  0      0   100%
+03-development/src/taskq_api/models/orm.py                      44      0   100%
+03-development/src/taskq_api/models/schemas.py                  38      0   100%
+03-development/src/taskq_api/repository/__init__.py              0      0   100%
+03-development/src/taskq_api/repository/key_repo.py             63      0   100%
+03-development/src/taskq_api/repository/rate_repo.py            56      0   100%
+03-development/src/taskq_api/repository/session.py              89      0   100%
+03-development/src/taskq_api/repository/task_repo.py           201      0   100%
+03-development/src/taskq_api/service/__init__.py                 3      0   100%
+03-development/src/taskq_api/service/auth.py                    38      0   100%
+03-development/src/taskq_api/service/common.py                  25      0   100%
+03-development/src/taskq_api/service/health.py                  14      0   100%
+03-development/src/taskq_api/service/ratelimit.py               25      0   100%
+03-development/src/taskq_api/service/runner.py                 166      8    95%   395-405
+03-development/src/taskq_api/service/tasks.py                   29      0   100%
+------------------------------------------------------------------------------------------
+TOTAL                                                         1198     30    97%
+=========================== short test summary info ============================
+FAILED 03-development/tests/integration/test_fr07.py::test_alembic_upgrade_downgrade_base[AC-7.4-upgrade-head-then-downgrade-base]
+FAILED 03-development/tests/integration/test_fr07.py::test_v3_data_migration_round_trip_preserves_columns[AC-7.5-round-trip-preserves-column-values]
+FAILED 03-development/tests/integration/test_fr07.py::test_v3_data_migration_round_trip_preserves_columns[AC-7.5-round-trip-preserves-row-count]
+FAILED 03-development/tests/integration/test_fr07.py::test_v3_split_results_upgrade_splits_and_copies
+FAILED 03-development/tests/integration/test_fr07.py::test_v3_split_results_upgrade_skips_payloadless_rows
+FAILED 03-development/tests/integration/test_fr07.py::test_v3_split_results_downgrade_merges_back
+FAILED 03-development/tests/integration/test_fr07.py::test_v3_now_or_default_when_none_returns_now
+FAILED 03-development/tests/integration/test_fr07.py::test_v3_now_or_default_when_string_invalid_returns_now
+FAILED 03-development/tests/integration/test_fr07.py::test_fr07_property_v3_roundtrip_preserves_columns
+FAILED 03-development/tests/integration/test_nfr.py::test_migration_rollback_on_failure
+10 failed, 193 passed, 2 warnings in 7.27s
