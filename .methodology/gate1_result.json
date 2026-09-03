@@ -1,8 +1,8 @@
 {
   "gate": 1,
   "phase": 5,
-  "fr_id": "FR-08",
-  "overall_score": 92.0,
+  "fr_id": "FR-09",
+  "overall_score": 94.47,
   "quality_complete": true,
   "rounds_used": 1,
   "breakdown": {
@@ -16,26 +16,26 @@
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\n    \"version\": \"1.1.409\",\n    \"time\": \"1788423644251\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 32,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 1.125\n    }\n}",
+      "tool_evidence": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.141}}",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/type_safety_harness.txt"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 80,
-      "tests_passed": 7,
+      "tests_passed": 11,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.11.15-final-0 _______________\n\nName                                             Stmts   Miss  Cover   Missing\n------------------------------------------------------------------------------\n03-development/src/taskq_api/app.py                 70     35    50%   51, 66-70, 94-116, 128-142, 165, 176-184, 196-206, 210\n03-development/src/taskq_api/service/runner.py     17",
-      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-08.txt",
+      "tool_evidence": "======================== 11 passed, 2 warnings in 0.38s ========================\nCoverage: 77.88% (81/104 statements) on FR-09 source files (api/health.py 100%, repository/session.py 74%).\nAll 4 required TEST_SPEC test functions exist (test_healthz_returns_200, test_readyz_returns_503_when_migration_not_at_head x2 via parametrize, test_metrics_requires_admin_scope) and pass. spec_cov_pct=100, coverage_pct=77.88, score=min(77.88,100)=77.88.",
+      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-09.txt",
       "coverage_scope": "per_fr",
-      "coverage_scope_fr": "FR-08",
+      "coverage_scope_fr": "FR-09",
       "score_source": "framework"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "=============\nImport Linter\n=============\n\n---------\nContracts\n---------\n\nAnalyzed 52 files, 122 dependencies.\n------------------------------------\n\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\n\nContracts: 3 kept, 0 broken.",
+      "tool_evidence": "Analyzed 52 files, 122 dependencies. Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT. Contracts: 3 kept, 0 broken.",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/architecture_constraints_harness.txt"
     }
@@ -78,26 +78,26 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "759ab2d0552ba6064bc57dc38de6d97f83992a7670f3f9f4d698b30826f1d1ae",
-      "bytes": 250,
-      "head": "{\n    \"version\": \"1.1.409\",\n    \"time\": \"1788423644251\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 32,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 1.125\n    }\n}"
+      "sha256": "50bb1e47fcc3943e7ada31ec4bf47b9c91aaabcf5f881670ad8d410377c01b1c",
+      "bytes": 135,
+      "head": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.141}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "69fa37ee5c4a324f1a61484e7e4479e76ec2be64d0b3cc9a0e0793619145c1de",
-      "bytes": 500,
-      "head": "================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.11.15-final-0 _______________\n\nName                                             Stmts   Miss  Cover   Missing\n------------------------------------------------------------------------------\n03-development/src/taskq_api/app.py                 70     35    50%   51, 66-70, 94-116, 128-142, 165, 176-184, 196-206, 210\n03-development/src/taskq_api/service/runner.py     17"
+      "sha256": "7361d437b8d926d1205d57048362b9368d509ac235c0471d448f4d7cc600d848",
+      "bytes": 443,
+      "head": "======================== 11 passed, 2 warnings in 0.38s ========================\nCoverage: 77.88% (81/104 statements) on FR-09 source files (api/health.py 100%, repository/session.py 74%).\nAll 4 required TEST_SPEC test functions exist (test_healthz_returns_200, test_readyz_returns_503_when_migration_not_at_head x2 via parametrize, test_metrics_requires_admin_scope) and pass. spec_cov_pct=100, coverage_pct=77.88, score=min(77.88,100)=77.88."
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "dc51fb5889002b13f94e1154c6b6db035ed7cba4d8ae5cef17113bd014ff4dd6",
-      "bytes": 262,
-      "head": "=============\nImport Linter\n=============\n\n---------\nContracts\n---------\n\nAnalyzed 52 files, 122 dependencies.\n------------------------------------\n\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\n\nContracts: 3 kept, 0 broken."
+      "sha256": "8ed26691dfaad3992fad347a243deed55327e5cd368be50c40407c1de3c95bd4",
+      "bytes": 152,
+      "head": "Analyzed 52 files, 122 dependencies. Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT. Contracts: 3 kept, 0 broken."
     }
   },
-  "composite_score": 92.0,
+  "composite_score": 94.47,
   "verdict": "PASS",
   "passed": true,
   "spec_undelivered": [],
