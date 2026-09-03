@@ -1,41 +1,41 @@
 {
   "gate": 1,
   "phase": 4,
-  "fr_id": "FR-07",
-  "overall_score": 100.0,
+  "fr_id": "FR-08",
+  "overall_score": 91.59,
   "quality_complete": true,
   "rounds_used": 1,
   "breakdown": {
     "linting": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "All checks passed!\n",
+      "tool_evidence": "All checks passed!",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/linting_harness.txt"
     },
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\n    \"version\": \"1.1.409\",\n    \"time\": \"1788406198218\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 32,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 1.226\n    }\n}\n",
+      "tool_evidence": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0}}",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/type_safety_harness.txt"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 80,
-      "tests_passed": 39,
+      "tests_passed": 5,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "tests/test_fr07.py .......................................               [100%]\n======================== 39 passed, 1 warning in 3.31s =========================\nCoverage per-fr scope: percent_covered=99.39, spec_cov_pct=100% (7/7 required tests ran-and-passed)",
-      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-07.txt",
+      "tool_evidence": "5 passed, 1 warning in 2.48s\n03-development/tests/integration/test_fr08.py .....                      [100%]\nCoverage: 66.36% (148/223 statements covered)",
+      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-08.txt",
       "coverage_scope": "per_fr",
-      "coverage_scope_fr": "FR-07",
+      "coverage_scope_fr": "FR-08",
       "score_source": "framework"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "=============\nImport Linter\n=============\n\nContracts\n---------\n\nAnalyzed 52 files, 122 dependencies.\n------------------------------------\n\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\n\nContracts: 3 kept, 0 broken.\n",
+      "tool_evidence": "Analyzed 52 files, 122 dependencies. Contracts: 3 kept, 0 broken. Layer ordering KEPT. SQLAlchemy containment KEPT. Config and errors independence KEPT.",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/architecture_constraints_harness.txt"
     }
@@ -71,26 +71,26 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "ac40584b9d63d3ef9c6402e22fd58c9b44016e29911778c26adc1b93467f2c50",
-      "bytes": 250,
-      "head": "{\n    \"version\": \"1.1.409\",\n    \"time\": \"1788406198218\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 32,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 1.226\n    }\n}"
+      "sha256": "13ac6d571098785709732ce81f875322d473dad64f262dd18f935ee6194d1673",
+      "bytes": 115,
+      "head": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "1f9bf7c2e4323b231e21653c4432f38eb4e21631a1423d42870f66bb3e97a4ee",
-      "bytes": 260,
-      "head": "tests/test_fr07.py .......................................               [100%]\n======================== 39 passed, 1 warning in 3.31s =========================\nCoverage per-fr scope: percent_covered=99.39, spec_cov_pct=100% (7/7 required tests ran-and-passed)"
+      "sha256": "048e2d063c9049fa37b19a4b6c1f1596ded72feeb2b2ff2a97e4b962564e44a0",
+      "bytes": 154,
+      "head": "5 passed, 1 warning in 2.48s\n03-development/tests/integration/test_fr08.py .....                      [100%]\nCoverage: 66.36% (148/223 statements covered)"
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "35d748b7ce52607fe31a1ae673a8fb06286ad718ed6ff7589cbce049b576c111",
-      "bytes": 252,
-      "head": "=============\nImport Linter\n=============\n\nContracts\n---------\n\nAnalyzed 52 files, 122 dependencies.\n------------------------------------\n\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\n\nContracts: 3 kept, 0 broken."
+      "sha256": "e10d81ea420a1b997db549faac5ba1aa0fb44bdf71a837ebb1a8203f6847a209",
+      "bytes": 152,
+      "head": "Analyzed 52 files, 122 dependencies. Contracts: 3 kept, 0 broken. Layer ordering KEPT. SQLAlchemy containment KEPT. Config and errors independence KEPT."
     }
   },
-  "composite_score": 100.0,
+  "composite_score": 91.59,
   "verdict": "PASS",
   "passed": true,
   "spec_undelivered": [],
