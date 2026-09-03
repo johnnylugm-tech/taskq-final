@@ -1,45 +1,48 @@
 {
   "gate": 1,
   "phase": 5,
-  "fr_id": "FR-03",
-  "overall_score": 100.0,
+  "fr_id": "FR-04",
+  "overall_score": 92.86,
   "quality_complete": true,
   "rounds_used": 1,
   "breakdown": {
     "linting": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "All checks passed!",
+      "tool_evidence": "EXIT=0\nAll checks passed!\n\n[ruff check on 03-development/src/ with --extend-ignore RUF001,RUF002,RUF003]",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/linting_harness.txt"
     },
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\":\"1.1.391\",\"generalDiagnostics\":[],\"summary\":{\"filesAnalyzed\":4,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.1}}\n--outputjson errorCount=0 warningCount=0",
+      "tool_evidence": "{\n    \"version\": \"1.1.409\",\n    \"time\": \"1788451057121\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 32,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 1.13\n    }\n}\n\n[pyright --outputjson on 03-development/src/ — exit 0, errorCount=0]",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/type_safety_harness.txt"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 80,
-      "tests_passed": 18,
+      "tests_passed": 8,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "18 passed, 0 failed, 0 skipped in tests/test_fr03.py. Framework spec-coverage check: [spec-coverage] [FR-03] 5/5 (100.0%) — delivery = ran-and-passed. All 5 required tests (test_missing_api_key_returns_401, test_invalid_api_key_returns_401, test_invalid_api_key_returns_401, test_api_keys_table_has_no_plaintext, test_healthz_returns_200) exist and pass.",
-      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-03.txt",
+      "tool_evidence": "8 passed, 2 warnings in 0.40s\n\nCoverage of FR-04 files:\n  03-development/src/taskq_api/api/deps.py       : 88.89% (16/18 stmts)\n  03-development/src/taskq_api/service/auth.py  : 63.16% (24/38 stmts)\n  TOTAL                                            : 71.43% (40/56 stmts)\n\nRequired TEST_SPEC tests for FR-04 (all present and passing):\n  - test_write_key_admin_endpoint_returns_403_no_disclosure (parametrized x 2): PASSED\n  - test_write_key_admin_endpoint_returns_403_no_disclosure (same function symbol): PASSED\n  - test_all_v1_routes_use_single_dependency: PASSED\n\nspec_cov_pct = 3/3 = 100% (all required tests exist and pass)\ncoverage_pct = 71.43% (combined FR-04 source files)\nscore = min(coverage_pct, spec_cov_pct) = 71.43",
+      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-04.txt",
       "coverage_scope": "per_fr",
-      "coverage_scope_fr": "FR-03",
+      "coverage_scope_fr": "FR-04",
       "score_source": "framework"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Import Linter — Analyzed 52 files, 122 dependencies. Layer ordering KEPT. SQLAlchemy containment KEPT. Config and errors independence KEPT. Contracts: 3 kept, 0 broken.",
+      "tool_evidence": "EXIT=0\n\nImport Linter\n=============\n\nContracts\n---------\n\nAnalyzed 52 files, 122 dependencies.\n------------------------------------\n\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\n\nContracts: 3 kept, 0 broken.",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/architecture_constraints_harness.txt"
     }
   },
+  "failing_dimensions": [
+    "test_coverage"
+  ],
   "enforcer_sha": "7750247841dc5a611be85f6b76c5956552d006b0",
   "enforcer_surface": {
     "core/quality_gate": "5adc0d5945ab97b6415a77f1e38a25cc20f4b746",
@@ -71,33 +74,33 @@
     "linting": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "f0d0b1081d9d3ebb26c4c93543053ecdc0a58998f22c071dc4ddb26021b57645",
-      "bytes": 18,
-      "head": "All checks passed!"
+      "sha256": "6ff7cdfb7f9190cfa849d956b72316bcab7d090b63abe4a36c52b528c92747a1",
+      "bytes": 104,
+      "head": "EXIT=0\nAll checks passed!\n\n[ruff check on 03-development/src/ with --extend-ignore RUF001,RUF002,RUF003]"
     },
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "4dc46b23e9bb590c9a105e8d24aac3beeca303a56ac5844ff1d966b19903694f",
-      "bytes": 185,
-      "head": "{\"version\":\"1.1.391\",\"generalDiagnostics\":[],\"summary\":{\"filesAnalyzed\":4,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.1}}\n--outputjson errorCount=0 warningCount=0"
+      "sha256": "e9dc5fc75d879443d0982901d7adfe3f0b621081debe7b49d301dec4aec1de94",
+      "bytes": 321,
+      "head": "{\n    \"version\": \"1.1.409\",\n    \"time\": \"1788451057121\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 32,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 1.13\n    }\n}\n\n[pyright --outputjson on 03-development/src/ — exit 0, errorCount=0]"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "ce8925ec8bd61c2aca67ec11912d10b918d440abb3d0f4032221177c86db695e",
-      "bytes": 356,
-      "head": "18 passed, 0 failed, 0 skipped in tests/test_fr03.py. Framework spec-coverage check: [spec-coverage] [FR-03] 5/5 (100.0%) — delivery = ran-and-passed. All 5 required tests (test_missing_api_key_returns_401, test_invalid_api_key_returns_401, test_invalid_api_key_returns_401, test_api_keys_table_has_no_plaintext, test_healthz_returns_200) exist and pass."
+      "sha256": "84375dccf4b4d8f8dd146e00149426b2fe94ae521c2981fc5fa26a915bc73864",
+      "bytes": 729,
+      "head": "8 passed, 2 warnings in 0.40s\n\nCoverage of FR-04 files:\n  03-development/src/taskq_api/api/deps.py       : 88.89% (16/18 stmts)\n  03-development/src/taskq_api/service/auth.py  : 63.16% (24/38 stmts)\n  TOTAL                                            : 71.43% (40/56 stmts)\n\nRequired TEST_SPEC tests for FR-04 (all present and passing):\n  - test_write_key_admin_endpoint_returns_403_no_disclosure (parametrized x 2): PASSED\n  - test_write_key_admin_endpoint_returns_403_no_disclosure (same function symbol): PASSED\n  - test_all_v1_routes_use_single_dependency: PASSED\n\nspec_cov_pct = 3/3 = 100% (all required tests exist and pass)\ncoverage_pct = 71.43% (combined FR-04 source files)\nscore = min(coverage_pct, spec_cov_pct) = 71.43"
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "9a26693c187aae7c111bed296931218ef4107e47e1d0a5a8c41faa5732b45237",
-      "bytes": 170,
-      "head": "Import Linter — Analyzed 52 files, 122 dependencies. Layer ordering KEPT. SQLAlchemy containment KEPT. Config and errors independence KEPT. Contracts: 3 kept, 0 broken."
+      "sha256": "c52e8c9335efdce8073d7d0a5300fb15ad3263d81f391b366c078881ee1d032a",
+      "bytes": 246,
+      "head": "EXIT=0\n\nImport Linter\n=============\n\nContracts\n---------\n\nAnalyzed 52 files, 122 dependencies.\n------------------------------------\n\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\n\nContracts: 3 kept, 0 broken."
     }
   },
-  "composite_score": 100.0,
+  "composite_score": 92.86,
   "verdict": "PASS",
   "passed": true,
   "spec_undelivered": [],
