@@ -1,0 +1,20 @@
+{
+  "timestamp": "20260903T210257Z",
+  "exc_type": "BrokenPipeError",
+  "exc_message": "[Errno 32] Broken pipe",
+  "traceback": "Traceback (most recent call last):\n  File \"/Users/johnny/projects/taskq-final/harness/harness_cli.py\", line 385, in _dispatch\n    return args.func(args)\n           ^^^^^^^^^^^^^^^\n  File \"/Users/johnny/projects/taskq-final/harness/cli/phase_cmds.py\", line 885, in cmd_advance_phase\n    _pre_rc = _advance_step_commit_and_push(_advance_snap, _manifest_regenerated, _saved_cwd, _setup_cfg_written, args, next_phase, project)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/johnny/projects/taskq-final/harness/cli/advance_steps.py\", line 753, in _advance_step_commit_and_push\n    _run_doctor_after_advance(project)\n  File \"/Users/johnny/projects/taskq-final/harness/cli/advance_steps.py\", line 105, in _run_doctor_after_advance\n    print(f\"  [ERROR] {finding.check}: {finding.message}\", file=sys.stderr)\nBrokenPipeError: [Errno 32] Broken pipe\n",
+  "argv": [
+    "advance-phase",
+    "--completed",
+    "6",
+    "--project",
+    "/Users/johnny/projects/taskq-final",
+    "--push"
+  ],
+  "cwd": "/Users/johnny/projects/taskq-final",
+  "project": "/Users/johnny/projects/taskq-final",
+  "harness_git_sha": "f4af8962f193757d84e98ac60331d57af972ef6d",
+  "python_version": "3.11.15",
+  "repro_command": "/Users/johnny/projects/taskq-final/.venv/bin/python /Users/johnny/projects/taskq-final/harness/harness_cli.py advance-phase --completed 6 --project /Users/johnny/projects/taskq-final --push",
+  "maintenance_prompt": "harness-methodology crashed with BrokenPipeError: [Errno 32] Broken pipe\nReproduce: /Users/johnny/projects/taskq-final/.venv/bin/python /Users/johnny/projects/taskq-final/harness/harness_cli.py advance-phase --completed 6 --project /Users/johnny/projects/taskq-final --push\nDiagnose the root cause in harness-methodology's own code (not the target project's), write a regression test that reproduces this crash, then fix it. Follow SKILL.md's Phase 9 CR-BUG maintenance flow (`harness_cli.py cr-open --type bug ...`)."
+}
