@@ -1,8 +1,8 @@
 {
   "gate": 1,
   "phase": 7,
-  "fr_id": "FR-07",
-  "overall_score": 99.85,
+  "fr_id": "FR-08",
+  "overall_score": 92.0,
   "quality_complete": true,
   "rounds_used": 1,
   "breakdown": {
@@ -16,26 +16,26 @@
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1788471166664\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.122}}",
+      "tool_evidence": "{\"version\":\"1.1.409\",\"time\":\"1788471419702\",\"generalDiagnostics\":[],\"summary\":{\"filesAnalyzed\":32,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.125}}",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/type_safety_harness.txt"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 80,
-      "tests_passed": 39,
+      "tests_passed": 7,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "pytest tests/test_fr07.py: collected 39 items, 39 passed, 0 failed, 0 skipped. Coverage: 99.4% lines covered (165/166) on FR-07 source files (env.py, v1_initial.py, v2_tags.py, v3_split_results.py, _shared/__init__.py). All 4 unique required tests exist and pass: test_alembic_upgrade_downgrade_base (3 parametrized), test_v3_data_migration_round_trip_preserves_columns (2 parametrized), test_v2_tags_upgrade_creates_tags_task_tags_and_unique, test_v2_tags_downgrade_drops_v2_only.",
-      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-07.txt",
+      "tool_evidence": "7 passed, 2 warnings in 2.71s\n========================= test session starts ==========================\ncollected 7 items\n03-development/tests/integration/test_fr08.py .......                    [100%]\ncoverage_pct: 68.46 (runner.py=76%, app.py=50%); spec_cov_pct: 100 (4/4 required test entries present — test_graceful_drain_waits_running parametrized for cases #1+#2; test_task_timeout_kills_orphan_subprocess; test_cancelled_error_propagates)",
+      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-08.txt",
       "coverage_scope": "per_fr",
-      "coverage_scope_fr": "FR-07",
+      "coverage_scope_fr": "FR-08",
       "score_source": "framework"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Import Linter: Analyzed 52 files, 122 dependencies. Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT. Contracts: 3 kept, 0 broken.",
+      "tool_evidence": "Analyzed 52 files, 122 dependencies. Layer ordering KEPT; SQLAlchemy containment KEPT; Config and errors independence KEPT. Contracts: 3 kept, 0 broken.",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/architecture_constraints_harness.txt"
     }
@@ -78,26 +78,26 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "b03cbc45c8e9e47fef40e8a428721e6f1fbaae32ec2bdc4ae77d665e04a55b26",
-      "bytes": 186,
-      "head": "{\"version\": \"1.1.409\", \"time\": \"1788471166664\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.122}}"
+      "sha256": "ea264a0edb9a68b852014f2e607f6cdc67e01db9e2589bb35040a2ff27abef64",
+      "bytes": 170,
+      "head": "{\"version\":\"1.1.409\",\"time\":\"1788471419702\",\"generalDiagnostics\":[],\"summary\":{\"filesAnalyzed\":32,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.125}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "cbd784207e723c7d608800a4bfc8a14eaee8d59d12c74efe4fc3f1a2011bc267",
-      "bytes": 481,
-      "head": "pytest tests/test_fr07.py: collected 39 items, 39 passed, 0 failed, 0 skipped. Coverage: 99.4% lines covered (165/166) on FR-07 source files (env.py, v1_initial.py, v2_tags.py, v3_split_results.py, _shared/__init__.py). All 4 unique required tests exist and pass: test_alembic_upgrade_downgrade_base (3 parametrized), test_v3_data_migration_round_trip_preserves_columns (2 parametrized), test_v2_tags_upgrade_creates_tags_task_tags_and_unique, test_v2_tags_downgrade_drops_v2_only."
+      "sha256": "e7d15bb76a4c977773dcec524d5093242eed66558416e62d741ad9ac25451030",
+      "bytes": 446,
+      "head": "7 passed, 2 warnings in 2.71s\n========================= test session starts ==========================\ncollected 7 items\n03-development/tests/integration/test_fr08.py .......                    [100%]\ncoverage_pct: 68.46 (runner.py=76%, app.py=50%); spec_cov_pct: 100 (4/4 required test entries present — test_graceful_drain_waits_running parametrized for cases #1+#2; test_task_timeout_kills_orphan_subprocess; test_cancelled_error_propagates)"
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "a33b04b6d9db35ecc511f5ce9a8b00029b68ab6046fbcef4a4896c6efb7d8436",
-      "bytes": 167,
-      "head": "Import Linter: Analyzed 52 files, 122 dependencies. Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT. Contracts: 3 kept, 0 broken."
+      "sha256": "3b2d748dac1159c15b94c99abe1aeb993816304b951612a09a8dd61cd821d65b",
+      "bytes": 152,
+      "head": "Analyzed 52 files, 122 dependencies. Layer ordering KEPT; SQLAlchemy containment KEPT; Config and errors independence KEPT. Contracts: 3 kept, 0 broken."
     }
   },
-  "composite_score": 99.85,
+  "composite_score": 92.0,
   "verdict": "PASS",
   "passed": true,
   "spec_undelivered": [],
