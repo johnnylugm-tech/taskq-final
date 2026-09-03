@@ -1,8 +1,8 @@
 {
   "gate": 1,
   "phase": 5,
-  "fr_id": "FR-06",
-  "overall_score": 100.0,
+  "fr_id": "FR-07",
+  "overall_score": 99.85,
   "quality_complete": true,
   "rounds_used": 1,
   "breakdown": {
@@ -16,26 +16,26 @@
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1788451581551\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.135}}",
+      "tool_evidence": "{\"version\":\"1.1.409\",\"time\":\"1788451835582\",\"generalDiagnostics\":[],\"summary\":{\"filesAnalyzed\":32,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.135}}",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/type_safety_harness.txt"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 80,
-      "tests_passed": 31,
+      "tests_passed": 39,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "ERROR: file or directory not found: 03-development/tests/test_fr06.py\n\n============================= test session starts ==============================\ncollected 0 items\n============================ no tests ran in 0.08s =============================\n\nName                                                   Stmts   Miss  Cover\n--------------------------------------------------------------------------\n03-development/src/taskq_api/repository/rate_repo.py      56     16    71%\n03-development/src/taskq_api/repository/session.py        89     45    49%\n03-development/src/taskq_api/repository/task_repo.py     201      0   100%\n--------------------------------------------------------------------------\nTOTAL                                                    346     61    82%",
-      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-06.txt",
+      "tool_evidence": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.15, pytest-8.4.2, pluggy-1.6.0\ncollected 39 items\n\n03-development/tests/integration/test_fr07.py .......................... [ 66%]\n.............                                                            [100%]\n\n======================== 39 passed, 1 warning in 3.28s =========================\nCoverage: totals 165 covered / 166 statements, percent_covered = 99.39759036144578 (env.py 98%, _shared 100%, v1_initial 100%, v2_tags 100%, v3_split_results 100%). All 7 required test function instances present: test_alembic_upgrade_downgrade_base[AC-7.4/AC-7.2/AC-7.6], test_v3_data_migration_round_trip_preserves_columns[AC-7.5-column-values/row-count], test_v2_tags_upgrade_creates_tags_task_tags_and_unique, test_v2_tags_downgrade_drops_v2_only. spec_cov_pct = 7/7 = 100%.",
+      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-07.txt",
       "coverage_scope": "per_fr",
-      "coverage_scope_fr": "FR-06",
+      "coverage_scope_fr": "FR-07",
       "score_source": "framework"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Contracts: 3 kept, 0 broken.\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT",
+      "tool_evidence": "=============\nImport Linter\n=============\n\n---------\nContracts\n---------\n\nAnalyzed 52 files, 122 dependencies.\n------------------------------------\n\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\n\nContracts: 3 kept, 0 broken.",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/architecture_constraints_harness.txt"
     }
@@ -78,26 +78,26 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "21dd7b2b46827b218001a1c7ef09b194d962a5b0c5e85b61e718b8538a3361dd",
-      "bytes": 186,
-      "head": "{\"version\": \"1.1.409\", \"time\": \"1788451581551\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.135}}"
+      "sha256": "e9e9bf2c09f6a1398b968c65fbf387d6d068b5388b581d3b38583c5f01368436",
+      "bytes": 170,
+      "head": "{\"version\":\"1.1.409\",\"time\":\"1788451835582\",\"generalDiagnostics\":[],\"summary\":{\"filesAnalyzed\":32,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.135}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "d726a1fa34ac0dea4927ebb23af4d11a59c07045e8c75df9720121d9542c4c5d",
-      "bytes": 776,
-      "head": "ERROR: file or directory not found: 03-development/tests/test_fr06.py\n\n============================= test session starts ==============================\ncollected 0 items\n============================ no tests ran in 0.08s =============================\n\nName                                                   Stmts   Miss  Cover\n--------------------------------------------------------------------------\n03-development/src/taskq_api/repository/rate_repo.py      56     16    71%\n03-development/src/taskq_api/repository/session.py        89     45    49%\n03-development/src/taskq_api/repository/task_repo.py     201      0   100%\n--------------------------------------------------------------------------\nTOTAL                                                    346     61    82%"
+      "sha256": "b2b8366377443ac20bfa474cbb45c150242ad5f67cdb67f41c5918c6b8df7ef3",
+      "bytes": 882,
+      "head": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.15, pytest-8.4.2, pluggy-1.6.0\ncollected 39 items\n\n03-development/tests/integration/test_fr07.py .......................... [ 66%]\n.............                                                            [100%]\n\n======================== 39 passed, 1 warning in 3.28s =========================\nCoverage: totals 165 covered / 166 statements, percent_covered = 99.39759036144578 (env.py 98%, _shared 100%, v1_initial 100%, v2_tags 100%, v3_split_results 100%). All 7 required test function instances present: test_alembic_upgrade_downgrade_base[AC-7.4/AC-7.2/AC-7.6], test_v3_data_migration_round_trip_preserves_columns[AC-7.5-column-values/row-count], test_v2_tags_upgrade_creates_tags_task_tags_and_unique, test_v2_tags_downgrade_drops_v2_only. spec_cov_pct = 7/7 = 100%."
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "1ae3c1de83d2cdf1bc0a09ca2ae81dc9bb069f43f2f36e38ff545b4ea92d0693",
-      "bytes": 112,
-      "head": "Contracts: 3 kept, 0 broken.\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT"
+      "sha256": "dc51fb5889002b13f94e1154c6b6db035ed7cba4d8ae5cef17113bd014ff4dd6",
+      "bytes": 262,
+      "head": "=============\nImport Linter\n=============\n\n---------\nContracts\n---------\n\nAnalyzed 52 files, 122 dependencies.\n------------------------------------\n\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\n\nContracts: 3 kept, 0 broken."
     }
   },
-  "composite_score": 100.0,
+  "composite_score": 99.85,
   "verdict": "PASS",
   "passed": true,
   "spec_undelivered": [],
