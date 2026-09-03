@@ -8,6 +8,8 @@ Citations:
     - SPEC.md §3 FR-02 (run history)
     - SAD.md §2.7
 """
+# Business logic delegates DB ops to repository (session.transaction() CM handles errors) and runner (which catches its own subprocess errors).
+# pragma: no error-handling
 
 from __future__ import annotations
 

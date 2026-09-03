@@ -1,4 +1,5 @@
 """[FR-01] SQLAlchemy ORM tables — L1 (models).
+# pragma: no error-handling  # pure data/constants — no I/O to handle
 
 Declarative tables for tasks, task_results, api_keys, tags, rate_buckets.
 This module defines the schema; no business logic lives here.

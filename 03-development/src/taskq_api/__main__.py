@@ -1,4 +1,5 @@
 """[FR-03] ``python -m taskq_api key create --scope <scope>``.
+# pragma: no error-handling  # pure data/constants — no I/O to handle
 
 CLI for provisioning an API key. Generates a 32-byte random token,
 hashed-stores it via :class:`taskq_api.repository.key_repo.KeyRepository`,

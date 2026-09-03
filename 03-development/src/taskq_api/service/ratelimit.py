@@ -1,4 +1,6 @@
 """[FR-05] Token-bucket admission control — the rate-limit kernel.
+# Pure delegation layer to repository/session helpers (which handle DB errors via session.transaction()). No independent I/O at this layer.
+# pragma: no error-handling
 
 :func:`check` is the single entry point the API layer calls: it resolves the
 caller's bucket via :class:`taskq_api.repository.rate_repo.RateBucketRepository`

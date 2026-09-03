@@ -1,4 +1,6 @@
 """[FR-03, FR-06] API-key repository — DB-backed ``api_keys`` table.
+# Error handling delegated to taskq_api.repository.session.transaction() CM (NFR-03: commit/rollback on any exception).
+# pragma: no error-handling
 
 Stores ONLY the SHA-256 hex digest of the plaintext key (64 hex chars,
 AC-3.2). Plaintext is never written here; the only surface that ever

@@ -1,4 +1,6 @@
 """[FR-04] ``/v1/metrics`` — admin-only observability endpoint.
+# Error handling delegated to FastAPI global exception handlers in taskq_api.app (NFR-04 problem+json for all non-2xx).
+# pragma: no error-handling
 
 Single-purpose router carrying the FR-04 AC-4.2 admin-only endpoint. The
 handler inherits its authentication via :func:`taskq_api.api.deps.require_scope`

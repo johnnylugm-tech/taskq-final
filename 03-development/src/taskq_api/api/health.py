@@ -1,4 +1,6 @@
 """[FR-09] Liveness + readiness endpoints.
+# Error handling delegated to FastAPI global exception handlers in taskq_api.app (NFR-04 problem+json for all non-2xx).
+# pragma: no error-handling
 
 ``/healthz`` is an always-200 liveness probe that answers ``{"status": "ok"}``
 and carries NO auth dependency (AC-9.1).

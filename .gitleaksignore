@@ -1,0 +1,6 @@
+# agent_b_approvals/* contains SHA-256 assertion digests as FR-01..FR-10
+# evidence (test fixture hashes, not real API keys). 64-hex-char sequences
+# inside JSON value strings match gitleaks' generic-api-key rule by length+entropy.
+# Whitelisted by fingerprint below.
+b8721c5f64ef34e822b0adbec80e425f35b48c37:.methodology/agent_b_approvals/FR-03.json:generic-api-key:46
+b8721c5f64ef34e822b0adbec80e425f35b48c37:.methodology/agent_b_approvals/FR-03.json:generic-api-key:47

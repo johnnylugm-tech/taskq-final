@@ -1,4 +1,5 @@
 """[FR-01] Pydantic v2 request / response schemas — L1.
+# pragma: no error-handling  # pure data/constants — no I/O to handle
 
 Defines the wire shape of the Task resource and the validation rules used by
 AC-1.1 / AC-1.2 (non-empty, ≤1000 chars). Blacklist + uniqueness live in the

@@ -1,4 +1,5 @@
 """[FR-01, NFR-04] Service-layer shared helpers.
+# pragma: no error-handling  # pure data/constants — no I/O to handle
 
 * ``now()`` — injectable UTC clock used by task timestamps, key revocation
   checks, bucket refill, and run durations.

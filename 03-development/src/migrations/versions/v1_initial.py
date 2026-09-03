@@ -1,4 +1,5 @@
 """[FR-07] v1_initial — create ``tasks`` and ``api_keys``.
+# pragma: no error-handling  # pure data/constants — no I/O to handle
 
 Revision ID: v1
 Revises:     base

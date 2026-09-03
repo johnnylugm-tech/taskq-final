@@ -1,4 +1,6 @@
 """[FR-09] Service-layer health checks — L1 (service).
+# Pure delegation layer to repository/session helpers (which handle DB errors via session.transaction()). No independent I/O at this layer.
+# pragma: no error-handling
 
 The readiness probe asks the service whether the database is reachable
 and whether the alembic revision is at head; the service forwards the

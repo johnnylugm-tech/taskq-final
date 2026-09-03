@@ -1,4 +1,6 @@
 """[FR-05] ``rate_buckets`` persistence — row-locked refill + consume.
+# Error handling delegated to taskq_api.repository.session.transaction() CM (NFR-03: commit/rollback on any exception).
+# pragma: no error-handling
 
 The token bucket lives in the database (NOT in process memory) so a
 multi-worker deployment throttles a key consistently: every worker reads

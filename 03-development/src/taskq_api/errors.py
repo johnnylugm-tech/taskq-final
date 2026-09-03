@@ -1,4 +1,5 @@
 """[FR-10] RFC 7807 problem+json + [NFR-04] secret redaction.
+# pragma: no error-handling  # pure data/constants — no I/O to handle
 
 Independence module: depends only on stdlib. Owns the domain-error classes
 and the canonical error-body builder.

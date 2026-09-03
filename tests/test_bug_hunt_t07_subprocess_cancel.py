@@ -50,16 +50,56 @@ def test_t07_outer_cancellation_kills_subprocess():
         # Give the kernel a moment to reap a killed process.
         await asyncio.sleep(0.2)
 
+        # Scope the ps scan to THIS process tree only (ppid chain back to
+        # the pytest runner). The unfiltered ``ps -A`` form had a false-
+        # positive on the full verify-system run when other tests left
+        # `sleep` orphans on the host — the regression we care about is
+        # whether OUR spawn survived, not whether any host-level ``sleep``
+        # exists.
+        my_ppid = os.getppid()
         proc = await asyncio.create_subprocess_exec(
-            "ps", "-A", "-o", "pid=,comm=",
+            "ps", "-A", "-o", "pid=,ppid=,comm=",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
         stdout, _ = await proc.communicate()
-        return [
-            line for line in stdout.decode().splitlines()
-            if line.strip().endswith("sleep")
+        descendants: set[int] = set()
+        rows = [
+            line.strip().split(None, 2)
+            for line in stdout.decode().splitlines()
+            if line.strip()
         ]
+        # First pass: index ppid -> [pid]
+        by_ppid: dict[int, list[int]] = {}
+        for row in rows:
+            if len(row) < 2:
+                continue
+            try:
+                pid = int(row[0])
+                ppid = int(row[1])
+            except ValueError:
+                continue
+            by_ppid.setdefault(ppid, []).append(pid)
+        # Second pass: walk descendants of my_ppid
+        frontier = [my_ppid]
+        while frontier:
+            children = []
+            for pid in frontier:
+                children.extend(by_ppid.get(pid, []))
+            descendants.update(children)
+            frontier = children
+        # Third pass: any sleep row whose pid is in our descendant set
+        sleep_orphans: list[str] = []
+        for row in rows:
+            if len(row) < 3 or not row[2].endswith("sleep"):
+                continue
+            try:
+                pid = int(row[0])
+            except ValueError:
+                continue
+            if pid in descendants:
+                sleep_orphans.append(" ".join(row))
+        return sleep_orphans
 
     alive = asyncio.run(_drive())
     assert not alive, (

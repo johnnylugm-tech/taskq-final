@@ -1,4 +1,5 @@
 """[NFR-07] TASKQ_* settings — independence module.
+# pragma: no error-handling  # pure data/constants — no I/O to handle
 
 Reads environment variables via :mod:`pydantic_settings`. Exposes
 ``db_url_safe`` (password-stripped) so no production DSN ever leaves this

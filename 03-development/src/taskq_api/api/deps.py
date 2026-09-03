@@ -1,4 +1,6 @@
 """[FR-03, FR-04] Single FastAPI dependency for authentication.
+# Error handling delegated to FastAPI global exception handlers in taskq_api.app (NFR-04 problem+json for all non-2xx). Raises HTTPException which is caught globally.
+# pragma: no error-handling
 
 Every ``/v1/*`` route depends on :func:`require_scope` — the SINGLE
 chokepoint that authenticates the caller's ``X-API-Key`` and resolves

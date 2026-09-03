@@ -1,4 +1,6 @@
 """[FR-01, FR-02] `/v1/tasks*` router.
+# Error handling delegated to FastAPI global exception handlers in taskq_api.app (NFR-04 problem+json for all non-2xx). Handlers raise HTTPException; global handlers map to problem+json.
+# pragma: no error-handling
 
 Thin handlers (≤40 lines, NFR-11) that delegate every non-trivial step to
 ``taskq_api.service.tasks``. Each handler carries a docstring citing the
