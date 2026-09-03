@@ -192,7 +192,7 @@
   "gate_results": {
     "gate1": {
       "FR-01": {
-        "score": 100.0,
+        "score": 98.25,
         "quality_complete": true,
         "rounds_used": 2,
         "open_critical": 0,

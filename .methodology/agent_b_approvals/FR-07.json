@@ -1,0 +1,74 @@
+{
+  "review_status": "APPROVE",
+  "reason": "Each FR-07 normative requirement maps to a specific asserted file:line pair. v1 tables at test_v1_initial_upgrade_creates_tables lines 1177-1178/1180-1182 and downgrade-drops at 1227-1228. v2 adds tags/task_tags at 1268 and unique uq_tasks_name at 1272-1275; v2-downgrade drops v2-only at 1335-1337 while preserving v1 data at 1343. v3-split-creates task_results and drops result_json at 1439/1442 with split data verified at 1455-1461; v3-merge drops task_results and restores result_json at 1607/1610 with merge fidelity at 1622-1631. upgrade head/downgrade base subprocess success pinned at 277 and 346. Round-trip column-by-column equality (sample exit_code/stdout_tail/stderr_tail/duration_ms preserved across downgrade-1+upgrade-head) verified at 615, 624, 628, 634, 638; row count preserved at 715. DROP TABLE shortcut scan at 416 (assert total_hits == 0). Offline SQL generation coverage at 307-310.",
+  "citations": [
+    "SPEC.md:130",
+    "SPEC.md:136",
+    "SPEC.md:137",
+    "SPEC.md:138",
+    "SPEC.md:140",
+    "SPEC.md:141",
+    "SPEC.md:142",
+    "SPEC.md:143",
+    "03-development/tests/integration/test_fr07.py:1177",
+    "03-development/tests/integration/test_fr07.py:1178",
+    "03-development/tests/integration/test_fr07.py:1180",
+    "03-development/tests/integration/test_fr07.py:1182",
+    "03-development/tests/integration/test_fr07.py:1227",
+    "03-development/tests/integration/test_fr07.py:1228",
+    "03-development/tests/integration/test_fr07.py:1268",
+    "03-development/tests/integration/test_fr07.py:1272",
+    "03-development/tests/integration/test_fr07.py:1273",
+    "03-development/tests/integration/test_fr07.py:1335",
+    "03-development/tests/integration/test_fr07.py:1336",
+    "03-development/tests/integration/test_fr07.py:1337",
+    "03-development/tests/integration/test_fr07.py:1343",
+    "03-development/tests/integration/test_fr07.py:1439",
+    "03-development/tests/integration/test_fr07.py:1442",
+    "03-development/tests/integration/test_fr07.py:1455",
+    "03-development/tests/integration/test_fr07.py:1456",
+    "03-development/tests/integration/test_fr07.py:1460",
+    "03-development/tests/integration/test_fr07.py:1607",
+    "03-development/tests/integration/test_fr07.py:1610",
+    "03-development/tests/integration/test_fr07.py:1622",
+    "03-development/tests/integration/test_fr07.py:1628",
+    "03-development/tests/integration/test_fr07.py:277",
+    "03-development/tests/integration/test_fr07.py:346",
+    "03-development/tests/integration/test_fr07.py:307",
+    "03-development/tests/integration/test_fr07.py:308",
+    "03-development/tests/integration/test_fr07.py:615",
+    "03-development/tests/integration/test_fr07.py:624",
+    "03-development/tests/integration/test_fr07.py:628",
+    "03-development/tests/integration/test_fr07.py:634",
+    "03-development/tests/integration/test_fr07.py:638",
+    "03-development/tests/integration/test_fr07.py:715",
+    "03-development/tests/integration/test_fr07.py:416",
+    "tests/test_fr07.py:1177",
+    "tests/test_fr07.py:1439",
+    "tests/test_fr07.py:628",
+    "tests/test_fr07.py:416"
+  ],
+  "docs_embedded": [
+    "SPEC.md"
+  ],
+  "gaps": [],
+  "criteria_review": {
+    "requirement_path": "SPEC.md",
+    "declared_tests": [
+      "test_alembic_upgrade_downgrade_base",
+      "test_v2_tags_downgrade_drops_v2_only",
+      "test_v2_tags_upgrade_creates_tags_task_tags_and_unique",
+      "test_v3_data_migration_round_trip_preserves_columns"
+    ],
+    "assertion_digests": {
+      "test_alembic_upgrade_downgrade_base": "e92e2a0e058e84b05aacd9ad525282deafc2c782db711c6638addc4c2f1d3b75",
+      "test_v2_tags_downgrade_drops_v2_only": "a2a581b03e891b0cae4e7825093e1dff0b9535259d32a30a0e948d74462047ac",
+      "test_v2_tags_upgrade_creates_tags_task_tags_and_unique": "241349da47e837011a8cc1eab2b0f5c661f0e2386fe3d3ff01adc82269db32b1",
+      "test_v3_data_migration_round_trip_preserves_columns": "f08e13907617477fd6c68bf017ef89c7db4ac5837a21dc332fb3a984ef7d548a"
+    },
+    "test_files": [
+      "03-development/tests/integration/test_fr07.py",
+      "tests/test_fr07.py"
+    ]
+  }
+}

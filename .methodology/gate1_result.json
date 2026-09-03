@@ -1,41 +1,41 @@
 {
   "gate": 1,
-  "phase": 3,
-  "fr_id": "FR-10",
-  "overall_score": 100.0,
+  "phase": 4,
+  "fr_id": "FR-01",
+  "overall_score": 98.25,
   "quality_complete": true,
   "rounds_used": 1,
   "breakdown": {
     "linting": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "All checks passed!\n--- exit: 0",
+      "tool_evidence": "All checks passed!\n",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/linting_harness.txt"
     },
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1788391085010\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 33, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.126}}\nexit: 0",
+      "tool_evidence": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0}}\n",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/type_safety_harness.txt"
     },
     "test_coverage": {
-      "score": 89.52,
+      "score": 100.0,
       "threshold": 80,
-      "tests_passed": 17,
+      "tests_passed": 24,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "tests/test_fr10.py ............                                          [ 70%]\ntests/test_fr08.py .....                                                 [100%]\n======================== 17 passed, 1 warning in 2.54s =========================\ncoverage: errors.py 100%, app.py 83%, totals 90% (>=80 threshold); spec_cov 5/5 = 100% -> score = min(90, 100) = 90, capped by min(coverage_pct, spec_cov_pct) = 100\nexit: 0",
-      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-10.txt",
+      "tool_evidence": "collected 24 items\n03-development/tests/integration/test_fr01.py ........................   [100%]\n======================== 24 passed, 1 warning in 0.34s =========================\nFR-01 source coverage 93.37% (366/392 lines) across api/tasks.py, service/tasks.py, service/common.py, repository/task_repo.py, models/schemas.py, models/orm.py.\n",
+      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-01.txt",
       "coverage_scope": "per_fr",
-      "coverage_scope_fr": "FR-10",
+      "coverage_scope_fr": "FR-01",
       "score_source": "framework"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Import Linter\nContracts: 3 kept, 0 broken.\nLayer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT\nexit: 0",
+      "tool_evidence": "Analyzed 52 files, 122 dependencies.\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\nContracts: 3 kept, 0 broken.\n",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/architecture_constraints_harness.txt"
     }
@@ -47,36 +47,50 @@
     "harness/gate_configs": "d91e4c3c9409081ea44b75ae3060f3293fa59cab"
   },
   "evidence_digest": {
+    "mutation_testing::setup.cfg": {
+      "source": "setup.cfg (score-altering exclusions)",
+      "kind": "file",
+      "sha256": "a85ca806feea1166f5b23f5e8662f805c41222a19a8a9e95e5cd969e12f228aa",
+      "bytes": 1333,
+      "head": "[mutmut]\n# Mutation test scope — service + repository layers per SAB.json scope_layers.\n# Round 89 站2: this file is regenerated from the SAB at the P2→P3 handoff\n# (the scope decides what mutation_testing is judged on, so a drift here\n# blocks Gate 2/3/4 with the framework's \"scope disagrees with SAB\" infra\n# failure rather than silently picking a side).\nrunner=python3 -m pytest -m mutation_oracle --tb=no -q -p no:cacheprovider\npaths_to_mutate=03-development/src/taskq_api/service,03-development/src/taskq_api/repository\n\n[tool:pytest]\n# Gate 2 evaluation expects an integration suite under 03-development/tests/integration/\n# (NFR-10). That directory mirrors tests/test_*.py via symlinks so the framework's\n# `pytest 03-development/tests/integration --cov=03-development/src` invocation\n# produces a real measurement. Without this directive pytest's default discovery\n# would collect BOTH copies on `pytest --ignore=harness/tests` (i.e. `make\n# verify-system`), and a pytest session that finds the same test function under\n# two node-ids fails with collection errors. `norecursedirs` makes the\n# integration mirror opt-in: explicit `pytest 03-development/tests/integration`\n# still walks into it (the path is on the command line), but a bare `pytest`\n# from the project root skips it."
+    },
+    "test_coverage::setup.cfg": {
+      "source": "setup.cfg (score-altering exclusions)",
+      "kind": "file",
+      "sha256": "a85ca806feea1166f5b23f5e8662f805c41222a19a8a9e95e5cd969e12f228aa",
+      "bytes": 1333,
+      "head": "[mutmut]\n# Mutation test scope — service + repository layers per SAB.json scope_layers.\n# Round 89 站2: this file is regenerated from the SAB at the P2→P3 handoff\n# (the scope decides what mutation_testing is judged on, so a drift here\n# blocks Gate 2/3/4 with the framework's \"scope disagrees with SAB\" infra\n# failure rather than silently picking a side).\nrunner=python3 -m pytest -m mutation_oracle --tb=no -q -p no:cacheprovider\npaths_to_mutate=03-development/src/taskq_api/service,03-development/src/taskq_api/repository\n\n[tool:pytest]\n# Gate 2 evaluation expects an integration suite under 03-development/tests/integration/\n# (NFR-10). That directory mirrors tests/test_*.py via symlinks so the framework's\n# `pytest 03-development/tests/integration --cov=03-development/src` invocation\n# produces a real measurement. Without this directive pytest's default discovery\n# would collect BOTH copies on `pytest --ignore=harness/tests` (i.e. `make\n# verify-system`), and a pytest session that finds the same test function under\n# two node-ids fails with collection errors. `norecursedirs` makes the\n# integration mirror opt-in: explicit `pytest 03-development/tests/integration`\n# still walks into it (the path is on the command line), but a bare `pytest`\n# from the project root skips it."
+    },
     "linting": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "d744c845d51a3a270a18bb4d9db91fccedb582bdd6d3ca6bf01602b200f66cf4",
-      "bytes": 30,
-      "head": "All checks passed!\n--- exit: 0"
+      "sha256": "f0d0b1081d9d3ebb26c4c93543053ecdc0a58998f22c071dc4ddb26021b57645",
+      "bytes": 18,
+      "head": "All checks passed!"
     },
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "93e1a1f47d394d6bcebf5eb807726d7289b5211900de4e5bb2c853340af02ba3",
-      "bytes": 194,
-      "head": "{\"version\": \"1.1.409\", \"time\": \"1788391085010\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 33, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.126}}\nexit: 0"
+      "sha256": "13ac6d571098785709732ce81f875322d473dad64f262dd18f935ee6194d1673",
+      "bytes": 115,
+      "head": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "4f7f3a6a88932021c4c1210e02e58f6e78cbdcb16045aac6a0673e01c5e94ecf",
-      "bytes": 413,
-      "head": "tests/test_fr10.py ............                                          [ 70%]\ntests/test_fr08.py .....                                                 [100%]\n======================== 17 passed, 1 warning in 2.54s =========================\ncoverage: errors.py 100%, app.py 83%, totals 90% (>=80 threshold); spec_cov 5/5 = 100% -> score = min(90, 100) = 90, capped by min(coverage_pct, spec_cov_pct) = 100\nexit: 0"
+      "sha256": "db57535b1ce6d45490564b90388e94e0a35bd463e71280d87000fd50c9ec8512",
+      "bytes": 341,
+      "head": "collected 24 items\n03-development/tests/integration/test_fr01.py ........................   [100%]\n======================== 24 passed, 1 warning in 0.34s =========================\nFR-01 source coverage 93.37% (366/392 lines) across api/tasks.py, service/tasks.py, service/common.py, repository/task_repo.py, models/schemas.py, models/orm.py."
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "846b1a4c87766a158d98b1732fb9b9d43a3703e20339eb4c83f6a61fe57a11f0",
-      "bytes": 136,
-      "head": "Import Linter\nContracts: 3 kept, 0 broken.\nLayer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT\nexit: 0"
+      "sha256": "c683995f998cdfb13cfa744bba1d90de86db49015cb498c26bfe929b575bfecd",
+      "bytes": 149,
+      "head": "Analyzed 52 files, 122 dependencies.\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\nContracts: 3 kept, 0 broken."
     }
   },
-  "composite_score": 100.0,
+  "composite_score": 98.25,
   "verdict": "PASS",
   "passed": true,
   "spec_undelivered": [],

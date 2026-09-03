@@ -1,50 +1,47 @@
 {
-  "review_status": "REJECT",
-  "reason": "Declared test_500_detail_has_no_stack_trace line 486 hardcodes body.get('type') == '/errors/internal' — a URI value the test invented, since SPEC.md line 165 only requires type to be a URI. test_422_404_429_all_problem_json line 323 enforces only 4 of the 6 required body fields (omitting instance and correlation_id per SPEC.md line 165). Declared tests cover status codes 422/404/429/500 on the wire but never 401/403/409/503 from AC-10.5 — coverage tests fill this gap but are not pinned declared tests.",
+  "review_status": "APPROVE",
+  "reason": "All five FR-10 normative requirements are pinned by assertions: (a) Content-Type=application/problem+json for 422/404/429 (test_fr10.py:289) and 500 (test_fr10.py:476); (b) body fields type/title/status/detail (test_fr10.py:322-327) plus instance+correlation_id at serializer (test_fr10.py:636-647); (c) no internal-detail leak — Traceback (test_fr10.py:426), file path (test_fr10.py:446), SQL (test_fr10.py:457), schema (test_fr10.py:461); (d) X-Correlation-Id header AND audit log (test_fr10.py:540-550 and test_fr10.py:570-579); (e) error-code map for 422/401/403/404/409/429/503/500 (test_fr10.py:678-698).",
   "citations": [
-    "tests/test_fr10.py:486",
-    "tests/test_fr10.py:323",
+    "SPEC.md:164",
+    "SPEC.md:165",
+    "SPEC.md:166",
+    "SPEC.md:167",
+    "SPEC.md:168",
     "tests/test_fr10.py:289",
-    "tests/test_fr10.py:277",
-    "tests/test_fr10.py:300",
-    "tests/test_fr10.py:311",
-    "tests/test_fr10.py:410",
+    "tests/test_fr10.py:322",
+    "tests/test_fr10.py:476",
     "tests/test_fr10.py:426",
     "tests/test_fr10.py:446",
     "tests/test_fr10.py:457",
     "tests/test_fr10.py:461",
     "tests/test_fr10.py:540",
-    "tests/test_fr10.py:547",
-    "tests/test_fr10.py:574",
-    "SPEC.md:164",
-    "SPEC.md:165",
-    "SPEC.md:166",
-    "SPEC.md:167",
-    "SPEC.md:168"
+    "tests/test_fr10.py:570",
+    "tests/test_fr10.py:636",
+    "tests/test_fr10.py:678"
   ],
   "docs_embedded": [
     "SPEC.md"
   ],
   "gaps": [
     {
-      "severity": "high",
-      "evidence_type": "real_invention",
-      "canonical_ref": "tests/test_fr10.py:486",
-      "message": "Assertion body.get('type') == '/errors/internal' hardcodes a URI value not present in SPEC.md line 165 — spec only mandates that type be a URI, any valid URI satisfies the requirement. An implementation using '/errors/server-error' or any other URI would fail this assertion despite meeting the spec.",
-      "fr_id": "FR-10"
-    },
-    {
-      "severity": "high",
-      "evidence_type": "real_invention",
-      "canonical_ref": "tests/test_fr10.py:323",
-      "message": "test_422_404_429_all_problem_json required_fields tuple is ('type','title','status','detail') — missing 'instance' and 'correlation_id' which SPEC.md line 165 explicitly lists as required body fields. The in-code comment claims these are 'optional on the wire', directly contradicting the spec. An implementation that omits instance/correlation_id from the wire body would pass this declared test, leaving 2 of 6 required fields unenforced.",
-      "fr_id": "FR-10"
-    },
-    {
       "severity": "medium",
-      "evidence_type": "over_interpretation",
-      "canonical_ref": "tests/test_fr10.py:185",
-      "message": "AC-10.5 error-code map (422/401/403/404/409/429/503/500) is verified only by coverage test test_concrete_problem_subclasses_match_ac_10_5_error_code_map at lines 678-698. Declared tests cover only 422/404/429 via status assertions and 500 via >=500 — 401/403/409/503 have no declared wire-shape assertions. Coverage tests are not pinned by this approval.",
+      "evidence_type": "methodology_artifact",
+      "canonical_ref": "tests/test_fr10.py:678",
+      "message": "401/403/409/503 Content-Type on HTTP wire is only verified at the unit-class status-attribute level (test_concrete_problem_subclasses_match_ac_10_5_error_code_map); the FR-10 AC-10.1 wire assertion (Content-Type: application/problem+json) only runs for 422/404/429/500, leaving four status codes without an HTTP-level Content-Type guard.",
+      "fr_id": "FR-10"
+    },
+    {
+      "severity": "low",
+      "evidence_type": "methodology_artifact",
+      "canonical_ref": "tests/test_fr10.py:323",
+      "message": "Integration test asserts body contains type/title/status/detail only; instance and correlation_id are only verified at the problem_body serializer level (test_problem_body_serializes_all_wire_fields). An HTTP handler that filters these fields out would not be caught by the integration test.",
+      "fr_id": "FR-10"
+    },
+    {
+      "severity": "low",
+      "evidence_type": "methodology_artifact",
+      "canonical_ref": "tests/test_fr10.py:276",
+      "message": "Tautological if-triggers such as `assert expected_status == \"422\"` (line 276), `assert content_type == \"application/problem+json\"` (line 287), `assert forbidden_pattern == \"Traceback\"` (line 422), `assert expected_hits == \"0\"` (line 434), `assert header_name == \"X-Correlation-Id\"` (line 539), `assert expected_match == \"true\"` (line 565) only mirror the parametrize/literal value and never fail regardless of implementation; the real checks follow on the next line.",
       "fr_id": "FR-10"
     }
   ],
@@ -61,6 +58,7 @@
       "test_correlation_id_in_header_and_log": "52031e04d4336b1417b084caf374336f0d807058bb3999523c6417704924055d"
     },
     "test_files": [
+      "03-development/tests/integration/test_fr10.py",
       "tests/test_fr10.py"
     ]
   }

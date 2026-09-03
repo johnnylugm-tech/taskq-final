@@ -1,9 +1,9 @@
 {
   "state": "RUNNING",
   "current_phase": 4,
-  "last_gate": 2,
-  "last_fr": "FR-10",
-  "last_update": "2026-09-03T02:52:47.726667+00:00",
+  "last_gate": 1,
+  "last_fr": "FR-01",
+  "last_update": "2026-09-03T03:02:12.756709+00:00",
   "language": "python",
   "phase_completed": {
     "1": {
