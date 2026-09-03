@@ -1,6 +1,6 @@
 # Harness-executed: pytest-cov
 # returncode: 1
-# agent_score: 77.9 | threshold: 80.0
+# agent_score: 90.0 | threshold: 80.0
 
 ........................................................................ [ 23%]
 ........................................................................ [ 46%]
@@ -16,8 +16,8 @@
   /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
     import multipart
 
-03-development/tests/test_fr01.py::test_repository_add_result_persists_run_and_mirrors_to_memory
-  /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/_pytest/unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x10b716700>
+03-development/tests/test_fr01.py::test_tasks_list_cursor_pagination[AC-1.4-two-pages]
+  /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/_pytest/unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x10760e700>
   
   Traceback (most recent call last):
     File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/asyncio/base_subprocess.py", line 126, in __del__
@@ -83,4 +83,4 @@ ERROR 03-development/tests/test_fr07.py::test_alembic_upgrade_downgrade_base[AC-
 ERROR 03-development/tests/test_fr07.py::test_alembic_upgrade_downgrade_base[AC-7.6-no-drop-shortcut]
 ERROR 03-development/tests/test_fr07.py::test_v3_data_migration_round_trip_preserves_columns[AC-7.5-round-trip-preserves-column-values]
 ERROR 03-development/tests/test_fr07.py::test_v3_data_migration_round_trip_preserves_columns[AC-7.5-round-trip-preserves-row-count]
-303 passed, 3 warnings, 5 errors in 19.91s
+303 passed, 3 warnings, 5 errors in 19.74s
