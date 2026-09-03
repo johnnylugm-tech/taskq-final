@@ -1,6 +1,6 @@
 # Harness-executed: pytest-cov
 # returncode: 0
-# agent_score: 100.0 | threshold: 80.0
+# agent_score: 98.3 | threshold: 80.0
 
 ........................................................................ [ 26%]
 ........................................................................ [ 53%]
@@ -15,8 +15,8 @@
   /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
     import multipart
 
-03-development/tests/test_fr01.py::test_repository_add_result_persists_run_and_mirrors_to_memory
-  /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/_pytest/unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x108f06700>
+03-development/tests/test_fr01.py::test_list_tasks_with_status_filter
+  /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/_pytest/unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x10ab8a700>
   
   Traceback (most recent call last):
     File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/asyncio/base_subprocess.py", line 126, in __del__
@@ -76,4 +76,4 @@ Name                                                         Stmts   Miss  Cover
 03-development/src/taskq_api/service/tasks.py                   29      0   100%
 ------------------------------------------------------------------------------------------
 TOTAL                                                         1203      0   100%
-267 passed, 3 warnings in 18.60s
+267 passed, 3 warnings in 18.52s
