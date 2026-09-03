@@ -1,8 +1,8 @@
 {
   "gate": 1,
-  "phase": 5,
-  "fr_id": "FR-10",
-  "overall_score": 97.475,
+  "phase": 3,
+  "fr_id": "FR-01",
+  "overall_score": 100.0,
   "quality_complete": true,
   "rounds_used": 1,
   "breakdown": {
@@ -16,31 +16,31 @@
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1788452680450\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.137}}",
+      "tool_evidence": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 19, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.073}}",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/type_safety_harness.txt"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 80,
-      "tests_passed": 12,
+      "tests_passed": 24,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "======================== 12 passed, 2 warnings in 0.22s ========================\ncollected 12 items\ntests/test_fr10.py ............  [100%]\ncoverage_pct=89.9%, spec_cov_pct=100% (5/5 required test functions present and passing)",
-      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-10.txt",
+      "tool_evidence": "tests/test_fr01.py ........................                              [100%]\n\n============================== 24 passed in 0.35s ==============================\n{\"totals\": {\"covered_lines\": 310, \"num_statements\": 310, \"percent_covered\": 100.0}}",
       "coverage_scope": "per_fr",
-      "coverage_scope_fr": "FR-10",
-      "score_source": "framework"
+      "coverage_scope_fr": "FR-01",
+      "score_source": "framework",
+      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-01.txt"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Analyzed 52 files, 122 dependencies.\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\nContracts: 3 kept, 0 broken.",
+      "tool_evidence": "Analyzed 36 files, 66 dependencies. Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT. Contracts: 3 kept, 0 broken.",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/architecture_constraints_harness.txt"
     }
   },
-  "enforcer_sha": "7750247841dc5a611be85f6b76c5956552d006b0",
+  "enforcer_sha": "f4af8962f193757d84e98ac60331d57af972ef6d",
   "enforcer_surface": {
     "core/quality_gate": "5adc0d5945ab97b6415a77f1e38a25cc20f4b746",
     "harness/harness_bridge.py": "ce203273ad7961428965bd2c0000a799b95aec7a",
@@ -50,9 +50,9 @@
     "secrets_scanning::.gitleaksignore": {
       "source": ".gitleaksignore (score-altering exclusions)",
       "kind": "file",
-      "sha256": "0d91a016ddc243bfb3ba1e065f86a98587818c26c1755c6bd8fd4a10296cdfaf",
-      "bytes": 472,
-      "head": "# agent_b_approvals/* contains SHA-256 assertion digests as FR-01..FR-10\n# evidence (test fixture hashes, not real API keys). 64-hex-char sequences\n# inside JSON value strings match gitleaks' generic-api-key rule by length+entropy.\n# Whitelisted by fingerprint below.\nb8721c5f64ef34e822b0adbec80e425f35b48c37:.methodology/agent_b_approvals/FR-03.json:generic-api-key:46\nb8721c5f64ef34e822b0adbec80e425f35b48c37:.methodology/agent_b_approvals/FR-03.json:generic-api-key:47"
+      "sha256": "c7972b2ea37d544f71d6afcd1e2d29444d7f060e5657c6ab1136af8dfcb35210",
+      "bytes": 1253,
+      "head": "# agent_b_approvals/* contains SHA-256 assertion digests as FR-01..FR-10\n# evidence (test fixture hashes, not real API keys). 64-hex-char sequences\n# inside JSON value strings match gitleaks' generic-api-key rule by length+entropy.\n# Whitelisted by fingerprint below.\nb8721c5f64ef34e822b0adbec80e425f35b48c37:.methodology/agent_b_approvals/FR-03.json:generic-api-key:46\nb8721c5f64ef34e822b0adbec80e425f35b48c37:.methodology/agent_b_approvals/FR-03.json:generic-api-key:47\n\n# gate1_result.json:29 / :90 contain the test function name\n# \"test_invalid_api_key_returns_401\" inside a `tool_evidence` string. That\n# substring (\"_invalid_api_key_\") trips gitleaks' generic-api-key entropy\n# heuristic (entropy 3.94, token boundary on \"key\"). It is a pytest test id,\n# not a real credential — there is no API key material in this file. The\n# fingerprint is recorded here so future CI runs can verify the same false\n# positive remains the only entry, and so any future real leak in\n# gate1_result.json would not be masked (the allowlist is fingerprint-keyed,\n# not path-keyed).\n8bb7b79e0588432ff2923b5002b6f7635fbbe94d:.methodology/gate1_result.json:generic-api-key:29\n8bb7b79e0588432ff2923b5002b6f7635fbbe94d:.methodology/gate1_result.json:generic-api-key:90"
     },
     "mutation_testing::setup.cfg": {
       "source": "setup.cfg (score-altering exclusions)",
@@ -78,26 +78,26 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "395c52b68e22f634d8ef2827e1e791506e7bd92ad3e732c61a8e623d53b32aa5",
-      "bytes": 186,
-      "head": "{\"version\": \"1.1.409\", \"time\": \"1788452680450\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.137}}"
+      "sha256": "dd5087d49dec8d75dd6164a75014e535e4bd0b9d298d6542ca3045c1cbe04506",
+      "bytes": 135,
+      "head": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 19, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.073}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "2f2de57cdef24adb4db366845e9c5cfef003fc18054123b6ac0e7a363959ce20",
-      "bytes": 227,
-      "head": "======================== 12 passed, 2 warnings in 0.22s ========================\ncollected 12 items\ntests/test_fr10.py ............  [100%]\ncoverage_pct=89.9%, spec_cov_pct=100% (5/5 required test functions present and passing)"
+      "sha256": "e91b213a15118a86fd276013f9b2fd1ff9fd6b6e4c7c532c1463f215c4e0da14",
+      "bytes": 245,
+      "head": "tests/test_fr01.py ........................                              [100%]\n\n============================== 24 passed in 0.35s ==============================\n{\"totals\": {\"covered_lines\": 310, \"num_statements\": 310, \"percent_covered\": 100.0}}"
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "c683995f998cdfb13cfa744bba1d90de86db49015cb498c26bfe929b575bfecd",
-      "bytes": 149,
-      "head": "Analyzed 52 files, 122 dependencies.\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\nContracts: 3 kept, 0 broken."
+      "sha256": "e4e37ef7fe8ab45a7816d60bf23fc85e3bd66bbd85caeede9766c3ab3b6a8300",
+      "bytes": 151,
+      "head": "Analyzed 36 files, 66 dependencies. Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT. Contracts: 3 kept, 0 broken."
     }
   },
-  "composite_score": 97.475,
+  "composite_score": 100.0,
   "verdict": "PASS",
   "passed": true,
   "spec_undelivered": [],

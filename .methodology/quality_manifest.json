@@ -166,14 +166,15 @@
     },
     "gate4": {
       "score": 97.61,
-      "quality_complete": true,
+      "quality_complete": false,
       "rounds_used": 3,
       "open_critical": 0,
       "open_high": 0,
       "phase": 6,
       "gate": 4,
       "fr_scope": "all",
-      "overall_score": 97.61
+      "overall_score": 97.61,
+      "commit_landed": false
     }
   },
   "gate_score_overrides": {

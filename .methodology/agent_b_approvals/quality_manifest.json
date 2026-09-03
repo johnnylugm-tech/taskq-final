@@ -1,0 +1,23 @@
+{
+  "fr": "quality_manifest",
+  "review_status": "APPROVE",
+  "reason": "Persistent SoT manifest at .methodology/quality_manifest.json is the authoritative Gate 4 scoring source. Gate 4 block (lines 167-178) declares overall_score=97.61 matching QUALITY_REPORT.md line 5 (97.6144/100), open_critical=0 and open_high=0; Gate 3 block (lines 156-166) shows overall_score=95.31 matching BASELINE.md line 41; Gate 2 block (lines 145-155) shows overall_score=93.15; Gate 1 per-FR scores (lines 73-143) for all 10 FRs match FINAL_SIGN_OFF.md Section 4 and RELEASE_NOTES.md Section 3 exactly (FR-01=100.0, FR-02=92.25, FR-03=100.0, FR-04=92.86, FR-05=100.0, FR-06=100.0, FR-07=99.85, FR-08=100.0, FR-09=94.5, FR-10=97.47). gate_score_overrides mutation_testing=70.0 (line 187) cross-checks with VERIFICATION_REPORT.md line 20 (mutation ≥70 PASS). The gate4.quality_complete=false a",
+  "citations": [
+    ".methodology/quality_manifest.json:75",
+    ".methodology/quality_manifest.json:117",
+    ".methodology/quality_manifest.json:131",
+    ".methodology/quality_manifest.json:138",
+    ".methodology/quality_manifest.json:161",
+    ".methodology/quality_manifest.json:176",
+    ".methodology/quality_manifest.json:187",
+    "05-verification/BASELINE.md:41",
+    "05-verification/VERIFICATION_REPORT.md:20"
+  ],
+  "docs_embedded": [
+    "QUALITY_REPORT.md",
+    "RELEASE_NOTES.md",
+    "FINAL_SIGN_OFF.md",
+    "VERIFICATION_REPORT.md"
+  ],
+  "confidence": 0.9
+}
