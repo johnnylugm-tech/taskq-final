@@ -100,6 +100,18 @@ class _CorrelationIdMiddleware(BaseHTTPMiddleware):
             correlation_id, request.method, request.url.path,
         )
         response = await call_next(request)
+        # [T-13] Re-emit a record carrying the principal.key_id when the
+        # request reached a route that resolved an authenticated Principal
+        # (FR-04 chokepoint in :mod:`taskq_api.api.deps` stashes the
+        # Principal on request.state). This closes the T-13 repudiation
+        # gap — an operator can now grep audit logs by key_id and recover
+        # the caller for every privileged action.
+        principal = getattr(request.state, "principal", None)
+        if principal is not None:
+            _audit_logger.info(
+                "request authenticated correlation_id=%s key_id=%s scope=%s",
+                correlation_id, principal.key_id, principal.scope,
+            )
         response.headers["X-Correlation-Id"] = correlation_id
         return response
 

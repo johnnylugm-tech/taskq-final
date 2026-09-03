@@ -23,7 +23,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from fastapi import Header
+from fastapi import Header, Request
 
 from taskq_api.errors import RateLimitedProblem, UnauthenticatedProblem
 from taskq_api.service import ratelimit
@@ -57,9 +57,10 @@ def _enforce_rate_limit(principal: Principal) -> None:
 
 
 async def require_auth(
+    request: Request,
     x_api_key: Optional[str] = Header(default=None, alias="X-API-Key"),
 ) -> Principal:
-    """[FR-03 AC-3.1, FR-05 AC-5.1] Authenticate, then charge the bucket.
+    """[FR-03 AC-3.1, FR-05 AC-5.1, T-13] Authenticate, then charge the bucket.
 
     Raises :class:`UnauthenticatedProblem` (→ 401) for missing / unknown
     keys. Per-route scope authorization is done inline in the handler
@@ -73,10 +74,17 @@ async def require_auth(
     it cannot be charged before the caller is known) and BEFORE the
     handler's scope check — an over-limit caller never reaches the handler
     (FR-05 AC-5.1 / AC-5.2).
+
+    The resolved :class:`Principal` is also stashed on
+    ``request.state.principal`` so the FR-10 audit-log middleware in
+    :mod:`taskq_api.app` can re-emit a record carrying the principal's
+    ``key_id`` alongside the correlation_id — closing the T-13
+    repudiation gap (privileged actions become traceable to a caller).
     """
     principal = verify_key(x_api_key)
     if principal is None:
         raise UnauthenticatedProblem()
+    request.state.principal = principal
     _enforce_rate_limit(principal)
     return principal
 
