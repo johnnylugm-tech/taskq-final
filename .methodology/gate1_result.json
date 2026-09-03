@@ -1,8 +1,8 @@
 {
   "gate": 1,
   "phase": 3,
-  "fr_id": "FR-02",
-  "overall_score": 98.97,
+  "fr_id": "FR-03",
+  "overall_score": 99.77,
   "quality_complete": true,
   "rounds_used": 1,
   "breakdown": {
@@ -16,26 +16,26 @@
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1788362255071\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 20, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 0.947}}",
+      "tool_evidence": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 22, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0}}",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/type_safety_harness.txt"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 80,
-      "tests_passed": 31,
+      "tests_passed": 18,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "31 passed, 1 warning in 0.54s. Coverage totals: 256/267 statements = 95.88% (tasks.py 100%, runner.py 86.11%, task_repo.py 99.27%). spec_cov_pct=100 (6/6 required tests present and passing).",
+      "tool_evidence": "18 passed, 1 warning in 0.34s. coverage: percent_covered=99.06% (105/106 lines, 1 missing line in auth.py:73).",
       "coverage_scope": "per_fr",
-      "coverage_scope_fr": "FR-02",
+      "coverage_scope_fr": "FR-03",
       "score_source": "framework",
-      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-02.txt"
+      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-03.txt"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Analyzed 40 files, 77 dependencies. Layer ordering KEPT. SQLAlchemy containment KEPT. Config and errors independence KEPT. Contracts: 3 kept, 0 broken.",
+      "tool_evidence": "Contracts: 3 kept, 0 broken. (Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT)",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/architecture_constraints_harness.txt"
     }
@@ -78,26 +78,26 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "06a81ed05ee5a15d610a292065e8fcead758a5f569bb01e259f30241c4ea9a73",
-      "bytes": 186,
-      "head": "{\"version\": \"1.1.409\", \"time\": \"1788362255071\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 20, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 0.947}}"
+      "sha256": "08d2e13082f7184e58fb9d04618dcd1770bec39f3a5dac2c612a1f32b30f397d",
+      "bytes": 115,
+      "head": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 22, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "a85ea03716d2a428a4e1435e1fa03d758291a199f53367142b041bd515a78c6e",
-      "bytes": 190,
-      "head": "31 passed, 1 warning in 0.54s. Coverage totals: 256/267 statements = 95.88% (tasks.py 100%, runner.py 86.11%, task_repo.py 99.27%). spec_cov_pct=100 (6/6 required tests present and passing)."
+      "sha256": "5e0653602a4d6c864bfea0e785b024057122c86363a9c1968a27fbe4c2c6b283",
+      "bytes": 110,
+      "head": "18 passed, 1 warning in 0.34s. coverage: percent_covered=99.06% (105/106 lines, 1 missing line in auth.py:73)."
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "6af525afddde4b79d5475fedb37c034158982b85cf83763d4bd52bf8a246d7af",
-      "bytes": 151,
-      "head": "Analyzed 40 files, 77 dependencies. Layer ordering KEPT. SQLAlchemy containment KEPT. Config and errors independence KEPT. Contracts: 3 kept, 0 broken."
+      "sha256": "d9542030c94f41902902ccc9afdcc933a45a79305657d0ec028977f034065033",
+      "bytes": 116,
+      "head": "Contracts: 3 kept, 0 broken. (Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT)"
     }
   },
-  "composite_score": 98.97,
+  "composite_score": 99.77,
   "verdict": "PASS",
   "passed": true,
   "spec_undelivered": [],
