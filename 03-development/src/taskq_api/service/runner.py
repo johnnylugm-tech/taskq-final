@@ -265,6 +265,39 @@ async def submit(coro) -> _TaskHandle:
     return handle
 
 
+async def _cancel_and_await(still_pending: list[asyncio.Task]) -> None:
+    """Cancel each task that exceeded the drain budget, then await its unwind.
+
+    Cancellation / other errors are expected — the drain tally reads
+    the final task state, not the exception that surfaced.
+    """
+    for t in still_pending:
+        t.cancel()
+    for t in still_pending:
+        try:
+            await t
+        except BaseException:
+            pass
+
+
+def _tally_pending(pending: list["_TaskHandle"]) -> tuple[int, int]:
+    """Compute (drained, interrupted) counts from the post-wait task states.
+
+    The status is read directly from each task via the shared classifier
+    so the tally stays in lock-step with :meth:`_TaskHandle._on_done`.
+    """
+    drained = 0
+    interrupted = 0
+    for h in pending:
+        status, is_drained, is_interrupted = _classify_state(h.asyncio_task)
+        h.status = status
+        if is_drained:
+            drained += 1
+        elif is_interrupted:
+            interrupted += 1
+    return drained, interrupted
+
+
 async def drain(timeout: float) -> DrainResult:
     """[FR-02, FR-08 AC-8.1] Gracefully wait for in-flight tasks within ``timeout``.
 
@@ -286,32 +319,9 @@ async def drain(timeout: float) -> DrainResult:
         return DrainResult(drained_count="0", interrupted_count="0")
 
     tasks = [h.asyncio_task for h in pending]
-    done, still_pending = await asyncio.wait(tasks, timeout=timeout_s)
-
-    # Cancel any task that exceeded the budget, then await the
-    # cancellation so the underlying coroutine can unwind (releasing the
-    # concurrency semaphore via its ``finally``).
-    for t in still_pending:
-        t.cancel()
-    for t in still_pending:
-        try:
-            await t
-        except BaseException:
-            # Cancellation / other errors are expected; we only care
-            # about the final state, not the exception that surfaced.
-            pass
-
-    # Tally — compute status directly from the task state via the shared
-    # classifier so this stays in lock-step with :meth:`_TaskHandle._on_done`.
-    drained = 0
-    interrupted = 0
-    for h in pending:
-        status, is_drained, is_interrupted = _classify_state(h.asyncio_task)
-        h.status = status
-        if is_drained:
-            drained += 1
-        elif is_interrupted:
-            interrupted += 1
+    _done, still_pending = await asyncio.wait(tasks, timeout=timeout_s)
+    await _cancel_and_await(still_pending)
+    drained, interrupted = _tally_pending(pending)
 
     return DrainResult(
         drained_count=str(drained),
