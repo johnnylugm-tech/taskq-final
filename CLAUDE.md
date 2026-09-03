@@ -8,7 +8,7 @@
 <!-- harness:auto-start -->
 ## Harness Status _(auto-generated — do not edit this block)_
 
-> Phase: **6 — Quality** | Last Gate: **Gate 1** | Last FR: FR-04 | Updated: 2026-09-03
+> Phase: **6 — Quality** | Last Gate: **Gate 1** | Last FR: FR-05 | Updated: 2026-09-03
 
 ### Gate Progress
 | Gate | Score / FRs | Status |
@@ -25,7 +25,7 @@
 | FR-02 | 99.0 | ✅ COMPLETE |
 | FR-03 | 99.8 | ✅ COMPLETE |
 | FR-04 | 99.5 | ✅ COMPLETE |
-| FR-05 | 100.0 | ✅ COMPLETE |
+| FR-05 | 95.9 | ✅ COMPLETE |
 | FR-06 | 100.0 | ✅ COMPLETE |
 | FR-07 | 99.8 | ✅ COMPLETE |
 | FR-08 | 100.0 | ✅ COMPLETE |
