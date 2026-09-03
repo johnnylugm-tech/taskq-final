@@ -1,41 +1,41 @@
 {
   "gate": 1,
   "phase": 8,
-  "fr_id": "FR-05",
-  "overall_score": 98.25,
+  "fr_id": "FR-06",
+  "overall_score": 97.85,
   "quality_complete": true,
   "rounds_used": 1,
   "breakdown": {
     "linting": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "All checks passed!\nEXIT=0",
+      "tool_evidence": "All checks passed!",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/linting_harness.txt"
     },
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.122}}",
+      "tool_evidence": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.114}}",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/type_safety_harness.txt"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 80,
-      "tests_passed": 12,
+      "tests_passed": 19,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "12 passed, 2 warnings in 0.90s. Coverage: deps.py 94%, rate_repo.py 91%, ratelimit.py 96%, total 93%. All 4 required tests present (test_rate_limit_burst_returns_429_with_retry_after, test_rate_bucket_concurrent_no_overdraft, test_healthz_returns_200).",
-      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-05.txt",
+      "tool_evidence": "tests/test_fr06.py: 19 passed. Coverage on FR-06 source files: key_repo.py 100% (63/63), rate_repo.py 100% (56/56), session.py 60.7% (54/89), task_repo.py 100% (201/201). Total: 91.4% (374/409).",
+      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-06.txt",
       "coverage_scope": "per_fr",
-      "coverage_scope_fr": "FR-05",
+      "coverage_scope_fr": "FR-06",
       "score_source": "framework"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Contracts: 3 kept, 0 broken. Analyzed 52 files, 122 dependencies. Layer ordering KEPT. SQLAlchemy containment KEPT. Config and errors independence KEPT.",
+      "tool_evidence": "Analyzed 52 files, 122 dependencies. Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT. Contracts: 3 kept, 0 broken.",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/architecture_constraints_harness.txt"
     }
@@ -71,33 +71,33 @@
     "linting": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "821aea98b0447901f9f5d243824d9d61c4a339243295f6d63b6834cd54e3670e",
-      "bytes": 25,
-      "head": "All checks passed!\nEXIT=0"
+      "sha256": "f0d0b1081d9d3ebb26c4c93543053ecdc0a58998f22c071dc4ddb26021b57645",
+      "bytes": 18,
+      "head": "All checks passed!"
     },
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "2dd9be1ce23dbc711b359ce5000d3754d4b436ac6653d7c299a3b19b68377611",
+      "sha256": "0e683da040753c0d744a8eab5935081281ac4d7ffbda4c6d7eeaf6fd22b49737",
       "bytes": 135,
-      "head": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.122}}"
+      "head": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.114}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "13762f1b76427346e7137e20da0c2835504af74ff4ffa5ea1a77ed217e6ed7a8",
-      "bytes": 252,
-      "head": "12 passed, 2 warnings in 0.90s. Coverage: deps.py 94%, rate_repo.py 91%, ratelimit.py 96%, total 93%. All 4 required tests present (test_rate_limit_burst_returns_429_with_retry_after, test_rate_bucket_concurrent_no_overdraft, test_healthz_returns_200)."
+      "sha256": "539b76182be1adf148a9feca62f3c70dca96a4b510ea42ffbad5510199da4a86",
+      "bytes": 194,
+      "head": "tests/test_fr06.py: 19 passed. Coverage on FR-06 source files: key_repo.py 100% (63/63), rate_repo.py 100% (56/56), session.py 60.7% (54/89), task_repo.py 100% (201/201). Total: 91.4% (374/409)."
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "cad7c68911f5a94851f926206176d8192a8170dbb266d863f9df38df1889fab9",
+      "sha256": "8ed26691dfaad3992fad347a243deed55327e5cd368be50c40407c1de3c95bd4",
       "bytes": 152,
-      "head": "Contracts: 3 kept, 0 broken. Analyzed 52 files, 122 dependencies. Layer ordering KEPT. SQLAlchemy containment KEPT. Config and errors independence KEPT."
+      "head": "Analyzed 52 files, 122 dependencies. Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT. Contracts: 3 kept, 0 broken."
     }
   },
-  "composite_score": 98.25,
+  "composite_score": 97.85,
   "verdict": "PASS",
   "passed": true,
   "spec_undelivered": [],
