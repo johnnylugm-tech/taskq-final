@@ -1,8 +1,8 @@
 {
   "gate": 1,
   "phase": 5,
-  "fr_id": "FR-02",
-  "overall_score": 95.37,
+  "fr_id": "FR-03",
+  "overall_score": 99.5,
   "quality_complete": true,
   "rounds_used": 1,
   "breakdown": {
@@ -16,26 +16,26 @@
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\":\"1.1.409\",\"summary\":{\"filesAnalyzed\":32,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.124}}",
+      "tool_evidence": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.158}}",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/type_safety_harness.txt"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 80,
-      "tests_passed": 38,
+      "tests_passed": 18,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "======================== 38 passed, 3 warnings in 0.65s ========================\nFR-02 unique required tests present (4/4 unique required functions): test_task_run_returns_202_with_run_id, test_subprocess_no_shell_true, test_run_history_newest_first, test_task_results_row_has_v3_columns. Combined coverage on FR-02 source files (tasks.py 100%, task_repo.py 100%, runner.py 53.8%) = 81.5%.",
-      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-02.txt",
+      "tool_evidence": "18 passed, 2 warnings in 0.41s. Coverage: 98% (covered=117/num_statements=119). spec-coverage 5/5 (100%) — all required tests exist and pass: test_missing_api_key_returns_401, test_invalid_api_key_returns_401 (2 scenarios via parametrize), test_api_keys_table_has_no_plaintext, test_healthz_returns_200. score = min(coverage_pct=98, spec_cov_pct=100) = 98.",
+      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-03.txt",
       "coverage_scope": "per_fr",
-      "coverage_scope_fr": "FR-02",
+      "coverage_scope_fr": "FR-03",
       "score_source": "framework"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Layer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\nContracts: 3 kept, 0 broken.",
+      "tool_evidence": "Analyzed 52 files, 122 dependencies. Layer ordering KEPT. SQLAlchemy containment KEPT. Config and errors independence KEPT. Contracts: 3 kept, 0 broken.",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/architecture_constraints_harness.txt"
     }
@@ -78,26 +78,26 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "c9bfb0e4b997aba44fe124dcc3f7b50f33048f24771cfb789f41442137b2b6ea",
-      "bytes": 123,
-      "head": "{\"version\":\"1.1.409\",\"summary\":{\"filesAnalyzed\":32,\"errorCount\":0,\"warningCount\":0,\"informationCount\":0,\"timeInSec\":1.124}}"
+      "sha256": "0a7917050188fef2d6eac4311ba848663ebc0d34742cdc3a432f596648482e1e",
+      "bytes": 135,
+      "head": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.158}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "b25f859b775ee501c917361cb6688a863a4b0a3aa903f97006f2f6fa849fa599",
-      "bytes": 389,
-      "head": "======================== 38 passed, 3 warnings in 0.65s ========================\nFR-02 unique required tests present (4/4 unique required functions): test_task_run_returns_202_with_run_id, test_subprocess_no_shell_true, test_run_history_newest_first, test_task_results_row_has_v3_columns. Combined coverage on FR-02 source files (tasks.py 100%, task_repo.py 100%, runner.py 53.8%) = 81.5%."
+      "sha256": "df51a725f418c28745674a997e7b8d94dc0bb4e05d7ac2d33d1705ff98b567df",
+      "bytes": 358,
+      "head": "18 passed, 2 warnings in 0.41s. Coverage: 98% (covered=117/num_statements=119). spec-coverage 5/5 (100%) — all required tests exist and pass: test_missing_api_key_returns_401, test_invalid_api_key_returns_401 (2 scenarios via parametrize), test_api_keys_table_has_no_plaintext, test_healthz_returns_200. score = min(coverage_pct=98, spec_cov_pct=100) = 98."
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "53b864d72df97c5fd036adcca86fbcd9a90db2bb916d6ab5936b9815146ef4d7",
-      "bytes": 112,
-      "head": "Layer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\nContracts: 3 kept, 0 broken."
+      "sha256": "eb99e981f8caa3a09ef7706a02495778b955478a0c8e2d2e3e8d1b6079aecd0f",
+      "bytes": 152,
+      "head": "Analyzed 52 files, 122 dependencies. Layer ordering KEPT. SQLAlchemy containment KEPT. Config and errors independence KEPT. Contracts: 3 kept, 0 broken."
     }
   },
-  "composite_score": 95.37,
+  "composite_score": 99.5,
   "verdict": "PASS",
   "passed": true,
   "spec_undelivered": [],
