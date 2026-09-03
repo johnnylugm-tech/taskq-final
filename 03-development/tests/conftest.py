@@ -97,13 +97,21 @@ def _reset_tasks_table():
     mutated the schema-typed ``task_results.finished_at`` column. The
     make-target's ``rm -f taskq.db`` step handles this on a fresh run;
     this fixture covers the in-session case.
+
+    Also resets the ``_SEEDED`` flag in ``task_repo`` so the next
+    ``TaskRepository.__init__`` re-seeds the 100 demo tasks the FR-01
+    cursor-pagination tests rely on (otherwise the second test in the
+    run sees an empty tasks table because the previous test already
+    consumed the one-shot seed).
     """
     try:
         from taskq_api.models.orm import Task, TaskResult
+        from taskq_api.repository import task_repo
         engine = get_engine()
         with engine.begin() as conn:
             conn.execute(delete(TaskResult))
             conn.execute(delete(Task))
+        task_repo._SEEDED = False
     except Exception:
         pass
     yield
