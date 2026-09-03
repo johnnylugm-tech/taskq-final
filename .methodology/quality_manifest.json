@@ -101,11 +101,11 @@
         "open_high": 0
       },
       "FR-05": {
-        "open_critical": 0,
-        "open_high": 0,
+        "score": 98.22,
         "quality_complete": true,
         "rounds_used": 2,
-        "score": 98.25
+        "open_critical": 0,
+        "open_high": 0
       },
       "FR-06": {
         "open_critical": 0,

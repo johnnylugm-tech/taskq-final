@@ -1,8 +1,8 @@
 {
   "gate": 1,
   "phase": 5,
-  "fr_id": "FR-04",
-  "overall_score": 92.86,
+  "fr_id": "FR-05",
+  "overall_score": 98.225,
   "quality_complete": true,
   "rounds_used": 1,
   "breakdown": {
@@ -16,26 +16,26 @@
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1788422224788\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.121}}",
+      "tool_evidence": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.125}}",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/type_safety_harness.txt"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 80,
-      "tests_passed": 8,
+      "tests_passed": 12,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.15, pytest-8.4.2, pluggy-1.6.0\ncollected 8 items\n\n03-development/tests/integration/test_fr04.py ........                   [100%]\n\n======================== 8 passed, 2 warnings in 0.46s =========================\nCoverage: 71.43% (40/56 statements) on deps.py + auth.py",
-      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-04.txt",
+      "tool_evidence": "collected 12 items tests/test_fr05.py 12 passed, 0 failed, 0 skipped. Line coverage 92.9% (deps.py=94%, rate_repo.py=91%, ratelimit.py=96%). Spec-coverage 4/4 = 100% (all 4 required test functions present and passing). score = min(coverage_pct=92.9, spec_cov_pct=100) = 92.9.",
+      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-05.txt",
       "coverage_scope": "per_fr",
-      "coverage_scope_fr": "FR-04",
+      "coverage_scope_fr": "FR-05",
       "score_source": "framework"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "=============\nImport Linter\n=============\n\nContracts\n---------\n\nAnalyzed 52 files, 122 dependencies.\n------------------------------------\n\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\n\nContracts: 3 kept, 0 broken.",
+      "tool_evidence": "Analyzed 52 files, 122 dependencies. Layer ordering KEPT. SQLAlchemy containment KEPT. Config and errors independence KEPT. Contracts: 3 kept, 0 broken.",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/architecture_constraints_harness.txt"
     }
@@ -78,26 +78,26 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "fa4da779582352e4397f1d1062ada4e09d18c34abd67a6c61aa22c4f89d6845f",
-      "bytes": 186,
-      "head": "{\"version\": \"1.1.409\", \"time\": \"1788422224788\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.121}}"
+      "sha256": "10a060834497f39f8c93d479cbddff28ec9cfc05ad609dc023a36bb296c15263",
+      "bytes": 135,
+      "head": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.125}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "4608983d5cc5484ee3a1c9beab0fd6ec553d7614b1d18f8d1af6272779145c82",
-      "bytes": 380,
-      "head": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.15, pytest-8.4.2, pluggy-1.6.0\ncollected 8 items\n\n03-development/tests/integration/test_fr04.py ........                   [100%]\n\n======================== 8 passed, 2 warnings in 0.46s =========================\nCoverage: 71.43% (40/56 statements) on deps.py + auth.py"
+      "sha256": "df1a5300672ce9cb79ecfe62135af2e4ea0e78f138e99d5bf924457403d8e99a",
+      "bytes": 275,
+      "head": "collected 12 items tests/test_fr05.py 12 passed, 0 failed, 0 skipped. Line coverage 92.9% (deps.py=94%, rate_repo.py=91%, ratelimit.py=96%). Spec-coverage 4/4 = 100% (all 4 required test functions present and passing). score = min(coverage_pct=92.9, spec_cov_pct=100) = 92.9."
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "35d748b7ce52607fe31a1ae673a8fb06286ad718ed6ff7589cbce049b576c111",
-      "bytes": 252,
-      "head": "=============\nImport Linter\n=============\n\nContracts\n---------\n\nAnalyzed 52 files, 122 dependencies.\n------------------------------------\n\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\n\nContracts: 3 kept, 0 broken."
+      "sha256": "eb99e981f8caa3a09ef7706a02495778b955478a0c8e2d2e3e8d1b6079aecd0f",
+      "bytes": 152,
+      "head": "Analyzed 52 files, 122 dependencies. Layer ordering KEPT. SQLAlchemy containment KEPT. Config and errors independence KEPT. Contracts: 3 kept, 0 broken."
     }
   },
-  "composite_score": 92.86,
+  "composite_score": 98.225,
   "verdict": "PASS",
   "passed": true,
   "spec_undelivered": [],
