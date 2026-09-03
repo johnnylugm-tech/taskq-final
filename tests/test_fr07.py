@@ -2020,8 +2020,8 @@ def test_fr07_property_v3_roundtrip_preserves_columns(tmp_path):
             ).first()
 
         assert after is not None, (
-            f"P-FR07-v3-roundtrip violated: round-trip lost the "
-            f"task_results row for the seeded task"
+            "P-FR07-v3-roundtrip violated: round-trip lost the "
+            "task_results row for the seeded task"
         )
 
         # Column-by-column equality (the algebraic invariant the
