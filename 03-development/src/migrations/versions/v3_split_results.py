@@ -79,16 +79,24 @@ _TASK_RESULTS_COLUMNS = (
 # ---------------------------------------------------------------------------
 
 
-def _now_or_default(value) -> datetime:
-    """Coerce a payload-supplied ``finished_at`` to ``datetime`` or ``None``."""
+def _now_or_default(value) -> datetime | None:
+    """Coerce a payload-supplied ``finished_at`` to ``datetime`` or ``None``.
+
+    [T-15] When the v1 ``result_json`` payload lacks a ``finished_at``
+    (or carries an invalid one), return ``None`` rather than silently
+    substituting ``datetime.now()`` — silently replacing the original
+    timestamp corrupts downstream ORDER BY finished_at queries and
+    cannot be recovered by the downgrade path. Callers fall back to
+    the parent task's ``created_at`` so temporal order is preserved.
+    """
     if value is None:
-        return datetime.now(tz=timezone.utc)
+        return None
     if isinstance(value, datetime):
         return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
     try:
         parsed = datetime.fromisoformat(str(value))
-    except ValueError:
-        return datetime.now(tz=timezone.utc)
+    except (ValueError, TypeError):
+        return None
     return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
 
 
@@ -137,18 +145,25 @@ def upgrade() -> None:
         "tasks",
         sa.column("id", sa.String),
         sa.column("result_json", sa.Text),
+        sa.column("created_at", sa.DateTime),
     )
 
     rows = bind.execute(
-        sa.select(tasks.c.id, tasks.c.result_json).select_from(tasks)
+        sa.select(tasks.c.id, tasks.c.result_json, tasks.c.created_at).select_from(tasks)
     ).fetchall()
 
-    for parent_id, raw_json in rows:
+    for parent_id, raw_json, parent_created_at in rows:
         payload = _shared.json_loads_safe(raw_json)
         if payload is None:
             # No result_json row (the v1 schema allowed NULL on
             # ``result_json``) — nothing to migrate for this task.
             continue
+        # [T-15] Anchor the finished_at fallback on the parent task's
+        # created_at (not datetime.now()) so temporal order is preserved
+        # when the payload lacks a finished_at field. ``_now_or_default``
+        # returns ``None`` on missing/invalid input; we substitute the
+        # parent's created_at at that point.
+        fallback = _now_or_default(parent_created_at) or datetime.now(tz=timezone.utc)
         # The downgrade path merges multiple ``task_results`` rows per
         # task into a ``{"runs": [...]}`` array. The upgrade path
         # reverses that split — one ``task_results`` row per entry in
@@ -164,7 +179,7 @@ def upgrade() -> None:
                         stdout_tail=str(entry.get("stdout_tail", ""))[:4096],
                         stderr_tail=str(entry.get("stderr_tail", ""))[:4096],
                         duration_ms=int(entry.get("duration_ms", 0)),
-                        finished_at=_now_or_default(entry.get("finished_at")),
+                        finished_at=_now_or_default(entry.get("finished_at")) or fallback,
                     )
                 )
         else:
@@ -175,7 +190,7 @@ def upgrade() -> None:
                     stdout_tail=str(payload.get("stdout_tail", ""))[:4096],
                     stderr_tail=str(payload.get("stderr_tail", ""))[:4096],
                     duration_ms=int(payload.get("duration_ms", 0)),
-                    finished_at=_now_or_default(payload.get("finished_at")),
+                    finished_at=_now_or_default(payload.get("finished_at")) or fallback,
                 )
             )
 

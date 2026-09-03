@@ -1757,15 +1757,18 @@ def test_v3_split_results_downgrade_offline_mode_emits_ddl_only(tmp_path):
 # ---------------------------------------------------------------------------
 
 
-def test_v3_now_or_default_when_none_returns_now():
-    """v3._now_or_default(None) returns ``datetime.now(tz=utc)``."""
-    from datetime import datetime
+def test_v3_now_or_default_when_none_returns_none():
+    """v3._now_or_default(None) returns ``None`` so caller falls back to parent.created_at.
 
+    [T-15] Previously this returned ``datetime.now(tz=utc)`` — silently
+    substituting wall-clock time for a missing ``finished_at`` corrupted
+    downstream ORDER BY finished_at queries. The fix returns ``None``
+    so :func:`migrations.versions.v3_split_results.upgrade` can fall
+    back to the parent ``tasks.created_at`` row.
+    """
     from migrations.versions.v3_split_results import _now_or_default
 
-    result = _now_or_default(None)
-    assert isinstance(result, datetime)
-    assert result.tzinfo is not None
+    assert _now_or_default(None) is None
 
 
 def test_v3_now_or_default_when_datetime_naive_adds_tz():
@@ -1802,15 +1805,18 @@ def test_v3_now_or_default_when_string_iso_parses():
     assert result.tzinfo is not None
 
 
-def test_v3_now_or_default_when_string_invalid_returns_now():
-    """v3._now_or_default(non-iso string) falls back to ``datetime.now``."""
-    from datetime import datetime
+def test_v3_now_or_default_when_string_invalid_returns_none():
+    """v3._now_or_default(non-iso string) returns ``None`` for caller fallback.
 
+    [T-15] The previous behavior silently substituted ``datetime.now``
+    for any unparseable ``finished_at`` value, masking data corruption
+    on the migration path. The fix returns ``None`` so the migration's
+    ``upgrade()`` substitutes the parent ``tasks.created_at`` row
+    (preserving temporal order).
+    """
     from migrations.versions.v3_split_results import _now_or_default
 
-    result = _now_or_default("not-an-iso-date")
-    assert isinstance(result, datetime)
-    assert result.tzinfo is not None
+    assert _now_or_default("not-an-iso-date") is None
 
 
 def test_v3_isoformat_or_none_when_none():
