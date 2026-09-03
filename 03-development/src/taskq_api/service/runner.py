@@ -363,12 +363,20 @@ def _failed_outcome(exc: BaseException) -> RunOutcome:
 async def _communicate_with_timeout(
     proc: asyncio.subprocess.Process, limit: float,
 ) -> tuple[bytes, bytes, bool]:
-    """[FR-02 AC-2.2] Await process completion, enforcing ``limit`` seconds.
+    """[FR-02 AC-2.2, T-07] Await process completion, enforcing ``limit`` seconds.
 
-    On timeout the process is killed and the partial output is drained so
-    the caller can still report the captured tail. The returned ``timed_out``
-    flag distinguishes the timeout path from the normal completion path so
-    the caller can stamp the right terminal state.
+    On timeout OR outer cancellation the process is killed and the partial
+    output is drained so the caller can still report the captured tail.
+    The returned ``timed_out`` flag distinguishes the timeout path from
+    the normal completion path so the caller can stamp the right terminal
+    state.
+
+    [T-07] An outer ``asyncio.wait_for`` (used by ``run_with_timeout``)
+    or ``drain()`` may cancel the running task before the inner ``limit``
+    fires. ``asyncio.CancelledError`` is a ``BaseException`` subclass and
+    would otherwise bypass the ``except asyncio.TimeoutError`` branch,
+    leaking the subprocess. The ``finally`` block guarantees
+    ``proc.kill()`` regardless of which path unwinds the coroutine.
     """
     try:
         stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=limit)
@@ -377,6 +385,24 @@ async def _communicate_with_timeout(
         proc.kill()
         stdout, stderr = await proc.communicate()
         return stdout, stderr, True
+    finally:
+        # [T-07] If the awaitable was cancelled (CancelledError propagated
+        # past the inner wait_for), proc.kill() must still fire so the
+        # subprocess is reaped. Idempotent — a no-op when the timeout
+        # branch already called kill(). The subsequent wait() ensures the
+        # kernel finishes reaping so the entry disappears from ps.
+        if proc.returncode is None:
+            try:
+                proc.kill()
+            except ProcessLookupError:
+                # Already exited between the except and the finally.
+                pass
+            try:
+                await proc.wait()
+            except Exception:
+                # wait() may raise if the loop is closing; the kernel
+                # still reaps the child on its own.
+                pass
 
 
 def _classify_exit(timed_out: bool, returncode: int) -> str:
