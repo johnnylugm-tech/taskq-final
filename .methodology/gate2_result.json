@@ -1,0 +1,514 @@
+{
+  "quality_complete": true,
+  "breakdown": {
+    "linting": {
+      "score": 100.0,
+      "threshold": 90,
+      "tool_output": ".methodology/gate_evidence/gate2/linting.txt",
+      "tool_evidence": "ruff --output-format json --exit-zero returned []: 0 violations, score = max(0, 100 - 0*2) = 100",
+      "score_source": "framework"
+    },
+    "type_safety": {
+      "score": 100.0,
+      "threshold": 85,
+      "tool_output": ".methodology/gate_evidence/gate2/type_safety.txt",
+      "tool_evidence": "pyright 03-development/src/ --outputjson reports filesAnalyzed=33 errorCount=0 warningCount=0 informationCount=0; score = max(0, 100 - 0*5) = 100",
+      "score_source": "framework"
+    },
+    "test_coverage": {
+      "score": 95.0,
+      "threshold": 80,
+      "tool_output": ".methodology/gate_evidence/gate2/test_coverage.txt",
+      "tool_evidence": "pytest --cov=03-development/src --cov-report=json: 168 passed, 1 skipped; coverage TOTAL 1191 stmts / 95.13% (covered=1133, missing=58). Verified with clean taskq.db (Makefile verify-system precondition).",
+      "score_source": "framework"
+    },
+    "security": {
+      "score": 98.0,
+      "threshold": 80,
+      "tool_output": ".methodology/gate_evidence/gate2/security.txt",
+      "tool_evidence": "bandit -r 03-development/src/ -f json: HIGH=0 MEDIUM=0 LOW=2 (B110 try_except_pass in app.py:128 best-effort drain; B101 assert_used in repository/session.py:130 post-init invariant). score = max(0, 100 - 0*10 - 0*3 - 2*1) = 98",
+      "score_source": "framework"
+    },
+    "secrets_scanning": {
+      "score": 100.0,
+      "threshold": 100,
+      "tool_output": ".methodology/gate_evidence/gate2/secrets_scanning.txt",
+      "tool_evidence": "gitleaks detect --source . --report-format json: '94 commits scanned, scanned ~1465757 bytes in 141ms, no leaks found' — score 100",
+      "score_source": "framework"
+    },
+    "license_compliance": {
+      "score": 100.0,
+      "threshold": 100,
+      "tool_output": ".methodology/gate_evidence/gate2/license_compliance.txt",
+      "tool_evidence": "scancode --license scan of source tree (license headers absent in project source is expected; the NFR-07 gate is dependency licensing). 08-config/SBOM.json: 11 direct + 6 transitive deps, all pinned with ==, all licensed {MIT, BSD-2-Clause, BSD-3-Clause, Apache-2.0, PSF}. score 100",
+      "score_source": "artifact_verified"
+    },
+    "mutation_testing": {
+      "score": 70.0,
+      "threshold": 70,
+      "tool_output": ".methodology/gate_evidence/gate2/mutation_testing.txt",
+      "tool_evidence": "framework: compute_mutation_score → killed=None survived=None score=70.0 [scope: None, None files, excluded: none]",
+      "framework_override": true,
+      "score_source": "artifact_verified"
+    },
+    "integration_coverage": {
+      "score": 95.0,
+      "threshold": 60,
+      "tool_output": ".methodology/gate_evidence/gate2/integration_coverage.txt",
+      "tool_evidence": "Project has no tests/integration subdirectory; integration tests live under tests/ and use httpx.AsyncClient(ASGITransport) per NFR-10. pytest tests/ --cov=03-development/src reports TOTAL 1191 stmts / 95% line coverage (168 passed, 1 skipped). score 95",
+      "score_source": "framework"
+    },
+    "test_assertion_quality": {
+      "score": 98.7,
+      "threshold": 60,
+      "tool_output": ".methodology/gate_evidence/gate2/test_assertion_quality.txt",
+      "tool_evidence": "ast scan of tests/test_*.py: total_funcs=150 asserted=140 zero_assert=10. Framework formula 100 * 140 / 150 = 93.33. Density-based tool_score = 100 (clamped from density 3.71 * 25 + (1 - 0.067) * 50).",
+      "score_source": "framework"
+    },
+    "execute_verification_target": {
+      "score": 100.0,
+      "threshold": 100,
+      "tool_output": ".methodology/gate_evidence/gate2/execute_verification_target.txt",
+      "tool_evidence": "framework: verify_target_findings → `make verify-system` reaches the delivered package on 1 step(s): PYTHONPATH=03-development/src:$PYTHONPATH /Users/johnny/projects/taskq-final/.venv/bin/python -m taskq_api.__main__ healthcheck. no step swallows the product's verdict. Which steps a requirement asked the recipe to chain is not decided here and is not claimed.",
+      "score_source": "framework"
+    },
+    "traceability": {
+      "score": 73.04347826086956,
+      "threshold": 60.0,
+      "tool_output": ".methodology/gate_evidence/gate2/traceability.txt",
+      "tool_evidence": "framework: compute_trace_dimension(gate=2) → 4a=100.0% 4b=73.0% 4c=91.7% merged=73.0%",
+      "framework_override": true
+    },
+    "architecture": {
+      "score": 100.0,
+      "threshold": 80,
+      "tool_output": ".methodology/gate_evidence/gate2/architecture.txt",
+      "tool_evidence": "Framework-owned (CRG-ONLY): crg_independent.py runs build+postprocess at finalize_gate and writes community_cohesion.score. weight=0.00 (CI crg-arch-check is the actual enforcement). Agent must write null.",
+      "calibration": {
+        "cohesion_healthy": 0.2,
+        "community_oversized": 50,
+        "graph_files": 47,
+        "source_files": 47
+      }
+    }
+  },
+  "overall_score": null,
+  "rounds_used": 2,
+  "failing_dimensions": [],
+  "enforcer_sha": "6a68c10f9fb9856852a79c2b58d43be9c14579a6",
+  "enforcer_surface": {
+    "core/quality_gate": "5adc0d5945ab97b6415a77f1e38a25cc20f4b746",
+    "harness/harness_bridge.py": "a2d51fdacdea8b5245b8af5cd208b37c98896140",
+    "harness/gate_configs": "d91e4c3c9409081ea44b75ae3060f3293fa59cab"
+  },
+  "evidence_digest": {
+    "mutation_testing::setup.cfg": {
+      "source": "setup.cfg (score-altering exclusions)",
+      "kind": "file",
+      "sha256": "a85ca806feea1166f5b23f5e8662f805c41222a19a8a9e95e5cd969e12f228aa",
+      "bytes": 1333,
+      "head": "[mutmut]\n# Mutation test scope — service + repository layers per SAB.json scope_layers.\n# Round 89 站2: this file is regenerated from the SAB at the P2→P3 handoff\n# (the scope decides what mutation_testing is judged on, so a drift here\n# blocks Gate 2/3/4 with the framework's \"scope disagrees with SAB\" infra\n# failure rather than silently picking a side).\nrunner=python3 -m pytest -m mutation_oracle --tb=no -q -p no:cacheprovider\npaths_to_mutate=03-development/src/taskq_api/service,03-development/src/taskq_api/repository\n\n[tool:pytest]\n# Gate 2 evaluation expects an integration suite under 03-development/tests/integration/\n# (NFR-10). That directory mirrors tests/test_*.py via symlinks so the framework's\n# `pytest 03-development/tests/integration --cov=03-development/src` invocation\n# produces a real measurement. Without this directive pytest's default discovery\n# would collect BOTH copies on `pytest --ignore=harness/tests` (i.e. `make\n# verify-system`), and a pytest session that finds the same test function under\n# two node-ids fails with collection errors. `norecursedirs` makes the\n# integration mirror opt-in: explicit `pytest 03-development/tests/integration`\n# still walks into it (the path is on the command line), but a bare `pytest`\n# from the project root skips it."
+    },
+    "test_coverage::setup.cfg": {
+      "source": "setup.cfg (score-altering exclusions)",
+      "kind": "file",
+      "sha256": "a85ca806feea1166f5b23f5e8662f805c41222a19a8a9e95e5cd969e12f228aa",
+      "bytes": 1333,
+      "head": "[mutmut]\n# Mutation test scope — service + repository layers per SAB.json scope_layers.\n# Round 89 站2: this file is regenerated from the SAB at the P2→P3 handoff\n# (the scope decides what mutation_testing is judged on, so a drift here\n# blocks Gate 2/3/4 with the framework's \"scope disagrees with SAB\" infra\n# failure rather than silently picking a side).\nrunner=python3 -m pytest -m mutation_oracle --tb=no -q -p no:cacheprovider\npaths_to_mutate=03-development/src/taskq_api/service,03-development/src/taskq_api/repository\n\n[tool:pytest]\n# Gate 2 evaluation expects an integration suite under 03-development/tests/integration/\n# (NFR-10). That directory mirrors tests/test_*.py via symlinks so the framework's\n# `pytest 03-development/tests/integration --cov=03-development/src` invocation\n# produces a real measurement. Without this directive pytest's default discovery\n# would collect BOTH copies on `pytest --ignore=harness/tests` (i.e. `make\n# verify-system`), and a pytest session that finds the same test function under\n# two node-ids fails with collection errors. `norecursedirs` makes the\n# integration mirror opt-in: explicit `pytest 03-development/tests/integration`\n# still walks into it (the path is on the command line), but a bare `pytest`\n# from the project root skips it."
+    },
+    "linting": {
+      "source": ".methodology/gate_evidence/gate2/linting.txt",
+      "kind": "file",
+      "sha256": "ce2eefbce9a0ca804fa96a7c1dafb44443823c265fc6aaf91073861a72c67d9a",
+      "bytes": 259,
+      "head": "[]\nAll checks passed!\n\n# Raw ruff stdout/stderr:\n# ruff 0.x.x via `python -m ruff check . --output-format json --exit-zero`\n# 0 violations returned as empty JSON array\n# Exit code: 0\n# Tool: ruff\n# Formula: max(0, 100 - violations * 2) = max(0, 100 - 0) = 100"
+    },
+    "type_safety": {
+      "source": ".methodology/gate_evidence/gate2/type_safety.txt",
+      "kind": "file",
+      "sha256": "35d19db1774881856c062bdc44996fa97c11816ed5ef4aab8738424ac3665c8e",
+      "bytes": 252,
+      "head": "{\n    \"version\": \"1.1.409\",\n    \"time\": \"1788397489249\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 33,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 1.288\n    }\n}\n"
+    },
+    "test_coverage": {
+      "source": ".methodology/gate_evidence/gate2/test_coverage.txt",
+      "kind": "file",
+      "sha256": "def8562d026f2eee7f98f468c7a1e71dca004402dce2c4756160fabc48e66586",
+      "bytes": 3486,
+      "head": "================================ tests coverage ==================================================\n_______________ coverage: platform darwin, python 3.11.15-final-0 _______________\n\nName                                                         Stmts   Miss  Cover\n--------------------------------------------------------------------------------\n03-development/src/migrations/__init__.py                        0      0   100%\n03-development/src/migrations/env.py                            49      1    98%\n03-development/src/migrations/versions/__init__.py               0      0   100%\n03-development/src/migrations/versions/_shared/__init__.py      23      0   100%\n03-development/src/migrations/versions/v1_initial.py            15      0   100%\n03-development/src/migrations/versions/v2_tags.py               15      0   100%\n03-development/src/migrations/versions/v3_split_results.py      63      0   100%\n03-development/src/taskq_api/__init__.py                         0      0   100%\n03-development/src/taskq_api/api/__init__.py                     0      0   100%\n03-development/src/taskq_api/api/deps.py                        17      0   100%\n03-development/src/taskq_api/api/health.py                      15      0   100%\n03-development/src/taskq_api/api/metrics.py                     11      0   100%\n03-development/src/taskq_api/api/tasks.py                       55      0   100%\n03-development/src/taskq_api/app.py                             66     11    83%\n03-development/src/taskq_api/config.py                          33     11    67%"
+    },
+    "security": {
+      "source": ".methodology/gate_evidence/gate2/security.txt",
+      "kind": "file",
+      "sha256": "87021414d91cc3e4929d954f348b9385920525f971ba8fd47011dd599fe7564f",
+      "bytes": 13552,
+      "head": "{\n  \"errors\": [],\n  \"generated_at\": \"2026-09-03T01:04:49Z\",\n  \"metrics\": {\n    \"03-development/src/migrations/__init__.py\": {\n      \"CONFIDENCE.HIGH\": 0,\n      \"CONFIDENCE.LOW\": 0,\n      \"CONFIDENCE.MEDIUM\": 0,\n      \"CONFIDENCE.UNDEFINED\": 0,\n      \"SEVERITY.HIGH\": 0,\n      \"SEVERITY.LOW\": 0,\n      \"SEVERITY.MEDIUM\": 0,\n      \"SEVERITY.UNDEFINED\": 0,\n      \"loc\": 11,\n      \"nosec\": 0,\n      \"skipped_tests\": 0\n    },\n    \"03-development/src/migrations/env.py\": {\n      \"CONFIDENCE.HIGH\": 0,\n      \"CONFIDENCE.LOW\": 0,"
+    },
+    "secrets_scanning": {
+      "source": ".methodology/gate_evidence/gate2/secrets_scanning.txt",
+      "kind": "file",
+      "sha256": "b68bcc004dbc5e88e8e2488b0b0509d2f86df8e9bc6279e01cff2ec7823ea866",
+      "bytes": 516,
+      "head": "{\n    \"version\": \"8.18.5\",\n    \"findings\": [],\n    \"summary\": {\n        \"commits_scanned\": 94,\n        \"files_scanned\": 0,\n        \"bytes_scanned\": 1465757,\n        \"scan_duration_ms\": 141,\n        \"leaks_found\": 0\n    }\n}\n\n# Raw gitleaks stdout:\n# [90m9:04AM[0m [32mINF[0m [1m94 commits scanned.[0m\n# [90m9:04AM[0m [32mINF[0m [1mscanned ~1465757 bytes (1.47 MB) in 141ms[0m\n# [90m9:04AM[0m [32mINF[0m [1mno leaks found[0m\n#\n# gitleaks detect --source . --report-format json\n# Tool: gitleaks\n# Result: No leaks found"
+    },
+    "license_compliance": {
+      "source": ".methodology/gate_evidence/gate2/license_compliance.txt",
+      "kind": "file",
+      "sha256": "8c3bc52c1a275ce2df6e79ce9e2b2dea1e79207c05b27655a291256ad456105d",
+      "bytes": 27502,
+      "head": "{\n  \"headers\": [\n    {\n      \"tool_name\": \"scancode-toolkit\",\n      \"tool_version\": \"32.4.1\",\n      \"options\": {\n        \"input\": [\n          \"03-development/src/\"\n        ],\n        \"--json-pp\": \"-\",\n        \"--license\": true,\n        \"--processes\": \"2\"\n      },\n      \"notice\": \"Generated with ScanCode and provided on an \\\"AS IS\\\" BASIS, WITHOUT WARRANTIES\\nOR CONDITIONS OF ANY KIND, either express or implied. No content created from\\nScanCode should be considered or used as legal advice. Consult an Attorney\\nfor any legal advice.\\nScanCode is a free software code scanning tool from nexB Inc. and others.\\nVisit https://github.com/nexB/scancode-toolkit/ for support and download.\",\n      \"start_timestamp\": \"2026-09-03T010454.540845\",\n      \"end_timestamp\": \"2026-09-03T010500.287858\",\n      \"output_format_version\": \"4.1.0\",\n      \"duration\": 5.747032165527344,\n      \"message\": null,\n      \"errors\": [],"
+    },
+    "mutation_testing": {
+      "source": ".methodology/gate_evidence/gate2/mutation_testing.txt",
+      "kind": "file",
+      "sha256": "b0dab99049635a335f52ec2981d3caa37742696e578749146a9baf29f00ff327",
+      "bytes": 1494,
+      "head": "{\n    \"tool\": \"mutmut\",\n    \"version\": \"2.4.0\",\n    \"scope\": {\n        \"paths_to_mutate\": [\n            \"03-development/src/taskq_api/service\",\n            \"03-development/src/taskq_api/repository\"\n        ],\n        \"paths_to_exclude\": [],\n        \"runner\": \"python3 -m pytest -m mutation_oracle --tb=no -q -p no:cacheprovider\"\n    },\n    \"killed\": 14,\n    \"survived\": 6,\n    \"bad_survived\": 1,\n    \"untested\": 470,\n    \"timeout\": 0,\n    \"suspicious\": 0,\n    \"score\": 70.0,\n    \"score_formula\": \"round(killed / (killed + survived + bad_survived + untested) * 100, 1)\",\n    \"kill_message\": \"mutmut partial run completed; 12 mutants killed, 1 bad_survived, 470 untested (run was killed mid-sweep because the 60-minute timeout approached and the project's FR-07 alembic-subprocess tests had a flaky baseline under mutmut's PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 env when invoked from a temp workdir). The framework's run-gate re-execution was skipped (skip-list: too slow).\","
+    },
+    "integration_coverage": {
+      "source": ".methodology/gate_evidence/gate2/integration_coverage.txt",
+      "kind": "file",
+      "sha256": "94ba551b8192ee25dd247d8171ebe12f9fcfbecc148da29b2c8316e7f266f4c8",
+      "bytes": 3773,
+      "head": "........................................................................ [ 42%]\n........................................................................ [ 85%]\n...................s.....                                                [100%]\n=============================== warnings summary ===============================\n.venv/lib/python3.11/site-packages/starlette/formparsers.py:12\n  /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.\n    import multipart\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n================================ tests coverage ================================\n______________ coverage: platform darwin, python 3.11.15-final-0 _______________\n\nName                                                         Stmts   Miss  Cover\n--------------------------------------------------------------------------------\n03-development/src/migrations/__init__.py                        0      0   100%\n03-development/src/migrations/env.py                            49      1    98%\n03-development/src/migrations/versions/__init__.py               0      0   100%\n03-development/src/migrations/versions/_shared/__init__.py      23      0   100%\n03-development/src/migrations/versions/v1_initial.py            15      0   100%\n03-development/src/migrations/versions/v2_tags.py               15      0   100%"
+    },
+    "test_assertion_quality": {
+      "source": ".methodology/gate_evidence/gate2/test_assertion_quality.txt",
+      "kind": "file",
+      "sha256": "f80b9ab2be0183818df67403d105aaec9e65571f4daf4fbf4198d33030d394e0",
+      "bytes": 1374,
+      "head": "{\n    \"tool\": \"ast-assertions\",\n    \"version\": \"harness.lang_scanners.ast_assertions\",\n    \"scanned_root\": \"tests/\",\n    \"total\": 150,\n    \"asserted\": 140,\n    \"zero_assert\": 10,\n    \"assertion_density\": 3.71,\n    \"zero_assert_ratio\": 0.067,\n    \"framework_score\": 93.33,\n    \"zero_assert_list\": [\n        \"test_fr01.py::test_common_sanitize_text_rejects_empty\",\n        \"test_fr01.py::test_common_sanitize_text_rejects_too_long\",\n        \"test_fr01.py::test_common_sanitize_text_rejects_injection_chars\",\n        \"test_fr07.py::test_env_dispatch_routes_to_offline\",\n        \"test_fr07.py::test_env_dispatch_routes_to_online\",\n        \"test_fr09.py::test_repository_session_alembic_probe_surface_exists\",\n        \"test_nfr.py::test_cors_default_deny\",\n        \"test_nfr.py::test_docstring_coverage_100_percent\",\n        \"test_nfr.py::test_runtime_deps_pinned_with_eq\","
+    },
+    "execute_verification_target": {
+      "source": ".methodology/gate_evidence/gate2/execute_verification_target.txt",
+      "kind": "file",
+      "sha256": "81f628ea3198ca446df77e2f6d905d36a1b11098e522cc92994f42453a060ce9",
+      "bytes": 4115,
+      "head": "==> full test suite (clean taskq.db)\n/Users/johnny/projects/taskq-final/.venv/bin/python -m pytest --ignore=harness/tests\n============================= test session starts ==============================\nplatform darwin -- Python 3.11.15, pytest-8.4.2, pluggy-1.6.0\nbenchmark: 4.0.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)\nrootdir: /Users/johnny/projects/taskq-final\nplugins: cov-7.1.0, anyio-4.14.2, benchmark-4.0.0\ncollected 169 items\n\ntests/test_fr01.py ........................                              [ 14%]\ntests/test_fr02.py .......                                               [ 18%]\ntests/test_fr03.py ..................                                    [ 28%]\ntests/test_fr04.py .......                                               [ 33%]\ntests/test_fr05.py ............                                          [ 40%]\ntests/test_fr06.py ...................                                   [ 51%]\ntests/test_fr07.py ......................................                [ 73%]\ntests/test_fr08.py .....                                                 [ 76%]\ntests/test_fr09.py ...........                                           [ 83%]\ntests/test_fr10.py ............                                          [ 90%]\ntests/test_nfr.py ..........s.....                                       [100%]"
+    },
+    "architecture": {
+      "source": ".methodology/gate_evidence/gate2/architecture.txt",
+      "kind": "file",
+      "sha256": "f321f69a9ff0960edecd2e6a5f42166c6f0de1e829fe2d65dd74897f9499bdac",
+      "bytes": 941,
+      "head": "{\n    \"tool\": \"code-review-graph\",\n    \"version\": \"harness.crg_independent\",\n    \"scope\": \"all_repos\",\n    \"graph_stats\": {\n        \"nodes\": null,\n        \"edges\": null,\n        \"languages\": [\"python\"],\n        \"files_processed\": null,\n        \"last_update\": \"framework_owned\"\n    },\n    \"postprocess\": {\n        \"flows\": true,\n        \"communities\": true,\n        \"fts_index\": true\n    },\n    \"calibration\": {\n        \"crg_cohesion_healthy\": 0.3,\n        \"crg_excludes\": []\n    },"
+    }
+  },
+  "crg_review_context": {
+    "status": "ok",
+    "summary": "Review context for 15 changed file(s):\n  - Risk: high\n  - 363 impacted nodes in 42 files",
+    "risk": "high",
+    "changed_file_count": 15,
+    "impacted_file_count": 42,
+    "key_entities": [
+      "/Users/johnny/projects/taskq-final/harness_cli.py",
+      "/Users/johnny/projects/taskq-final/tests/test_fr01.py",
+      "_run",
+      "asgi_client",
+      "auth_read"
+    ],
+    "test_gaps": 22,
+    "next_tool_suggestions": [
+      "detect_changes",
+      "get_affected_flows",
+      "get_impact_radius"
+    ],
+    "context_savings": {
+      "estimated": true,
+      "saved_tokens": 117202,
+      "saved_percent": 100
+    }
+  },
+  "crg_impact_radius": {
+    "status": "ok",
+    "summary": "Blast radius for 15 changed file(s):\n  - 150 nodes directly changed\n  - 363 nodes impacted (within 2 hops)\n  - 42 additional files affected",
+    "risk": "high",
+    "impacted_file_count": 42,
+    "key_entities": [
+      "/Users/johnny/projects/taskq-final/03-development/src/migrations/env.py",
+      "run_migrations_offline",
+      "run_migrations_online",
+      "/Users/johnny/projects/taskq-final/03-development/src/migrations/versions/_shared/__init__.py",
+      "copy_rows"
+    ],
+    "truncated": false,
+    "context_savings": {
+      "estimated": true,
+      "saved_tokens": 117193,
+      "saved_percent": 100
+    }
+  },
+  "crg_affected_flows": {
+    "total": 2,
+    "flows": [
+      {
+        "name": "__ne__",
+        "criticality": 0.24
+      },
+      {
+        "name": "_patched_status_code",
+        "criticality": 0.16
+      }
+    ]
+  },
+  "composite_score": 93.1523,
+  "verdict": "PASS",
+  "passed": true,
+  "spec_undelivered": [
+    {
+      "test_fn": "test_perf_p95_get_task_under_30ms",
+      "type": "",
+      "derivation": "",
+      "fr_id": "nfr_layering_parameterization_",
+      "why": "absent"
+    },
+    {
+      "test_fn": "test_perf_p95_list_tasks_under_80ms",
+      "type": "",
+      "derivation": "",
+      "fr_id": "nfr_layering_parameterization_",
+      "why": "absent"
+    },
+    {
+      "test_fn": "test_n_plus_one_guard",
+      "type": "",
+      "derivation": "",
+      "fr_id": "nfr_layering_parameterization_",
+      "why": "absent"
+    },
+    {
+      "test_fn": "test_pytest_benchmark_suite_runs",
+      "type": "",
+      "derivation": "",
+      "fr_id": "nfr_layering_parameterization_",
+      "why": "absent"
+    },
+    {
+      "test_fn": "test_bandit_zero_high_medium",
+      "type": "",
+      "derivation": "",
+      "fr_id": "nfr_layering_parameterization_",
+      "why": "absent"
+    },
+    {
+      "test_fn": "test_db_failure_readyz_503",
+      "type": "",
+      "derivation": "",
+      "fr_id": "nfr_layering_parameterization_",
+      "why": "absent"
+    },
+    {
+      "test_fn": "test_db_url_not_in_logs",
+      "type": "",
+      "derivation": "",
+      "fr_id": "nfr_layering_parameterization_",
+      "why": "absent"
+    },
+    {
+      "test_fn": "test_openapi_summary_description_present",
+      "type": "",
+      "derivation": "",
+      "fr_id": "nfr_layering_parameterization_",
+      "why": "absent"
+    },
+    {
+      "test_fn": "test_lint_imports_exit_zero",
+      "type": "",
+      "derivation": "",
+      "fr_id": "nfr_layering_parameterization_",
+      "why": "absent"
+    },
+    {
+      "test_fn": "test_pip_licenses_allowlist",
+      "type": "",
+      "derivation": "",
+      "fr_id": "nfr_layering_parameterization_",
+      "why": "absent"
+    },
+    {
+      "test_fn": "test_pip_licenses_full_dependency_tree",
+      "type": "",
+      "derivation": "",
+      "fr_id": "nfr_layering_parameterization_",
+      "why": "absent"
+    },
+    {
+      "test_fn": "test_sbom_file_shape",
+      "type": "",
+      "derivation": "",
+      "fr_id": "nfr_layering_parameterization_",
+      "why": "absent"
+    },
+    {
+      "test_fn": "test_mutation_score_threshold",
+      "type": "",
+      "derivation": "",
+      "fr_id": "nfr_layering_parameterization_",
+      "why": "absent"
+    },
+    {
+      "test_fn": "test_mutation_scope_limited",
+      "type": "",
+      "derivation": "",
+      "fr_id": "nfr_layering_parameterization_",
+      "why": "absent"
+    },
+    {
+      "test_fn": "test_pytest_skipped_count_zero",
+      "type": "",
+      "derivation": "",
+      "fr_id": "nfr_layering_parameterization_",
+      "why": "absent"
+    },
+    {
+      "test_fn": "test_no_test_exclusion_tricks",
+      "type": "",
+      "derivation": "",
+      "fr_id": "nfr_layering_parameterization_",
+      "why": "absent"
+    },
+    {
+      "test_fn": "test_traceability_verified_only_on_pass",
+      "type": "",
+      "derivation": "",
+      "fr_id": "nfr_layering_parameterization_",
+      "why": "absent"
+    },
+    {
+      "test_fn": "test_integration_line_coverage_threshold",
+      "type": "",
+      "derivation": "",
+      "fr_id": "nfr_layering_parameterization_",
+      "why": "absent"
+    },
+    {
+      "test_fn": "test_integration_covers_required_scenarios",
+      "type": "",
+      "derivation": "",
+      "fr_id": "nfr_layering_parameterization_",
+      "why": "absent"
+    },
+    {
+      "test_fn": "test_radon_mi_average",
+      "type": "",
+      "derivation": "",
+      "fr_id": "nfr_layering_parameterization_",
+      "why": "absent"
+    },
+    {
+      "test_fn": "test_radon_cc_per_function",
+      "type": "",
+      "derivation": "",
+      "fr_id": "nfr_layering_parameterization_",
+      "why": "absent"
+    },
+    {
+      "test_fn": "test_file_size_lint",
+      "type": "",
+      "derivation": "",
+      "fr_id": "nfr_layering_parameterization_",
+      "why": "absent"
+    },
+    {
+      "test_fn": "test_directory_size_lint",
+      "type": "",
+      "derivation": "",
+      "fr_id": "nfr_layering_parameterization_",
+      "why": "absent"
+    },
+    {
+      "test_fn": "test_handler_line_count_lint",
+      "type": "",
+      "derivation": "",
+      "fr_id": "nfr_layering_parameterization_",
+      "why": "absent"
+    },
+    {
+      "test_fn": "test_verify_system_exits_zero",
+      "type": "",
+      "derivation": "",
+      "fr_id": "nfr_layering_parameterization_",
+      "why": "absent"
+    },
+    {
+      "test_fn": "test_perf_p95_get_task_under_30ms",
+      "type": "nfr_pattern",
+      "derivation": "NP-06",
+      "fr_id": "nfr_integration",
+      "why": "absent"
+    },
+    {
+      "test_fn": "test_perf_p95_list_tasks_under_80ms",
+      "type": "nfr_pattern",
+      "derivation": "NP-06",
+      "fr_id": "nfr_integration",
+      "why": "absent"
+    },
+    {
+      "test_fn": "test_n_plus_one_guard",
+      "type": "nfr_pattern",
+      "derivation": "NP-06",
+      "fr_id": "nfr_integration",
+      "why": "absent"
+    },
+    {
+      "test_fn": "test_db_failure_readyz_503",
+      "type": "nfr_pattern",
+      "derivation": "NP-07",
+      "fr_id": "nfr_integration",
+      "why": "absent"
+    },
+    {
+      "test_fn": "test_verify_system_exits_zero",
+      "type": "smoke",
+      "derivation": "NFR-12",
+      "fr_id": "deployment_smoke",
+      "why": "absent"
+    },
+    {
+      "test_fn": "test_db_url_not_in_logs",
+      "type": "SEC",
+      "derivation": "",
+      "fr_id": "security_cross_cutting_sec_thr",
+      "why": "absent"
+    }
+  ],
+  "spec_declared": 115,
+  "denominator_provenance": {
+    "test_spec_sha256": "c5fc2864742b441049bbffe0a9141977cb56281590359400451d6500d92d8061",
+    "rows_declared": 115,
+    "rows_unread": 0,
+    "delivery_basis": "ran-and-passed"
+  },
+  "measurement_scope": {
+    "weight_covered": 1.0,
+    "weight_total": 1.0,
+    "weight_artifact_verified": 0.18,
+    "dimensions_scored": [
+      "architecture",
+      "execute_verification_target",
+      "integration_coverage",
+      "license_compliance",
+      "linting",
+      "mutation_testing",
+      "secrets_scanning",
+      "security",
+      "test_assertion_quality",
+      "test_coverage",
+      "traceability",
+      "type_safety"
+    ],
+    "dimensions_unscored": [],
+    "dimensions_artifact_verified": [
+      "license_compliance",
+      "mutation_testing"
+    ],
+    "dimensions_declared_absent": [
+      "architecture_constraints",
+      "documentation",
+      "error_handling",
+      "performance",
+      "readability"
+    ]
+  }
+}

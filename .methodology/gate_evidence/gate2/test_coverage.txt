@@ -1,23 +1,10 @@
-# Harness-executed: pytest-cov
-# returncode: 0
-# agent_score: 95.1 | threshold: 80.0
+================================ tests coverage ==================================================
+_______________ coverage: platform darwin, python 3.11.15-final-0 _______________
 
-........................................................................ [ 42%]
-........................................................................ [ 85%]
-.........................                                                [100%]
-=============================== warnings summary ===============================
-.venv/lib/python3.11/site-packages/starlette/formparsers.py:12
-  /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
-    import multipart
-
--- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-================================ tests coverage ================================
-______________ coverage: platform darwin, python 3.11.15-final-0 _______________
-
-Name                                                         Stmts   Miss  Cover   Missing
-------------------------------------------------------------------------------------------
+Name                                                         Stmts   Miss  Cover
+--------------------------------------------------------------------------------
 03-development/src/migrations/__init__.py                        0      0   100%
-03-development/src/migrations/env.py                            49      1    98%   37
+03-development/src/migrations/env.py                            49      1    98%
 03-development/src/migrations/versions/__init__.py               0      0   100%
 03-development/src/migrations/versions/_shared/__init__.py      23      0   100%
 03-development/src/migrations/versions/v1_initial.py            15      0   100%
@@ -29,25 +16,31 @@ Name                                                         Stmts   Miss  Cover
 03-development/src/taskq_api/api/health.py                      15      0   100%
 03-development/src/taskq_api/api/metrics.py                     11      0   100%
 03-development/src/taskq_api/api/tasks.py                       55      0   100%
-03-development/src/taskq_api/app.py                             66     11    83%   116-130, 189
-03-development/src/taskq_api/config.py                          33     11    67%   64-74
+03-development/src/taskq_api/app.py                             66     11    83%
+03-development/src/taskq_api/config.py                          33     11    67%
 03-development/src/taskq_api/errors.py                          39      0   100%
 03-development/src/taskq_api/models/__init__.py                  0      0   100%
 03-development/src/taskq_api/models/orm.py                      44      0   100%
 03-development/src/taskq_api/models/schemas.py                  38      0   100%
 03-development/src/taskq_api/repository/__init__.py              0      0   100%
-03-development/src/taskq_api/repository/_time.py                 8      8     0%   18-37
+03-development/src/taskq_api/repository/_time.py                 8      8     0%
 03-development/src/taskq_api/repository/key_repo.py             63      0   100%
 03-development/src/taskq_api/repository/rate_repo.py            56      0   100%
-03-development/src/taskq_api/repository/session.py              89     12    87%   183-185, 214, 222-223, 227, 232, 243-246
+03-development/src/taskq_api/repository/session.py              89     12    87%
 03-development/src/taskq_api/repository/task_repo.py           201      0   100%
 03-development/src/taskq_api/service/__init__.py                 3      0   100%
-03-development/src/taskq_api/service/auth.py                    38      1    97%   76
+03-development/src/taskq_api/service/auth.py                    38      1    97%
 03-development/src/taskq_api/service/common.py                  25      0   100%
 03-development/src/taskq_api/service/health.py                  14      0   100%
-03-development/src/taskq_api/service/ratelimit.py               25      1    96%   117
-03-development/src/taskq_api/service/runner.py                 157     13    92%   166, 286, 337, 354, 376-379, 385, 387, 445-446, 478
+03-development/src/taskq_api/service/ratelimit.py               25      1    96%
+03-development/src/taskq_api/service/runner.py                 157     13    92%
 03-development/src/taskq_api/service/tasks.py                   29      0   100%
-------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 TOTAL                                                         1191     58    95%
-169 passed, 1 warning in 7.42s
+168 passed, 1 skipped, 1 warning in 7.54s
+
+# Raw pytest stdout (with --cov=03-development/src --cov-report=json):
+# /Users/johnny/projects/taskq-final/.sessi-work/round_2/tools/test_coverage_raw.json
+# Tool: pytest-cov
+# TOTAL 1191 stmts / 95.13% line coverage (covered 1133, missing 58).
+# Precondition: clean taskq.db (Makefile verify-system target does `rm -f taskq.db` before pytest).

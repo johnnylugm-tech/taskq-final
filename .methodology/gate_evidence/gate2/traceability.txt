@@ -1,0 +1,11 @@
+# traceability tool audit trail
+# Framework-owned dimension: harness-trace runs at finalize-gate via compute_trace_dimension.
+# requires_tool_execution: false (gate2_p3_exit.yaml line 22).
+# Agent-recorded score is null; framework patches at finalize time.
+
+# NFR trace matrix (.methodology/quality_manifest.json) — already audited by Gate 1.
+# Per PR 4 comment: 4a threshold 100% applies to FRs with status ∈ {IN_PROGRESS, VERIFIED}.
+# PENDING FRs are not in the denominator.
+
+# All 10 FRs in Gate 1 status: COMPLETE → in denominator.
+# Final traceability score is computed and written by the framework.

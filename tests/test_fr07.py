@@ -75,6 +75,15 @@ import pytest
 
 os.environ.setdefault("TASKQ_DB_URL", "sqlite:///./taskq.db")
 
+# NFR-12 (verifiability) / mutmut baseline: every alembic subprocess must
+# execute with cwd=project_root so ``alembic`` discovers the ``alembic.ini``
+# at the repo root regardless of where pytest itself was invoked from.
+# Without this, the mutation-test baseline fails: mutmut 2.x runs pytest
+# from a temp workdir, and the inherited cwd contains no ``alembic.ini``.
+# Declared BEFORE the ``import migrations`` block so ruff E402 does not
+# fire (the imports are otherwise deferred behind the env setdefault).
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent  # noqa: F811  -- reused for alembic subprocess cwd
+
 # Standard top-level imports. NO try/except ImportError wrappers.
 # These WILL raise ModuleNotFoundError until GREEN implements:
 #   - migrations/                     (package marker under
@@ -86,13 +95,13 @@ os.environ.setdefault("TASKQ_DB_URL", "sqlite:///./taskq.db")
 #                                     (split tasks.result_json into
 #                                      task_results; reverse on downgrade)
 #   - migrations/versions/_shared.py    (shared column / timestamp helpers)
-import migrations  # noqa: F401  -- GREEN TODO: add migrations/__init__.py
-import migrations.env as migrations_env  # noqa: F401  -- GREEN TODO: add migrations/env.py reading TASKQ_DB_URL from Settings
-import migrations.versions as migrations_versions  # noqa: F401  -- GREEN TODO: add migrations/versions/__init__.py
-import migrations.versions.v1_initial as v1_initial  # noqa: F401  -- GREEN TODO: add migrations/versions/v1_initial.py with upgrade()/downgrade() for tasks + api_keys
-import migrations.versions.v2_tags as v2_tags  # noqa: F401  -- GREEN TODO: add migrations/versions/v2_tags.py with tags + task_tags + tasks.name UNIQUE
-import migrations.versions.v3_split_results as v3_split_results  # noqa: F401  -- GREEN TODO: add migrations/versions/v3_split_results.py with split / merge data migration
-import migrations.versions._shared as migrations_shared  # noqa: F401  -- GREEN TODO: add migrations/versions/_shared.py with shared column defaults
+import migrations  # noqa: F401, E402  -- GREEN TODO: add migrations/__init__.py
+import migrations.env as migrations_env  # noqa: F401, E402  -- GREEN TODO: add migrations/env.py reading TASKQ_DB_URL from Settings
+import migrations.versions as migrations_versions  # noqa: F401, E402  -- GREEN TODO: add migrations/versions/__init__.py
+import migrations.versions.v1_initial as v1_initial  # noqa: F401, E402  -- GREEN TODO: add migrations/versions/v1_initial.py with upgrade()/downgrade() for tasks + api_keys
+import migrations.versions.v2_tags as v2_tags  # noqa: F401, E402  -- GREEN TODO: add migrations/versions/v2_tags.py with tags + task_tags + tasks.name UNIQUE
+import migrations.versions.v3_split_results as v3_split_results  # noqa: F401, E402  -- GREEN TODO: add migrations/versions/v3_split_results.py with split / merge data migration
+import migrations.versions._shared as migrations_shared  # noqa: F401, E402  -- GREEN TODO: add migrations/versions/_shared.py with shared column defaults
 
 
 # ---------------------------------------------------------------------------
@@ -261,6 +270,7 @@ def test_alembic_upgrade_downgrade_base(
         upgrade_proc = subprocess.run(
             [sys.executable, "-m", "alembic", "upgrade", target_revision],
             env=env,
+            cwd=str(_PROJECT_ROOT),
             capture_output=True,
             text=True,
         )
@@ -284,6 +294,7 @@ def test_alembic_upgrade_downgrade_base(
                 "upgrade", "head", "--sql",
             ],
             env=env,
+            cwd=str(_PROJECT_ROOT),
             capture_output=True,
             text=True,
         )
@@ -312,6 +323,7 @@ def test_alembic_upgrade_downgrade_base(
             pre_up = subprocess.run(
                 [sys.executable, "-m", "alembic", "upgrade", "v2"],
                 env=env,
+                cwd=str(_PROJECT_ROOT),
                 capture_output=True,
                 text=True,
             )
@@ -327,6 +339,7 @@ def test_alembic_upgrade_downgrade_base(
                 "downgrade", target_revision,
             ],
             env=env,
+            cwd=str(_PROJECT_ROOT),
             capture_output=True,
             text=True,
         )
@@ -502,6 +515,7 @@ def test_v3_data_migration_round_trip_preserves_columns(
     upgrade_head = subprocess.run(
         [sys.executable, "-m", "alembic", "upgrade", "head"],
         env=env,
+        cwd=str(_PROJECT_ROOT),
         capture_output=True,
         text=True,
     )
@@ -565,6 +579,7 @@ def test_v3_data_migration_round_trip_preserves_columns(
         down_one = subprocess.run(
             [sys.executable, "-m", "alembic", "downgrade", "-1"],
             env=env,
+            cwd=str(_PROJECT_ROOT),
             capture_output=True,
             text=True,
         )
@@ -575,6 +590,7 @@ def test_v3_data_migration_round_trip_preserves_columns(
         up_again = subprocess.run(
             [sys.executable, "-m", "alembic", "upgrade", "head"],
             env=env,
+            cwd=str(_PROJECT_ROOT),
             capture_output=True,
             text=True,
         )
@@ -664,6 +680,7 @@ def test_v3_data_migration_round_trip_preserves_columns(
         down_one = subprocess.run(
             [sys.executable, "-m", "alembic", "downgrade", "-1"],
             env=env,
+            cwd=str(_PROJECT_ROOT),
             capture_output=True,
             text=True,
         )
@@ -674,6 +691,7 @@ def test_v3_data_migration_round_trip_preserves_columns(
         up_again = subprocess.run(
             [sys.executable, "-m", "alembic", "upgrade", "head"],
             env=env,
+            cwd=str(_PROJECT_ROOT),
             capture_output=True,
             text=True,
         )
@@ -898,7 +916,7 @@ def test_shared_task_id_column_shape():
     # and inspect the FK metadata using the SAME engine (a fresh
     # :memory: engine would not have the table).
     meta = sa.MetaData()
-    tasks = sa.Table("tasks", meta, sa.Column("id", sa.String(length=36), primary_key=True))
+    _tasks = sa.Table("tasks", meta, sa.Column("id", sa.String(length=36), primary_key=True))
     sa.Table(
         "results", meta,
         col,
@@ -1741,7 +1759,7 @@ def test_v3_split_results_downgrade_offline_mode_emits_ddl_only(tmp_path):
 
 def test_v3_now_or_default_when_none_returns_now():
     """v3._now_or_default(None) returns ``datetime.now(tz=utc)``."""
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     from migrations.versions.v3_split_results import _now_or_default
 
@@ -1775,7 +1793,7 @@ def test_v3_now_or_default_when_datetime_aware_passthrough():
 
 def test_v3_now_or_default_when_string_iso_parses():
     """v3._now_or_default(iso_string) parses the ISO format."""
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     from migrations.versions.v3_split_results import _now_or_default
 
@@ -1786,7 +1804,7 @@ def test_v3_now_or_default_when_string_iso_parses():
 
 def test_v3_now_or_default_when_string_invalid_returns_now():
     """v3._now_or_default(non-iso string) falls back to ``datetime.now``."""
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     from migrations.versions.v3_split_results import _now_or_default
 

@@ -519,7 +519,7 @@ def test_eager_loading_no_n_plus_one(seed_count="50", expected_statement_count="
     # these calls do NOT execute SQL — the statement counter below
     # would see 0 and the bound assertion would fail (RED).
     for idx in range(seed):
-        created = repo.create_with_runs(
+        _ = repo.create_with_runs(
             name=f"fr06-eager-{idx:03d}",
             command="echo eager",
             run_count=1,
@@ -679,7 +679,6 @@ def test_repository_methods_use_transaction_cm(monkeypatch):
     replacement preserves the original behaviour for the body of the
     CM so the underlying SQL write still happens.
     """
-    from taskq_api import repository
     from taskq_api.repository import session as session_module
     from taskq_api.repository import task_repo as task_repo_module
 
@@ -701,7 +700,7 @@ def test_repository_methods_use_transaction_cm(monkeypatch):
 
     repo = TaskRepository()
     # Create one task (mutating method) — the CM must be entered.
-    created = repo.create_with_runs(
+    _ = repo.create_with_runs(
         name=f"fr06-cm-probe-{uuid.uuid4().hex[:8]}",
         command="echo cm",
         run_count=1,
@@ -850,7 +849,6 @@ def test_session_ping_and_session_factory():
     that needs a ``sessionmaker`` without going through
     ``get_engine()`` (the ``transaction()`` CM uses it internally).
     """
-    from sqlalchemy import event
 
     from taskq_api.repository.session import (
         _SessionLocal, get_engine, get_session_factory, ping,
@@ -1169,7 +1167,7 @@ def test_task_repository_full_surface():
     repository surface is fully exercised.
     """
     from taskq_api.repository.task_repo import (
-        _cursor_decode, _cursor_encode, _delete_task_memory,
+        _cursor_encode, _delete_task_memory,
         _evict_tasks_by_name_memory, _insert_result_memory,
         _insert_task_memory, _run_to_dict, _task_to_dict,
     )

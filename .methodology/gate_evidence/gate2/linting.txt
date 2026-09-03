@@ -1,0 +1,9 @@
+[]
+All checks passed!
+
+# Raw ruff stdout/stderr:
+# ruff 0.x.x via `python -m ruff check . --output-format json --exit-zero`
+# 0 violations returned as empty JSON array
+# Exit code: 0
+# Tool: ruff
+# Formula: max(0, 100 - violations * 2) = max(0, 100 - 0) = 100

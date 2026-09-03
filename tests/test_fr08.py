@@ -259,7 +259,7 @@ def test_task_timeout_kills_orphan_subprocess():
     ``expected_orphan_pids == 0`` (no orphan subprocesses).
     """
     task_timeout = 0.5
-    command = "sleep 10"
+    _command = "sleep 10"
     expected_status = "timeout"
     expected_orphan_pids = "0"
 

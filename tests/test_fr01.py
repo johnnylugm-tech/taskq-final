@@ -538,7 +538,6 @@ def test_delete_handles_task_absent_from_order_list():
         TaskRow,
         _LOCK,
         _TASKS,
-        _TASK_ORDER,
     )
 
     fake_id = "11111111-2222-3333-4444-555555555555"

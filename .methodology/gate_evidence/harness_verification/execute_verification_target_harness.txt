@@ -1,0 +1,108 @@
+# Harness-executed: system-verification
+# returncode: 0
+# agent_score: 100.0 | threshold: 100.0
+
+==> full test suite (clean taskq.db)
+/Users/johnny/projects/taskq-final/.venv/bin/python -m pytest --ignore=harness/tests
+============================= test session starts ==============================
+platform darwin -- Python 3.11.15, pytest-8.4.2, pluggy-1.6.0
+benchmark: 4.0.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /Users/johnny/projects/taskq-final
+configfile: setup.cfg
+plugins: cov-7.1.0, anyio-4.14.2, benchmark-4.0.0
+collected 169 items
+
+tests/test_fr01.py ........................                              [ 14%]
+tests/test_fr02.py .......                                               [ 18%]
+tests/test_fr03.py ..................                                    [ 28%]
+tests/test_fr04.py .......                                               [ 33%]
+tests/test_fr05.py ............                                          [ 40%]
+tests/test_fr06.py ...................                                   [ 51%]
+tests/test_fr07.py ......................................                [ 73%]
+tests/test_fr08.py .....                                                 [ 76%]
+tests/test_fr09.py ...........                                           [ 83%]
+tests/test_fr10.py ............                                          [ 90%]
+tests/test_nfr.py ................                                       [100%]
+
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/starlette/formparsers.py:12
+  /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+tests/test_fr02.py::test_subprocess_no_shell_true[AC-2.2-shell-true-zero]
+  /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/_pytest/threadexception.py:58: PytestUnhandledThreadExceptionWarning: Exception in thread taskq-run-5e8399b9
+  
+  Traceback (most recent call last):
+    File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/threading.py", line 1045, in _bootstrap_inner
+      self.run()
+    File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/threading.py", line 982, in run
+      self._target(*self._args, **self._kwargs)
+    File "/Users/johnny/projects/taskq-final/03-development/src/taskq_api/service/runner.py", line 457, in _drive_run
+      repo.update_status(task_id, outcome.state)
+    File "/Users/johnny/projects/taskq-final/03-development/src/taskq_api/repository/task_repo.py", line 368, in update_status
+      with _session.transaction() as db_session:
+    File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/contextlib.py", line 144, in __exit__
+      next(self.gen)
+    File "/Users/johnny/projects/taskq-final/03-development/src/taskq_api/repository/session.py", line 141, in transaction
+      session.commit()
+    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2017, in commit
+      trans.commit(_to_root=True)
+    File "<string>", line 2, in commit
+    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py", line 139, in _go
+      ret_value = fn(self, *arg, **kw)
+                  ^^^^^^^^^^^^^^^^^^^^
+    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1302, in commit
+      self._prepare_impl()
+    File "<string>", line 2, in _prepare_impl
+    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py", line 139, in _go
+      ret_value = fn(self, *arg, **kw)
+                  ^^^^^^^^^^^^^^^^^^^^
+    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1277, in _prepare_impl
+      self.session.flush()
+    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 4341, in flush
+      self._flush(objects)
+    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 4476, in _flush
+      with util.safe_reraise():
+    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 146, in __exit__
+      raise exc_value.with_traceback(exc_tb)
+    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 4437, in _flush
+      flush_context.execute()
+    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/unitofwork.py", line 466, in execute
+      rec.execute(self)
+    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/unitofwork.py", line 642, in execute
+      util.preloaded.orm_persistence.save_obj(
+    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/persistence.py", line 85, in save_obj
+      _emit_update_statements(
+    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/sqlalchemy/orm/persistence.py", line 948, in _emit_update_statements
+      raise orm_exc.StaleDataError(
+  sqlalchemy.orm.exc.StaleDataError: UPDATE statement on table 'tasks' expected to update 1 row(s); 0 were matched.
+  
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+    warnings.warn(pytest.PytestUnhandledThreadExceptionWarning(msg))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================= 169 passed, 2 warnings in 9.58s ========================
+==> alembic upgrade head
+PYTHONPATH=03-development/src:$PYTHONPATH /Users/johnny/projects/taskq-final/.venv/bin/python -m alembic upgrade head
+==> service smoke (/healthz, /readyz)
+PYTHONPATH=03-development/src:$PYTHONPATH /Users/johnny/projects/taskq-final/.venv/bin/python -m taskq_api.__main__ healthcheck
+==> downgrade base + upgrade head round-trip
+PYTHONPATH=03-development/src:$PYTHONPATH /Users/johnny/projects/taskq-final/.venv/bin/python -m alembic downgrade base
+PYTHONPATH=03-development/src:$PYTHONPATH /Users/johnny/projects/taskq-final/.venv/bin/python -m alembic upgrade head
+verify-system: PASS
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> v1, [FR-07] v1_initial — create ``tasks`` and ``api_keys``.
+INFO  [alembic.runtime.migration] Running upgrade v1 -> v2, [FR-07] v2_tags — add ``tags``, ``task_tags`` and UNIQUE on ``tasks.name``.
+INFO  [alembic.runtime.migration] Running upgrade v2 -> v3, [FR-07] v3_split_results — split ``tasks.result_json`` into ``task_results``.
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running downgrade v3 -> v2, [FR-07] v3_split_results — split ``tasks.result_json`` into ``task_results``.
+INFO  [alembic.runtime.migration] Running downgrade v2 -> v1, [FR-07] v2_tags — add ``tags``, ``task_tags`` and UNIQUE on ``tasks.name``.
+INFO  [alembic.runtime.migration] Running downgrade v1 -> , [FR-07] v1_initial — create ``tasks`` and ``api_keys``.
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> v1, [FR-07] v1_initial — create ``tasks`` and ``api_keys``.
+INFO  [alembic.runtime.migration] Running upgrade v1 -> v2, [FR-07] v2_tags — add ``tags``, ``task_tags`` and UNIQUE on ``tasks.name``.
+INFO  [alembic.runtime.migration] Running upgrade v2 -> v3, [FR-07] v3_split_results — split ``tasks.result_json`` into ``task_results``.

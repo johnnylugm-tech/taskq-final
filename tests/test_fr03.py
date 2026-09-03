@@ -119,7 +119,7 @@ def test_missing_api_key_returns_401(asgi_client):
         ``taskq_api.api.deps`` and is the single chokepoint for /v1/*
         routes (FR-04 AC-4.3 overlap).
     """
-    header_value = ""            # case-1 input — empty / missing header
+    _header_value = ""           # case-1 input — empty / missing header (no header sent)
     expected_status = "401"      # case-1 input
     content_type = "application/problem+json"  # case-1 input
 
