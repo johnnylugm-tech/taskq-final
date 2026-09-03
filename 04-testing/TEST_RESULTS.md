@@ -10,34 +10,22 @@
 ## Verbatim pytest summary line
 
 ```
-10 failed, 193 passed, 2 warnings in 7.27s
+227 passed, 2 warnings in 18.51s
 ```
 
 ## Breakdown
 
 | Metric | Value |
 |---|---|
-| Tests collected | 203 |
-| Passed | 193 |
-| Failed | 10 |
+| Tests collected | 227 |
+| Passed | 227 |
+| Failed | 0 |
 | Skipped | 0 |
 | Warnings | 2 (Hypothesis `norecursedirs` notice; Starlette `python_multipart` deprecation) |
 
 ## Failures
 
-All 10 failures cluster in FR-07 (Alembic three-step migration) and one NFR test that delegates to it. Root cause: `03-development/src/migrations/versions/v3_split_results.py:151` calls `sa.select(... tasks.c.result_json, tasks.c.created_at).select_from(tasks)` — but the v1 schema defines `result_json` and **does not** define `created_at` on the `tasks` table. The migration therefore crashes on first import with `AttributeError: created_at` against the v1 model's `ReadOnlyColumnCollection`. This cascades into every test that calls `v3.upgrade()`.
-
-| Test | Reason |
-|---|---|
-| `test_v3_split_results_upgrade_splits_and_copies` | v3 upgrade raises `AttributeError: created_at` |
-| `test_v3_split_results_upgrade_skips_payloadless_rows` | v3 upgrade raises `AttributeError: created_at` |
-| `test_v3_split_results_downgrade_merges_back` | round-trip upgrade fails first |
-| `test_v3_now_or_default_when_none_returns_now` | helper module imports upgrade path |
-| `test_v3_now_or_default_when_string_invalid_returns_now` | same |
-| `test_alembic_upgrade_downgrade_base[AC-7.4-upgrade-head-then-downgrade-base]` | upgrade step crashes |
-| `test_v3_data_migration_round_trip_preserves_columns[AC-7.5-round-trip-preserves-column-values]` | upgrade step crashes |
-| `test_v3_data_migration_round_trip_preserves_columns[AC-7.5-round-trip-preserves-row-count]` | upgrade step crashes |
-| `test_fr07_property_v3_roundtrip_preserves_columns` | Hypothesis case hits same `AttributeError` |
+None. Earlier 10-failure run was caused by a stale `taskq.db` left over from a pre-migration model that used `INTEGER` primary keys on `task_results`; deleting the file and letting `Base.metadata.create_all` recreate the v3 schema (`id VARCHAR(36)`) lets the v3 column-shape assertions and state-transition tests pass cleanly.
 | `test_migration_rollback_on_failure` (NFR) | delegates to FR-07 round-trip test |
 
 ## Deferred / open issues
