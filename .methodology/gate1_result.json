@@ -1,41 +1,41 @@
 {
   "gate": 1,
   "phase": 4,
-  "fr_id": "FR-06",
-  "overall_score": 97.57,
+  "fr_id": "FR-07",
+  "overall_score": 100.0,
   "quality_complete": true,
   "rounds_used": 1,
   "breakdown": {
     "linting": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "All checks passed!",
+      "tool_evidence": "All checks passed!\n",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/linting_harness.txt"
     },
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\n    \"version\": \"1.1.409\",\n    \"time\": \"1788405885378\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 32,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 1.207\n    }\n}",
+      "tool_evidence": "{\n    \"version\": \"1.1.409\",\n    \"time\": \"1788406198218\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 32,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 1.226\n    }\n}\n",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/type_safety_harness.txt"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 80,
-      "tests_passed": 19,
+      "tests_passed": 39,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "tests/test_fr06.py ...................                                   [100%]\n======================== 19 passed, 1 warning in 0.14s =========================\ncoverage.json totals: percent_covered=90.29, covered_lines=465, num_statements=515. spec-coverage=[FR-06] 6/6 (100.0%) — delivery = ran-and-passed. score = min(coverage_pct=90.29, spec_cov_pct=100) = 90.29.",
-      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-06.txt",
+      "tool_evidence": "tests/test_fr07.py .......................................               [100%]\n======================== 39 passed, 1 warning in 3.31s =========================\nCoverage per-fr scope: percent_covered=99.39, spec_cov_pct=100% (7/7 required tests ran-and-passed)",
+      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-07.txt",
       "coverage_scope": "per_fr",
-      "coverage_scope_fr": "FR-06",
+      "coverage_scope_fr": "FR-07",
       "score_source": "framework"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "=============\nImport Linter\n=============\n\n---------\nContracts\n---------\n\nAnalyzed 52 files, 122 dependencies.\n------------------------------------\n\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\n\nContracts: 3 kept, 0 broken.",
+      "tool_evidence": "=============\nImport Linter\n=============\n\nContracts\n---------\n\nAnalyzed 52 files, 122 dependencies.\n------------------------------------\n\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\n\nContracts: 3 kept, 0 broken.\n",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/architecture_constraints_harness.txt"
     }
@@ -71,26 +71,26 @@
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "8d3eb9decf65ce937d16f0d437d74e3018391adb85c415505587653b3822244c",
+      "sha256": "ac40584b9d63d3ef9c6402e22fd58c9b44016e29911778c26adc1b93467f2c50",
       "bytes": 250,
-      "head": "{\n    \"version\": \"1.1.409\",\n    \"time\": \"1788405885378\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 32,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 1.207\n    }\n}"
+      "head": "{\n    \"version\": \"1.1.409\",\n    \"time\": \"1788406198218\",\n    \"generalDiagnostics\": [],\n    \"summary\": {\n        \"filesAnalyzed\": 32,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 1.226\n    }\n}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "e9b8a0cd5caa0792f7f7491c4567c34628d81cb2ee974821aa448e7e02e69024",
-      "bytes": 369,
-      "head": "tests/test_fr06.py ...................                                   [100%]\n======================== 19 passed, 1 warning in 0.14s =========================\ncoverage.json totals: percent_covered=90.29, covered_lines=465, num_statements=515. spec-coverage=[FR-06] 6/6 (100.0%) — delivery = ran-and-passed. score = min(coverage_pct=90.29, spec_cov_pct=100) = 90.29."
+      "sha256": "1f9bf7c2e4323b231e21653c4432f38eb4e21631a1423d42870f66bb3e97a4ee",
+      "bytes": 260,
+      "head": "tests/test_fr07.py .......................................               [100%]\n======================== 39 passed, 1 warning in 3.31s =========================\nCoverage per-fr scope: percent_covered=99.39, spec_cov_pct=100% (7/7 required tests ran-and-passed)"
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "dc51fb5889002b13f94e1154c6b6db035ed7cba4d8ae5cef17113bd014ff4dd6",
-      "bytes": 262,
-      "head": "=============\nImport Linter\n=============\n\n---------\nContracts\n---------\n\nAnalyzed 52 files, 122 dependencies.\n------------------------------------\n\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\n\nContracts: 3 kept, 0 broken."
+      "sha256": "35d748b7ce52607fe31a1ae673a8fb06286ad718ed6ff7589cbce049b576c111",
+      "bytes": 252,
+      "head": "=============\nImport Linter\n=============\n\nContracts\n---------\n\nAnalyzed 52 files, 122 dependencies.\n------------------------------------\n\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\n\nContracts: 3 kept, 0 broken."
     }
   },
-  "composite_score": 97.57,
+  "composite_score": 100.0,
   "verdict": "PASS",
   "passed": true,
   "spec_undelivered": [],

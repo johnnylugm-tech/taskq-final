@@ -2,9 +2,9 @@
 # dimension: test_coverage
 # fr_id: FR-07
 # scope: this FR's own modules, per fr_module_traceability
-# executed/coverable: 164/165
-# per-fr coverage: 99.4%
-# whole-project coverage: 97.0% (see .methodology/gate_evidence/harness_verification/test_coverage_harness.txt)
+# executed/coverable: 165/165
+# per-fr coverage: 100.0%
+# whole-project coverage: 100.0% (see .methodology/gate_evidence/harness_verification/test_coverage_harness.txt)
 #
 # files in scope:
 #   03-development/src/migrations/env.py
