@@ -235,17 +235,26 @@ def test_no_degraded_importlinter_config():
 
 
 def test_runtime_deps_pinned_with_eq():
-    """NFR-07 — runtime deps pinned with `==`."""
+    """NFR-07 — runtime deps pinned with `==`.
+
+    NFR-09 (zero-skip guard) forbids ``pytest.skip`` in this suite, so the
+    missing-file / missing-pin branches assert rather than skip — when the
+    artifact is genuinely absent this test fails loudly, which is the
+    desired signal: a project shipping without a pinned dependencies file
+    violates NFR-07, full stop.
+    """
     pyproject = PROJECT_ROOT / "pyproject.toml"
+    req_txt = PROJECT_ROOT / "requirements.txt"
+    assert pyproject.exists() or req_txt.exists(), (
+        "NFR-07 violated: neither pyproject.toml nor requirements.txt present"
+    )
     if pyproject.exists():
         text = pyproject.read_text(encoding="utf-8")
-    elif (PROJECT_ROOT / "requirements.txt").exists():
-        text = (PROJECT_ROOT / "requirements.txt").read_text(encoding="utf-8")
     else:
-        pytest.skip("no requirements file present")
-    # Accept either TOML `==` pinning or requirements.txt `==` pinning.
-    if not re.search(r"==\s*[\d.]+", text):
-        pytest.skip("no `==` pin found in dependencies file")
+        text = req_txt.read_text(encoding="utf-8")
+    assert re.search(r"==\s*[\d.]+", text), (
+        "NFR-07 violated: no `==` pin found in dependencies file"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -254,10 +263,14 @@ def test_runtime_deps_pinned_with_eq():
 
 
 def test_harness_config_mutation_flag():
-    """NFR-08 — features.mutation_testing enabled in harness_config.json."""
+    """NFR-08 — features.mutation_testing enabled in harness_config.json.
+
+    NFR-09 (zero-skip guard) forbids ``pytest.skip`` in this suite, so the
+    missing-config branch asserts rather than skips — a project without a
+    harness_config.json violates the NFR-08 declaration contract.
+    """
     cfg = PROJECT_ROOT / ".methodology" / "harness_config.json"
-    if not cfg.exists():
-        pytest.skip("harness_config.json not present")
+    assert cfg.exists(), "NFR-08 violated: .methodology/harness_config.json missing"
     data = json.loads(cfg.read_text(encoding="utf-8"))
     enabled = data.get("features", {}).get("mutation_testing")
     assert enabled is True, (
