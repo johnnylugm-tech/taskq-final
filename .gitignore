@@ -20,3 +20,6 @@ htmlcov/
 .mutmut-cache/
 .code-review-graph/
 .claude/worktrees/
+
+# runtime SQLite database (created by app/tests at startup)
+taskq.db
