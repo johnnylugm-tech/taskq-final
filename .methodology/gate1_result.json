@@ -1,41 +1,41 @@
 {
   "gate": 1,
   "phase": 4,
-  "fr_id": "FR-09",
-  "overall_score": 96.79,
+  "fr_id": "FR-10",
+  "overall_score": 97.5,
   "quality_complete": true,
   "rounds_used": 1,
   "breakdown": {
     "linting": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "All checks passed!",
+      "tool_evidence": "$ python3 -m ruff check 03-development/src/ --extend-ignore RUF001,RUF002,RUF003\nAll checks passed!",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/linting_harness.txt"
     },
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.213}}",
+      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1788407333303\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.23}}",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/type_safety_harness.txt"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 80,
-      "tests_passed": 9,
+      "tests_passed": 12,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "tests/test_fr09.py ....FF..... [100%] FAILED test_healthz_route_is_registered FAILED test_readyz_route_is_registered 2 failed, 9 passed, 1 warning. Coverage FR-09 files: health.py=100%, session.py=74.16%; combined avg=87.08. Required spec tests (4/4 PASS): test_healthz_returns_200, test_readyz_returns_503_when_migration_not_at_head (parametrized x2), test_metrics_requires_admin_scope.",
-      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-09.txt",
+      "tool_evidence": "PYTHONPATH=./03-development/src python3 -m coverage run -m pytest 03-development/tests/integration/test_fr10.py\ncollected 12 items\n03-development/tests/integration/test_fr10.py ............               [100%]\n======================== 12 passed, 1 warning in 0.30s =========================\nTotal coverage: 90% (errors.py: 100%, app.py: 83%)",
+      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-10.txt",
       "coverage_scope": "per_fr",
-      "coverage_scope_fr": "FR-09",
+      "coverage_scope_fr": "FR-10",
       "score_source": "framework"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Contracts: 3 kept, 0 broken. Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT.",
+      "tool_evidence": "PYTHONPATH=./03-development/src lint-imports\nAnalyzed 52 files, 122 dependencies.\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\nContracts: 3 kept, 0 broken.",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/architecture_constraints_harness.txt"
     }
@@ -64,33 +64,33 @@
     "linting": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "f0d0b1081d9d3ebb26c4c93543053ecdc0a58998f22c071dc4ddb26021b57645",
-      "bytes": 18,
-      "head": "All checks passed!"
+      "sha256": "fad7bf8fec552781f58e1c0ffeca42f9112045994a8b691d1b407d6151442b6f",
+      "bytes": 99,
+      "head": "$ python3 -m ruff check 03-development/src/ --extend-ignore RUF001,RUF002,RUF003\nAll checks passed!"
     },
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "d7ae279d973cdff6879a71447d444c6811e83fe88c75ed0e14a63d308257a281",
-      "bytes": 135,
-      "head": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.213}}"
+      "sha256": "167b0c9874cd0487653342966475f17e787bee29c120683bccfe7f884d4fefe7",
+      "bytes": 185,
+      "head": "{\"version\": \"1.1.409\", \"time\": \"1788407333303\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.23}}"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "c05de033dc263b54c0190578af0d6821cca31cf474c5d51328b1d7fe2b3e571c",
-      "bytes": 387,
-      "head": "tests/test_fr09.py ....FF..... [100%] FAILED test_healthz_route_is_registered FAILED test_readyz_route_is_registered 2 failed, 9 passed, 1 warning. Coverage FR-09 files: health.py=100%, session.py=74.16%; combined avg=87.08. Required spec tests (4/4 PASS): test_healthz_returns_200, test_readyz_returns_503_when_migration_not_at_head (parametrized x2), test_metrics_requires_admin_scope."
+      "sha256": "0c83c44eb32daef27196263f3280efb8a4a8019c7cbd07bbba5618e716e7f19d",
+      "bytes": 342,
+      "head": "PYTHONPATH=./03-development/src python3 -m coverage run -m pytest 03-development/tests/integration/test_fr10.py\ncollected 12 items\n03-development/tests/integration/test_fr10.py ............               [100%]\n======================== 12 passed, 1 warning in 0.30s =========================\nTotal coverage: 90% (errors.py: 100%, app.py: 83%)"
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "0e3c1496ca70c3e719408f2252f4c7e4b1ca572a4d06cb16ca38e5f980bec1b9",
-      "bytes": 115,
-      "head": "Contracts: 3 kept, 0 broken. Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT."
+      "sha256": "14f8a5ea6a8eabc4d99d959473eede9279bb2e794d1d259f7ed47a06ba6e0459",
+      "bytes": 194,
+      "head": "PYTHONPATH=./03-development/src lint-imports\nAnalyzed 52 files, 122 dependencies.\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\nContracts: 3 kept, 0 broken."
     }
   },
-  "composite_score": 96.79,
+  "composite_score": 97.5,
   "verdict": "PASS",
   "passed": true,
   "spec_undelivered": [],
