@@ -2,7 +2,7 @@
 # dimension: test_coverage
 # fr_id: FR-07
 # scope: this FR's own modules, per fr_module_traceability
-# executed/coverable: 166/166
+# executed/coverable: 174/174
 # per-fr coverage: 100.0%
 # whole-project coverage: 100.0% (see .methodology/gate_evidence/harness_verification/test_coverage_harness.txt)
 #

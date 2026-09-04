@@ -12,7 +12,7 @@
     "omit": [
       "03-development/src/taskq_api/__main__.py"
     ],
-    "statements_measured": 1203,
+    "statements_measured": 173,
     "statements_omitted": 0
   },
   "gate": 1,

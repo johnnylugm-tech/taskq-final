@@ -1,11 +1,11 @@
 # Harness-executed: pytest-cov
-# returncode: 1
-# agent_score: 90.0 | threshold: 80.0
+# returncode: 0
+# agent_score: 100.0 | threshold: 80.0
 
 ........................................................................ [ 23%]
 ........................................................................ [ 46%]
 ........................................................................ [ 70%]
-....................................................EEEEE............... [ 93%]
+........................................................................ [ 93%]
 ....................                                                     [100%]
 =============================== warnings summary ===============================
 .venv/lib/python3.11/site-packages/_hypothesis_pytestplugin.py:487
@@ -16,8 +16,8 @@
   /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
     import multipart
 
-03-development/tests/test_fr01.py::test_tasks_list_cursor_pagination[AC-1.4-two-pages]
-  /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/_pytest/unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x10760e700>
+03-development/tests/test_fr07.py::test_fr07_property_v3_roundtrip_preserves_columns
+  /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/_pytest/unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x10ad72700>
   
   Traceback (most recent call last):
     File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/asyncio/base_subprocess.py", line 126, in __del__
@@ -50,7 +50,7 @@ Name                                                         Stmts   Miss  Cover
 03-development/src/migrations/versions/_shared/__init__.py      23      0   100%
 03-development/src/migrations/versions/v1_initial.py            15      0   100%
 03-development/src/migrations/versions/v2_tags.py               15      0   100%
-03-development/src/migrations/versions/v3_split_results.py      64      0   100%
+03-development/src/migrations/versions/v3_split_results.py      72      0   100%
 03-development/src/taskq_api/__init__.py                         0      0   100%
 03-development/src/taskq_api/api/__init__.py                     0      0   100%
 03-development/src/taskq_api/api/deps.py                        18      0   100%
@@ -76,11 +76,5 @@ Name                                                         Stmts   Miss  Cover
 03-development/src/taskq_api/service/runner.py                 171      0   100%
 03-development/src/taskq_api/service/tasks.py                   29      0   100%
 ------------------------------------------------------------------------------------------
-TOTAL                                                         1203      0   100%
-=========================== short test summary info ============================
-ERROR 03-development/tests/test_fr07.py::test_alembic_upgrade_downgrade_base[AC-7.4-upgrade-head-then-downgrade-base]
-ERROR 03-development/tests/test_fr07.py::test_alembic_upgrade_downgrade_base[AC-7.2-downgrade-v2-v1-keeps-v1-data]
-ERROR 03-development/tests/test_fr07.py::test_alembic_upgrade_downgrade_base[AC-7.6-no-drop-shortcut]
-ERROR 03-development/tests/test_fr07.py::test_v3_data_migration_round_trip_preserves_columns[AC-7.5-round-trip-preserves-column-values]
-ERROR 03-development/tests/test_fr07.py::test_v3_data_migration_round_trip_preserves_columns[AC-7.5-round-trip-preserves-row-count]
-303 passed, 3 warnings, 5 errors in 19.74s
+TOTAL                                                         1211      0   100%
+308 passed, 3 warnings in 21.85s

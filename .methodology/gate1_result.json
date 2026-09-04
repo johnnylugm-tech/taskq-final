@@ -1,46 +1,46 @@
 {
   "gate": 1,
   "phase": 8,
-  "fr_id": "FR-10",
-  "overall_score": 97.5,
+  "fr_id": "FR-07",
+  "overall_score": 100.0,
   "quality_complete": true,
   "rounds_used": 1,
   "breakdown": {
     "linting": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "All checks passed!\nEXIT: 0\n",
+      "tool_evidence": "All checks passed!\nEXIT:0",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/linting_harness.txt"
     },
     "type_safety": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "{\n    \"version\": \"1.1.409\",\n    \"summary\": {\n        \"filesAnalyzed\": 32,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 1.111\n    }\n}\nEXIT: 0\n",
+      "tool_evidence": "{\"version\": \"1.1.409\", \"time\": \"1788518930419\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.121}}\nEXIT:0",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/type_safety_harness.txt"
     },
     "test_coverage": {
       "score": 100.0,
       "threshold": 80,
-      "tests_passed": 12,
+      "tests_passed": 40,
       "tests_failed": 0,
       "tests_skipped": 0,
-      "tool_evidence": "collected 12 items\ntests/test_fr10.py ............                                          [100%]\ncoverage: errors.py 100% (39/39 stmts), app.py 84% (59/70 stmts)\nTOTAL 109 stmts, 11 miss, 90% covered\n12 passed, 2 warnings in 0.37s\nEXIT: 0\n",
-      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-10.txt",
+      "tool_evidence": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.15, pytest-8.4.2\ncollected 40 items\n\n03-development/tests/test_fr07.py ...................................... [ 95%]\n..                                                                       [100%]\n======================== 40 passed, 1 warning in 3.41s =========================\nFR-07 source coverage: env.py 100%, v1_initial.py 100%, v2_tags.py 100%, v3_split_results.py 100%, _shared 100%\nEXIT:0",
+      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-07.txt",
       "coverage_scope": "per_fr",
-      "coverage_scope_fr": "FR-10",
+      "coverage_scope_fr": "FR-07",
       "score_source": "framework"
     },
     "architecture_constraints": {
       "score": 100.0,
       "threshold": 100,
-      "tool_evidence": "Analyzed 52 files, 122 dependencies.\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\nContracts: 3 kept, 0 broken.\nEXIT: 0\n",
+      "tool_evidence": "=============\nImport Linter\n=============\n---------\nContracts\n---------\nAnalyzed 52 files, 122 dependencies.\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\nContracts: 3 kept, 0 broken.\nEXIT:0",
       "score_source": "framework",
       "tool_output": ".methodology/gate_evidence/harness_verification/architecture_constraints_harness.txt"
     }
   },
-  "enforcer_sha": "f4af8962f193757d84e98ac60331d57af972ef6d",
+  "enforcer_sha": "510e586d59938047279049bd55b021182850f68d",
   "enforcer_surface": {
     "core/quality_gate": "5adc0d5945ab97b6415a77f1e38a25cc20f4b746",
     "harness/harness_bridge.py": "ce203273ad7961428965bd2c0000a799b95aec7a",
@@ -71,33 +71,33 @@
     "linting": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "b7fa307f0265be552f4608ac89a4a0dde5c9693636762c70e45e8e78b1935836",
-      "bytes": 26,
-      "head": "All checks passed!\nEXIT: 0"
+      "sha256": "f9a965690fccb5e9b78a893f9160e9154f646cbc7c73fad765431d78a578d9dd",
+      "bytes": 25,
+      "head": "All checks passed!\nEXIT:0"
     },
     "type_safety": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "40caa9d7c5990760a00c6c40e1df8a29d9b12f4ac94d58418c60aacd0534c9b4",
-      "bytes": 199,
-      "head": "{\n    \"version\": \"1.1.409\",\n    \"summary\": {\n        \"filesAnalyzed\": 32,\n        \"errorCount\": 0,\n        \"warningCount\": 0,\n        \"informationCount\": 0,\n        \"timeInSec\": 1.111\n    }\n}\nEXIT: 0"
+      "sha256": "7af4bb61fac63c97fac24da362f2d0e08b0bbfc11edcf2e95f19674949af5615",
+      "bytes": 193,
+      "head": "{\"version\": \"1.1.409\", \"time\": \"1788518930419\", \"generalDiagnostics\": [], \"summary\": {\"filesAnalyzed\": 32, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.121}}\nEXIT:0"
     },
     "test_coverage": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "775e7ee208ae33e9235cc4f3470559d89c6d3ffcfab6683671f3c0c06cfc765c",
-      "bytes": 240,
-      "head": "collected 12 items\ntests/test_fr10.py ............                                          [100%]\ncoverage: errors.py 100% (39/39 stmts), app.py 84% (59/70 stmts)\nTOTAL 109 stmts, 11 miss, 90% covered\n12 passed, 2 warnings in 0.37s\nEXIT: 0"
+      "sha256": "db9e782e170b9dba9d16a372cdd37f9abce8f7bc485579f1bbd18336ad2086da",
+      "bytes": 508,
+      "head": "============================= test session starts ==============================\nplatform darwin -- Python 3.11.15, pytest-8.4.2\ncollected 40 items\n\n03-development/tests/test_fr07.py ...................................... [ 95%]\n..                                                                       [100%]\n======================== 40 passed, 1 warning in 3.41s =========================\nFR-07 source coverage: env.py 100%, v1_initial.py 100%, v2_tags.py 100%, v3_split_results.py 100%, _shared 100%\nEXIT:0"
     },
     "architecture_constraints": {
       "source": "tool_evidence (inline)",
       "kind": "inline",
-      "sha256": "97d7c400934566a29fb5c9d8a3d0edb17031c972f861c72d7996e76a4b923050",
-      "bytes": 157,
-      "head": "Analyzed 52 files, 122 dependencies.\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\nContracts: 3 kept, 0 broken.\nEXIT: 0"
+      "sha256": "897aa1f312756c8658a192d9a4af86de36baa19fcdb9ab9354b0f312823d987d",
+      "bytes": 228,
+      "head": "=============\nImport Linter\n=============\n---------\nContracts\n---------\nAnalyzed 52 files, 122 dependencies.\nLayer ordering KEPT\nSQLAlchemy containment KEPT\nConfig and errors independence KEPT\nContracts: 3 kept, 0 broken.\nEXIT:0"
     }
   },
-  "composite_score": 97.5,
+  "composite_score": 100.0,
   "verdict": "PASS",
   "passed": true,
   "spec_undelivered": [],
