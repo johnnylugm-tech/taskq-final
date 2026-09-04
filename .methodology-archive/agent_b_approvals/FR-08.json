@@ -1,0 +1,47 @@
+{
+  "review_status": "APPROVE",
+  "reason": "All four FR-08 normative requirements map to real behavioral assertions: graceful drain at line 197 (drained_count==3), interrupt-on-timeout at lines 231/236 (interrupted_count==1, status=='interrupted'); TASKQ_MAX_CONCURRENT cap at line 426 (elapsed >= 0.9s with cap=2, 6 tasks of 0.3s); subprocess kill at lines 280/301 (status=='timeout', orphan_count==0); CancelledError propagation at lines 344/351 (class=='CancelledError' or pytest.fail if swallowed). Each assertion would fail if its requirement is violated; none are inverted or trivially-true tautologies (the trivial `assert 'X' == 'X'` MIRROR triggers on lines 186/221/272/294/334 only select the branch and are accompanied by real behavioral assertions).",
+  "citations": [
+    "03-development/tests/integration/test_fr08.py:197",
+    "03-development/tests/integration/test_fr08.py:231",
+    "03-development/tests/integration/test_fr08.py:236",
+    "03-development/tests/integration/test_fr08.py:280",
+    "03-development/tests/integration/test_fr08.py:301",
+    "03-development/tests/integration/test_fr08.py:344",
+    "03-development/tests/integration/test_fr08.py:351",
+    "03-development/tests/integration/test_fr08.py:426",
+    "tests/test_fr08.py:197",
+    "tests/test_fr08.py:231",
+    "tests/test_fr08.py:236",
+    "tests/test_fr08.py:280",
+    "tests/test_fr08.py:301",
+    "tests/test_fr08.py:344",
+    "tests/test_fr08.py:351",
+    "tests/test_fr08.py:426",
+    "SPEC.md:147",
+    "SPEC.md:148",
+    "SPEC.md:149",
+    "SPEC.md:150"
+  ],
+  "docs_embedded": [
+    "SPEC.md"
+  ],
+  "gaps": [],
+  "criteria_review": {
+    "requirement_path": "SPEC.md",
+    "declared_tests": [
+      "test_cancelled_error_propagates",
+      "test_graceful_drain_waits_running",
+      "test_task_timeout_kills_orphan_subprocess"
+    ],
+    "assertion_digests": {
+      "test_cancelled_error_propagates": "f9890a8f151d769f17b1d26f9000617a97649bcfd16805580375426c4dfd19e2",
+      "test_graceful_drain_waits_running": "59c1b45ae11ffc53b893de7441080355013429a65cf81bf2931cf0911b09bf96",
+      "test_task_timeout_kills_orphan_subprocess": "476f4e61d724b5a2065b852b8ed7c973aa82d244dd87561876a63c47d31ca3b4"
+    },
+    "test_files": [
+      "03-development/tests/integration/test_fr08.py",
+      "tests/test_fr08.py"
+    ]
+  }
+}

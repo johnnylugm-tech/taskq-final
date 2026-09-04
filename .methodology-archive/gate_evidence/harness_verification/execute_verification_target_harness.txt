@@ -1,0 +1,116 @@
+# Harness-executed: system-verification
+# returncode: 0
+# agent_score: 100.0 | threshold: 100.0
+
+==> full test suite (clean taskq.db)
+/Users/johnny/projects/taskq-final/.venv/bin/python -m pytest --ignore=harness/tests
+============================= test session starts ==============================
+platform darwin -- Python 3.11.15, pytest-8.4.2, pluggy-1.6.0
+benchmark: 4.0.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /Users/johnny/projects/taskq-final
+configfile: setup.cfg
+plugins: cov-7.1.0, anyio-4.14.2, benchmark-4.0.0, hypothesis-6.167.1
+collected 242 items
+
+tests/bench/test_bench_task_repo.py ..                                   [  0%]
+tests/test_bug_hunt_t07_subprocess_cancel.py .                           [  1%]
+tests/test_bug_hunt_t10_pydantic_input_echo.py .                         [  1%]
+tests/test_bug_hunt_t13_audit_log_principal.py .                         [  2%]
+tests/test_bug_hunt_t15_migration_finished_at.py .                       [  2%]
+tests/test_fr01.py ...............................                       [ 15%]
+tests/test_fr02.py .......                                               [ 18%]
+tests/test_fr03.py ..................                                    [ 25%]
+tests/test_fr04.py ........                                              [ 28%]
+tests/test_fr05.py ............                                          [ 33%]
+tests/test_fr06.py ...................                                   [ 41%]
+tests/test_fr07.py .......................................               [ 57%]
+tests/test_fr08.py .......                                               [ 60%]
+tests/test_fr09.py ...........                                           [ 65%]
+tests/test_fr10.py ............                                          [ 70%]
+tests/test_nfr.py ................                                       [ 76%]
+tests/test_nfr_supplemental.py ........................                  [ 86%]
+tests/test_p3_exit_coverage.py ................................          [100%]
+
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/_hypothesis_pytestplugin.py:487
+  /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/_hypothesis_pytestplugin.py:487: UserWarning: Skipping collection of '.hypothesis' directory - this usually means you've explicitly set the `norecursedirs` pytest config option, replacing rather than extending the default ignores.
+    warnings.warn(
+
+.venv/lib/python3.11/site-packages/starlette/formparsers.py:12
+  /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+tests/test_nfr_supplemental.py::test_openapi_summary_description_present
+  /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/_pytest/unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <function BaseSubprocessTransport.__del__ at 0x10ae10ea0>
+  
+  Traceback (most recent call last):
+    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/pydantic/type_adapter.py", line 210, in __init__
+      core_schema = _getattr_no_parents(type, '__pydantic_core_schema__')
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "/Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/pydantic/type_adapter.py", line 98, in _getattr_no_parents
+      raise AttributeError(attribute)
+  AttributeError: __pydantic_core_schema__
+  
+  During handling of the above exception, another exception occurred:
+  
+  Traceback (most recent call last):
+    File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/asyncio/base_subprocess.py", line 126, in __del__
+      self.close()
+    File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/asyncio/base_subprocess.py", line 104, in close
+      proto.pipe.close()
+    File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/asyncio/unix_events.py", line 566, in close
+      self._close(None)
+    File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/asyncio/unix_events.py", line 590, in _close
+      self._loop.call_soon(self._call_connection_lost, exc)
+    File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 762, in call_soon
+      self._check_closed()
+    File "/Users/johnny/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/asyncio/base_events.py", line 520, in _check_closed
+      raise RuntimeError('Event loop is closed')
+  RuntimeError: Event loop is closed
+  
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+    warnings.warn(pytest.PytestUnraisableExceptionWarning(msg))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+
+----------------------------------------------------------------------------------------------- benchmark: 2 tests ----------------------------------------------------------------------------------------------
+Name (time in us)                     Min                    Max                  Mean                StdDev              Median                IQR            Outliers         OPS            Rounds  Iterations
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+test_bench_task_repo_get         215.8330 (1.0)         633.5420 (1.0)        226.3292 (1.0)         24.6407 (1.0)      220.5830 (1.0)       3.8952 (1.0)         34;82  4,418.3437 (1.0)         539           1
+test_bench_task_repo_list_50     914.0420 (4.23)     16,987.3340 (26.81)    1,024.6142 (4.53)     1,082.3660 (43.93)    934.2910 (4.24)     21.0837 (5.41)         3;29    975.9771 (0.22)        521           1
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Legend:
+  Outliers: 1 Standard Deviation from Mean; 1.5 IQR (InterQuartile Range) from 1st Quartile and 3rd Quartile.
+  OPS: Operations Per Second, computed as 1 / Mean
+======================= 242 passed, 3 warnings in 25.28s =======================
+==> alembic upgrade head
+PYTHONPATH=03-development/src:$PYTHONPATH /Users/johnny/projects/taskq-final/.venv/bin/python -m alembic upgrade head
+==> service smoke (/healthz, /readyz)
+PYTHONPATH=03-development/src:$PYTHONPATH /Users/johnny/projects/taskq-final/.venv/bin/python -m taskq_api.__main__ healthcheck
+==> downgrade base + upgrade head round-trip
+PYTHONPATH=03-development/src:$PYTHONPATH /Users/johnny/projects/taskq-final/.venv/bin/python -m alembic downgrade base
+PYTHONPATH=03-development/src:$PYTHONPATH /Users/johnny/projects/taskq-final/.venv/bin/python -m alembic upgrade head
+verify-system: PASS
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> v1, [FR-07] v1_initial — create ``tasks`` and ``api_keys``.
+# pragma: no error-handling  # pure data/constants — no I/O to handle
+INFO  [alembic.runtime.migration] Running upgrade v1 -> v2, [FR-07] v2_tags — add ``tags``, ``task_tags`` and UNIQUE on ``tasks.name``.
+# pragma: no error-handling  # pure data/constants — no I/O to handle
+INFO  [alembic.runtime.migration] Running upgrade v2 -> v3, [FR-07] v3_split_results — split ``tasks.result_json`` into ``task_results``.
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running downgrade v3 -> v2, [FR-07] v3_split_results — split ``tasks.result_json`` into ``task_results``.
+INFO  [alembic.runtime.migration] Running downgrade v2 -> v1, [FR-07] v2_tags — add ``tags``, ``task_tags`` and UNIQUE on ``tasks.name``.
+# pragma: no error-handling  # pure data/constants — no I/O to handle
+INFO  [alembic.runtime.migration] Running downgrade v1 -> , [FR-07] v1_initial — create ``tasks`` and ``api_keys``.
+# pragma: no error-handling  # pure data/constants — no I/O to handle
+INFO  [alembic.runtime.migration] Context impl SQLiteImpl.
+INFO  [alembic.runtime.migration] Will assume non-transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -> v1, [FR-07] v1_initial — create ``tasks`` and ``api_keys``.
+# pragma: no error-handling  # pure data/constants — no I/O to handle
+INFO  [alembic.runtime.migration] Running upgrade v1 -> v2, [FR-07] v2_tags — add ``tags``, ``task_tags`` and UNIQUE on ``tasks.name``.
+# pragma: no error-handling  # pure data/constants — no I/O to handle
+INFO  [alembic.runtime.migration] Running upgrade v2 -> v3, [FR-07] v3_split_results — split ``tasks.result_json`` into ``task_results``.

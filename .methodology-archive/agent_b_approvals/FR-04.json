@@ -1,0 +1,40 @@
+{
+  "review_status": "APPROVE",
+  "reason": "FR-04 hierarchy pinned by partial-order assertion at line 379; 403+problem+json+no-disclosure pinned by status (186), content-type (196), forbidden type (201), and task-id-absent (225); single dependency pinned by route-walk (304,331).",
+  "citations": [
+    "SPEC.md:109",
+    "tests/test_fr04.py:186",
+    "tests/test_fr04.py:196",
+    "tests/test_fr04.py:201",
+    "tests/test_fr04.py:225",
+    "tests/test_fr04.py:304",
+    "tests/test_fr04.py:331",
+    "tests/test_fr04.py:379"
+  ],
+  "docs_embedded": [
+    "SPEC.md"
+  ],
+  "gaps": [
+    {
+      "severity": "low",
+      "evidence_type": "over_interpretation",
+      "canonical_ref": "tests/test_fr04.py:231",
+      "message": "The detail string 'insufficient scope' is hardcoded by the test author. The spec requires 'body must not disclose resource existence' but does not mandate this exact wording; valid implementations using 'Forbidden'/'Access denied' would fail this assertion despite satisfying the no-disclosure requirement. Line 225 alone is the spec-faithful pin for no-disclosure.",
+      "fr_id": "FR-04"
+    }
+  ],
+  "criteria_review": {
+    "requirement_path": "SPEC.md",
+    "declared_tests": [
+      "test_all_v1_routes_use_single_dependency",
+      "test_write_key_admin_endpoint_returns_403_no_disclosure"
+    ],
+    "assertion_digests": {
+      "test_all_v1_routes_use_single_dependency": "e0bed7d978dce2d1eee711a3161193a130f9f8700c5a0909558a4c2e19d53a5d",
+      "test_write_key_admin_endpoint_returns_403_no_disclosure": "86437baf4f4c31cfa9f804382836d249293b7a08af4664daaae7193e3223e7d0"
+    },
+    "test_files": [
+      "tests/test_fr04.py"
+    ]
+  }
+}

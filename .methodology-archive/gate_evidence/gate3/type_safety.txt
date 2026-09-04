@@ -1,0 +1,2 @@
+$ python3 -m pyright 03-development/src/ --outputjson
+{"version": "1.1.409", "time": "1788407333303", "generalDiagnostics": [], "summary": {"filesAnalyzed": 32, "errorCount": 0, "warningCount": 0, "informationCount": 0, "timeInSec": 1.23}}

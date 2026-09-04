@@ -1,0 +1,44 @@
+{
+  "community_cohesion": {
+    "score": 100.0,
+    "healthy": 9,
+    "total": 9,
+    "total_all": 34,
+    "excluded_test_communities": 25,
+    "unhealthy": [],
+    "_cohesion_threshold": 0.2,
+    "_community_oversized": 50,
+    "_community_min_size": 5,
+    "_extra_excludes": [
+      "harness/*",
+      ".venv/*",
+      ".claude/*",
+      ".sessi-work/*",
+      ".code-review-graph/*"
+    ],
+    "excludes_matched": {
+      "harness/*": 0,
+      ".venv/*": 0,
+      ".claude/*": 0,
+      ".sessi-work/*": 0,
+      ".code-review-graph/*": 0
+    },
+    "excludes_files_matched": {
+      "harness/*": 0,
+      ".venv/*": 0,
+      ".claude/*": 0,
+      ".sessi-work/*": 0,
+      ".code-review-graph/*": 0
+    }
+  },
+  "large_functions_critical": [],
+  "large_functions_penalty": 0,
+  "architecture_score": 100.0,
+  "_source": "framework-independent",
+  "_graph_files": 54,
+  "_source_files": 54,
+  "_unparsed_files": [],
+  "_build_type": "update",
+  "_baseline_sha": "6716dea215c8a770ec7f23da7e5e711ac44e4385",
+  "_baseline_phase": 6
+}

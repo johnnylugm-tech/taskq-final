@@ -1,0 +1,13 @@
+{
+  "crg_cohesion_healthy": 0.2,
+  "crg_excludes": [
+    "harness/*",
+    ".venv/*",
+    ".claude/*",
+    ".sessi-work/*",
+    ".code-review-graph/*"
+  ],
+  "features": {
+    "mutation_testing": true
+  }
+}

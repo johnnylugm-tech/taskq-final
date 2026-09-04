@@ -1,0 +1,54 @@
+{
+  "review_status": "APPROVE",
+  "reason": "All five FR-03 normative clauses map to real assertions: missing X-API-Key → 401+problem+json (test_fr03.py:138,149,161); invalid/revoked key → 401+problem+json (test_fr03.py:263,277); SHA-256 hashed storage, no plaintext, key_hash column (test_fr03.py:340,352,363,373); revoked_at non-null → invalid (test_fr03.py:263 covers the revoked-key scenario); plaintext emitted exactly once by CLI (test_fr03.py:574,583); /healthz reachable without auth (test_fr03.py:421). SPEC.md:103-107 anchor each clause.",
+  "citations": [
+    "SPEC.md:103",
+    "SPEC.md:104",
+    "SPEC.md:105",
+    "SPEC.md:106",
+    "SPEC.md:107",
+    "03-development/tests/integration/test_fr03.py:138",
+    "03-development/tests/integration/test_fr03.py:149",
+    "03-development/tests/integration/test_fr03.py:161",
+    "03-development/tests/integration/test_fr03.py:263",
+    "03-development/tests/integration/test_fr03.py:277",
+    "03-development/tests/integration/test_fr03.py:340",
+    "03-development/tests/integration/test_fr03.py:352",
+    "03-development/tests/integration/test_fr03.py:363",
+    "03-development/tests/integration/test_fr03.py:373",
+    "03-development/tests/integration/test_fr03.py:421",
+    "03-development/tests/integration/test_fr03.py:574",
+    "03-development/tests/integration/test_fr03.py:583"
+  ],
+  "docs_embedded": [
+    "SPEC.md"
+  ],
+  "gaps": [
+    {
+      "severity": "low",
+      "evidence_type": "over_interpretation",
+      "canonical_ref": "SPEC.md:104",
+      "message": "The `hmac.compare_digest` (constant-time) half of FR-03's storage clause has no direct assertion that would fail if a non-constant-time comparison (e.g., `==`) were used. Only the SHA-256 storage shape is asserted (line 340, 352); the timing/comparison-side contract is exercised only indirectly via the storage hash.",
+      "fr_id": "FR-03"
+    }
+  ],
+  "criteria_review": {
+    "requirement_path": "SPEC.md",
+    "declared_tests": [
+      "test_api_keys_table_has_no_plaintext",
+      "test_healthz_returns_200",
+      "test_invalid_api_key_returns_401",
+      "test_missing_api_key_returns_401"
+    ],
+    "assertion_digests": {
+      "test_api_keys_table_has_no_plaintext": "8b967dadab6be70b6b22989f1eca68c8efddfa46e0bc7d8844dd2d3ec72b2369",
+      "test_healthz_returns_200": "a6ddcd0aeb1fe0fa817b3b6d7544b2a4cbc79267336ee6bf2e69589518590091",
+      "test_invalid_api_key_returns_401": "32257f366b500d607b578e3096812b5a85cedeb542e859522a41f4ee2c566d1e",
+      "test_missing_api_key_returns_401": "8395335244933209e04b15ec9418757dfc9593ad3fb7cda4d932e0db0673dfdd"
+    },
+    "test_files": [
+      "03-development/tests/integration/test_fr03.py",
+      "tests/test_fr03.py"
+    ]
+  }
+}

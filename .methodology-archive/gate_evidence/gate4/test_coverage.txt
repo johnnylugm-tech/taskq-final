@@ -1,0 +1,53 @@
+........................................................................ [ 26%]
+........................................................................ [ 53%]
+........................................................................ [ 80%]
+...................................................                      [100%]
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/_hypothesis_pytestplugin.py:487
+  /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/_hypothesis_pytestplugin.py:487: UserWarning: Skipping collection of '.hypothesis' directory - this usually means you've explicitly set the `norecursedirs` pytest config option, replacing rather than extending the default ignores.
+    warnings.warn(
+
+.venv/lib/python3.11/site-packages/starlette/formparsers.py:12
+  /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/starlette/formparsers.py:12: PendingDeprecationWarning: Please use `import python_multipart` instead.
+    import multipart
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+______________ coverage: platform darwin, python 3.11.15-final-0 _______________
+
+Name                                                         Stmts   Miss  Cover   Missing
+------------------------------------------------------------------------------------------
+03-development/src/migrations/__init__.py                        0      0   100%
+03-development/src/migrations/env.py                            49      0   100%
+03-development/src/migrations/versions/__init__.py               0      0   100%
+03-development/src/migrations/versions/_shared/__init__.py      23      0   100%
+03-development/src/migrations/versions/v1_initial.py            15      0   100%
+03-development/src/migrations/versions/v2_tags.py               15      0   100%
+03-development/src/migrations/versions/v3_split_results.py      64      0   100%
+03-development/src/taskq_api/__init__.py                         0      0   100%
+03-development/src/taskq_api/api/__init__.py                     0      0   100%
+03-development/src/taskq_api/api/deps.py                        18      0   100%
+03-development/src/taskq_api/api/health.py                      15      0   100%
+03-development/src/taskq_api/api/metrics.py                     11      0   100%
+03-development/src/taskq_api/api/tasks.py                       55      0   100%
+03-development/src/taskq_api/app.py                             70      0   100%
+03-development/src/taskq_api/config.py                          33      0   100%
+03-development/src/taskq_api/errors.py                          39      0   100%
+03-development/src/taskq_api/models/__init__.py                  0      0   100%
+03-development/src/taskq_api/models/orm.py                      44      0   100%
+03-development/src/taskq_api/models/schemas.py                  38      0   100%
+03-development/src/taskq_api/repository/__init__.py              0      0   100%
+03-development/src/taskq_api/repository/key_repo.py             63      0   100%
+03-development/src/taskq_api/repository/rate_repo.py            56      0   100%
+03-development/src/taskq_api/repository/session.py              89      0   100%
+03-development/src/taskq_api/repository/task_repo.py           201      0   100%
+03-development/src/taskq_api/service/__init__.py                 3      0   100%
+03-development/src/taskq_api/service/auth.py                    38      0   100%
+03-development/src/taskq_api/service/common.py                  25      0   100%
+03-development/src/taskq_api/service/health.py                  14      0   100%
+03-development/src/taskq_api/service/ratelimit.py               25      0   100%
+03-development/src/taskq_api/service/runner.py                 171      0   100%
+03-development/src/taskq_api/service/tasks.py                   29      0   100%
+------------------------------------------------------------------------------------------
+TOTAL                                                         1203      0   100%
+267 passed, 2 warnings in 19.88s

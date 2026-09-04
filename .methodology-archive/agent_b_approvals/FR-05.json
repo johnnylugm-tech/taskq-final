@@ -1,0 +1,48 @@
+{
+  "review_status": "APPROVE",
+  "reason": "Req 1 (per-token bucket: capacity TASKQ_RATE_BURST, refill TASKQ_RATE_PER_SEC) pinned by tests/test_fr05.py:311 (first-429-at-21 boundary proves burst=20) and :402 (elapsed*rate arithmetic proves 5 tokens/s refill). Req 2 (429 + problem+json + Retry-After) pinned by :344-345 (Retry-After header present), :354/:358 (positive integer seconds), :366 (content-type application/problem+json), :371 (body type /errors/rate-limited). Req 3 (DB-persisted bucket, single-transaction row-level lock) pinned by :543 (rate_buckets row must exist in DB after concurrent firing), :556 (tokens within [0, burst]), :585-586 (Session.get must be called with with_for_update). Req 4 (/healthz, /readyz exempt) pinned by :657 (healthz always 200), :677 (readyz never 429), :847 (healthz still 200 after bucket drained), :872 (readyz still not 429 after bucket drained).",
+  "citations": [
+    "SPEC.md:115",
+    "SPEC.md:117",
+    "SPEC.md:118",
+    "SPEC.md:119",
+    "SPEC.md:120",
+    "tests/test_fr05.py:311",
+    "tests/test_fr05.py:344",
+    "tests/test_fr05.py:345",
+    "tests/test_fr05.py:354",
+    "tests/test_fr05.py:358",
+    "tests/test_fr05.py:366",
+    "tests/test_fr05.py:371",
+    "tests/test_fr05.py:402",
+    "tests/test_fr05.py:487",
+    "tests/test_fr05.py:543",
+    "tests/test_fr05.py:556",
+    "tests/test_fr05.py:585",
+    "tests/test_fr05.py:586",
+    "tests/test_fr05.py:657",
+    "tests/test_fr05.py:677",
+    "tests/test_fr05.py:847",
+    "tests/test_fr05.py:872"
+  ],
+  "docs_embedded": [
+    "SPEC.md"
+  ],
+  "gaps": [],
+  "criteria_review": {
+    "requirement_path": "SPEC.md",
+    "declared_tests": [
+      "test_healthz_returns_200",
+      "test_rate_bucket_concurrent_no_overdraft",
+      "test_rate_limit_burst_returns_429_with_retry_after"
+    ],
+    "assertion_digests": {
+      "test_healthz_returns_200": "8e09ba30116dfd06ffd9a3e9401bdb539ae15e84ca7aa5d6aa75b6fcb8a215ea",
+      "test_rate_bucket_concurrent_no_overdraft": "78275d85aea5fdd6db03e466f779cf7134217d487bcfbcaa5ea86bc8cbf1a18f",
+      "test_rate_limit_burst_returns_429_with_retry_after": "488714958ae36f6ec9b3ce04dd3c0363768306c6491a54ef243b2b02035e531c"
+    },
+    "test_files": [
+      "tests/test_fr05.py"
+    ]
+  }
+}

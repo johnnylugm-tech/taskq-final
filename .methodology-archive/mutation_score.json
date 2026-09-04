@@ -1,0 +1,18 @@
+{
+  "generated_at": "2026-09-03T18:16:31.996133+00:00",
+  "tool": "mutmut",
+  "score": 96.3,
+  "killed": 26,
+  "survived": 1,
+  "total": 27,
+  "paths_to_mutate": "03-development/src/taskq_api/service,03-development/src/taskq_api/repository",
+  "paths_to_exclude": [
+    "__init__.py"
+  ],
+  "mutated_files": 483,
+  "cache_path": "/tmp/_mutmut_score.kvqsz_6p/.mutmut-cache",
+  "cache_sha256": "cf0706c68973ce1d1925ea5d258d88661445a98f7ad5876501a04e84dbd50912",
+  "enforcer_sha": "7750247841dc5a611be85f6b76c5956552d006b0",
+  "kill_message": "mutmut partial run completed (killed=26, survived=1, untested=457); run killed mid-sweep at the 60-minute timeout. score from killed/(killed+survived) formula.",
+  "could_not_measure": null
+}

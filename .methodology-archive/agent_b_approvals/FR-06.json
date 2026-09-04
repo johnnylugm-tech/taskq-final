@@ -1,0 +1,49 @@
+{
+  "review_status": "APPROVE",
+  "reason": "Each FR-06 requirement maps to a load-bearing assertion: R1 (service/api must not hold Session) → tests/test_fr06.py:767; R2 (transaction() CM commits on clean exit, rolls back on exception) → tests/test_fr06.py:295 (rollback visible==0) and tests/test_fr06.py:307 (commit visible==1), plus CM source string checks at tests/test_fr06.py:641 ('commit') and tests/test_fr06.py:648 ('rollback'), plus repository-uses-CM spy check at tests/test_fr06.py:709; R3 (no string SQL concat) → tests/test_fr06.py:422 (f-string SELECT hits==0) and tests/test_fr06.py:435 (% format hits==0); R4 (no N+1: selectinload/joinedload) → tests/test_fr06.py:584 (statement_log <= 3 across seed_count=50); R5 (pool_size=TASKQ_DB_POOL_SIZE, pool_pre_ping=True) → tests/test_fr06.py:807 (pool_size) and tests/test_fr06.py:819 (pre_ping is True).",
+  "citations": [
+    "SPEC.md:124",
+    "tests/test_fr06.py:295",
+    "tests/test_fr06.py:307",
+    "tests/test_fr06.py:422",
+    "tests/test_fr06.py:435",
+    "tests/test_fr06.py:584",
+    "tests/test_fr06.py:641",
+    "tests/test_fr06.py:648",
+    "tests/test_fr06.py:709",
+    "tests/test_fr06.py:767",
+    "tests/test_fr06.py:807",
+    "tests/test_fr06.py:819"
+  ],
+  "docs_embedded": [
+    "SPEC.md"
+  ],
+  "gaps": [
+    {
+      "severity": "low",
+      "evidence_type": "methodology_artifact",
+      "canonical_ref": "tests/test_fr06.py:802-805",
+      "message": "test_pool_config_uses_settings skips the pool_size assertion when the engine uses StaticPool/NullPool (SQLite testing path: pool_size_attr is None → pass-through); the pool_size half of AC-6.5 may not be validated in SQLite runs. The pre_ping half is always asserted at line 819.",
+      "fr_id": "FR-06"
+    }
+  ],
+  "criteria_review": {
+    "requirement_path": "SPEC.md",
+    "declared_tests": [
+      "test_eager_loading_no_n_plus_one",
+      "test_no_string_sql_concat",
+      "test_pool_config_uses_settings",
+      "test_session_rollback_on_exception"
+    ],
+    "assertion_digests": {
+      "test_eager_loading_no_n_plus_one": "77b7b19129167e668d868d26c450c19578578a1b75249484146a69169c115109",
+      "test_no_string_sql_concat": "7e1cbb93aedec0c347932047b2f4cfda0a03fe30fce74808a63a0aca9b62e6c5",
+      "test_pool_config_uses_settings": "7f4f42681d7827d47565ff0ed96f0a988aaaa23cb389f3ce52e00fa255d71a13",
+      "test_session_rollback_on_exception": "175ded28a3c95498f120218c567a3e9dad7e998b94d09f15f09f96da8d48849b"
+    },
+    "test_files": [
+      "03-development/tests/integration/test_fr06.py",
+      "tests/test_fr06.py"
+    ]
+  }
+}

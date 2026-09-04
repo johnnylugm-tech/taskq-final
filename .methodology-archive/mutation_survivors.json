@@ -1,0 +1,13 @@
+{
+  "generated_at": "2026-09-03T18:16:57.585596+00:00",
+  "tool": "mutmut",
+  "survivor_count": 1,
+  "survivors": [
+    {
+      "id": 15,
+      "status": "bad_survived",
+      "path": "/Users/johnny/projects/taskq-final/03-development/src/taskq_api/service/auth.py",
+      "line": 35
+    }
+  ]
+}

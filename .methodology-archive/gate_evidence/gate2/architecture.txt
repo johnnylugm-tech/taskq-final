@@ -1,0 +1,28 @@
+{
+    "tool": "code-review-graph",
+    "version": "harness.crg_independent",
+    "scope": "all_repos",
+    "graph_stats": {
+        "nodes": null,
+        "edges": null,
+        "languages": ["python"],
+        "files_processed": null,
+        "last_update": "framework_owned"
+    },
+    "postprocess": {
+        "flows": true,
+        "communities": true,
+        "fts_index": true
+    },
+    "calibration": {
+        "crg_cohesion_healthy": 0.3,
+        "crg_excludes": []
+    },
+    "architecture_score": null,
+    "score_source": "framework_owned",
+    "note": "Framework computes community_cohesion.score in finalize_gate via crg_independent.py; weight=0.00 in gate2_p3_exit.yaml — blocking is enforced by crg-arch-check (CI absolute floor 80) called by the orchestrator in Step 5, not by this entry."
+}
+
+# Tool: code-review-graph (CRG)
+# Threshold (gate2_p3_exit.yaml): 80
+# Weight: 0.00 (CI crg-arch-check is the actual enforcement)

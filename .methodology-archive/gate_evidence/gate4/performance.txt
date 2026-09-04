@@ -1,0 +1,19 @@
+..                                                                       [100%]
+=============================== warnings summary ===============================
+.venv/lib/python3.11/site-packages/_hypothesis_pytestplugin.py:487
+  /Users/johnny/projects/taskq-final/.venv/lib/python3.11/site-packages/_hypothesis_pytestplugin.py:487: UserWarning: Skipping collection of '.hypothesis' directory - this usually means you've explicitly set the `norecursedirs` pytest config option, replacing rather than extending the default ignores.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+
+--------------------------- benchmark: 2 tests --------------------------
+Name (time in us)                    Mean                   Max          
+-------------------------------------------------------------------------
+test_bench_task_repo_get         220.7905 (1.0)        363.8330 (1.0)    
+test_bench_task_repo_list_50     865.9619 (3.92)     1,032.7080 (2.84)   
+-------------------------------------------------------------------------
+
+Legend:
+  Outliers: 1 Standard Deviation from Mean; 1.5 IQR (InterQuartile Range) from 1st Quartile and 3rd Quartile.
+  OPS: Operations Per Second, computed as 1 / Mean
+2 passed, 1 warning in 1.92s

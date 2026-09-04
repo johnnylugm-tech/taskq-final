@@ -1,0 +1,49 @@
+{
+  "review_status": "APPROVE",
+  "reason": "Each normative clause maps to a substantive assertion: SPEC.md:156 /healthz 200+body → test_fr09.py:221/232/242; SPEC.md:157 /readyz 503+detail → test_fr09.py:383/396 (migration drift) and 409/415 (DB down), happy-path 200 → 654; SPEC.md:158 /v1/metrics admin-only → test_fr09.py:468, admin-OK 200+payload → 697/713; SPEC.md:160 fail-closed migration → test_fr09.py:396. Each assertion is a real comparison against runtime values, not tautologies.",
+  "citations": [
+    "SPEC.md:156",
+    "SPEC.md:157",
+    "SPEC.md:158",
+    "SPEC.md:160",
+    "tests/test_fr09.py:221",
+    "tests/test_fr09.py:232",
+    "tests/test_fr09.py:242",
+    "tests/test_fr09.py:383",
+    "tests/test_fr09.py:396",
+    "tests/test_fr09.py:409",
+    "tests/test_fr09.py:415",
+    "tests/test_fr09.py:468",
+    "tests/test_fr09.py:654",
+    "tests/test_fr09.py:697",
+    "tests/test_fr09.py:713"
+  ],
+  "docs_embedded": [
+    "SPEC.md"
+  ],
+  "gaps": [
+    {
+      "severity": "low",
+      "evidence_type": "over_interpretation",
+      "canonical_ref": "tests/test_fr09.py:713",
+      "message": "The AC-9.3 payload assertion is len(body) >= 1, which would pass for any non-empty JSON dict; SPEC.md:158 requires 'task counts by status, execution latency percentiles, rate-limit rejection counts' but the test only pins shape (dict, non-empty) rather than specific field names or content. An implementation returning e.g. {'foo': 'bar'} would satisfy this assertion while violating the substantive contract.",
+      "fr_id": "FR-09"
+    }
+  ],
+  "criteria_review": {
+    "requirement_path": "SPEC.md",
+    "declared_tests": [
+      "test_healthz_returns_200",
+      "test_metrics_requires_admin_scope",
+      "test_readyz_returns_503_when_migration_not_at_head"
+    ],
+    "assertion_digests": {
+      "test_healthz_returns_200": "db79fdabc93d779a0a74dc03f3ba7fad6a26fea275819f1c08c82eccddc7a686",
+      "test_metrics_requires_admin_scope": "849e4fb4120dd9bbaa47b914c63928734411a09418f614719794e73cb418a49e",
+      "test_readyz_returns_503_when_migration_not_at_head": "3548a77654931ecf245cea275607a4bc0786d255f24c875ee9b493d825fb3ea2"
+    },
+    "test_files": [
+      "tests/test_fr09.py"
+    ]
+  }
+}

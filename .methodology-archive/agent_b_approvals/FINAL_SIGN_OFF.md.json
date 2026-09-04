@@ -1,0 +1,21 @@
+{
+  "fr": "FINAL_SIGN_OFF.md",
+  "review_status": "APPROVE",
+  "reason": "Project-root FINAL_SIGN_OFF.md declares Phase 6 Gate 4 PASS at composite 97.6144/100 (line 7) tied to manifest gate_results.gate4.overall_score. Section 1 (lines 14-32) sign-off statement with all required fields present; Section 2 (lines 36-46) provenance lists VERIFICATION_REPORT.md (committed e318c5d), BASELINE.md (5bd8f97), gate4 close (ea57ecc), persistent quality_manifest.json, and QUALITY_REPORT.md with correct timestamps; Section 3 (lines 49-70) reproduces 16-dimension table matching QUALITY_REPORT.md lines 13-28; Section 4 (lines 73-87) certifies 10/10 FRs at Gate 1 PASS matching manifest; Section 7 (lines 116-123) defects table shows 0/0/0/0 matching QUALITY_REPORT.md lines 51-54; verdict SIGN-OFF Gate 4 PASS in Section 8.",
+  "citations": [
+    "FINAL_SIGN_OFF.md:7",
+    "FINAL_SIGN_OFF.md:14",
+    "FINAL_SIGN_OFF.md:32",
+    "FINAL_SIGN_OFF.md:46",
+    "FINAL_SIGN_OFF.md:70",
+    "FINAL_SIGN_OFF.md:87",
+    "FINAL_SIGN_OFF.md:123"
+  ],
+  "docs_embedded": [
+    "QUALITY_REPORT.md",
+    "RELEASE_NOTES.md",
+    "FINAL_SIGN_OFF.md",
+    "VERIFICATION_REPORT.md"
+  ],
+  "confidence": 0.9
+}

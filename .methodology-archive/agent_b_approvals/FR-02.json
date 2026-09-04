@@ -1,0 +1,62 @@
+{
+  "review_status": "APPROVE",
+  "reason": "Each FR-02 normative requirement maps to a substantive assert that fails on violation: POST 202 at tests/test_fr02.py:158, 409 state-machine guard at :170, run_id in body at :181, no shell=True at :268, GET 200 at :341, newest-first at :364, v3 columns at :448. Tautological trigger-asserts are documented methodology artifacts; the inner asserts pin the requirement. Three coverage gaps flagged: exact subprocess_exec(*shlex.split(command)) pattern, TASKQ_TASK_TIMEOUT value, and full state-machine transitions.",
+  "citations": [
+    "SPEC.md:95",
+    "SPEC.md:96",
+    "SPEC.md:97",
+    "SPEC.md:98",
+    "SPEC.md:99",
+    "tests/test_fr02.py:158",
+    "tests/test_fr02.py:170",
+    "tests/test_fr02.py:181",
+    "tests/test_fr02.py:268",
+    "tests/test_fr02.py:341",
+    "tests/test_fr02.py:364",
+    "tests/test_fr02.py:448"
+  ],
+  "docs_embedded": [
+    "SPEC.md"
+  ],
+  "gaps": [
+    {
+      "severity": "low",
+      "evidence_type": "over_interpretation",
+      "canonical_ref": "SPEC.md:96",
+      "message": "Test asserts shell=True/eval/exec source-absence only; the exact invocation pattern asyncio.create_subprocess_exec(*shlex.split(command)) is not asserted — an alternative compliant runner (e.g. subprocess.run with shell=False) would still pass.",
+      "fr_id": "FR-02"
+    },
+    {
+      "severity": "low",
+      "evidence_type": "over_interpretation",
+      "canonical_ref": "SPEC.md:96",
+      "message": "TASKQ_TASK_TIMEOUT value is not asserted anywhere — no test verifies the subprocess is bounded by the configured timeout.",
+      "fr_id": "FR-02"
+    },
+    {
+      "severity": "medium",
+      "evidence_type": "over_interpretation",
+      "canonical_ref": "SPEC.md:97",
+      "message": "State machine pending→running→done|failed|timeout is only partially tested: the 409 conflict guard for already-running is asserted at :170, but the transitions themselves (pending→running and running→done|failed|timeout) are not asserted by any check on resulting task status.",
+      "fr_id": "FR-02"
+    }
+  ],
+  "criteria_review": {
+    "requirement_path": "SPEC.md",
+    "declared_tests": [
+      "test_run_history_newest_first",
+      "test_subprocess_no_shell_true",
+      "test_task_results_row_has_v3_columns",
+      "test_task_run_returns_202_with_run_id"
+    ],
+    "assertion_digests": {
+      "test_run_history_newest_first": "0ade3d2e450833c2c7907a754de8934bccd7d4656535276e1d86a2ff8786c243",
+      "test_subprocess_no_shell_true": "cf5218d000ecd3ef055e01c4e7557c5a2091057bf46aa4b98673943ebdfd89a5",
+      "test_task_results_row_has_v3_columns": "e3e87a3e75daa0b5e890803838754a6f2a898f3fd2d3dc645027181d10c42f05",
+      "test_task_run_returns_202_with_run_id": "b26811eb13769d3ca1819ceacce035a743be2907d32e45603bd90c71b25a6063"
+    },
+    "test_files": [
+      "tests/test_fr02.py"
+    ]
+  }
+}

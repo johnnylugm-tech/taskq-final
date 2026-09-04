@@ -1,0 +1,207 @@
+{
+  "schema": "harness/traceability/attestation/v1",
+  "git_sha": "e1befbfe8a56fa90c8d532ac2c85f5b3a30bdad0",
+  "content_sha256": "c56b3547e98a5d0fed231d73c7b6b28de136552a6f059179a748402cb249fb47",
+  "tool": "scripts/build_trace_attestation.py",
+  "overlay_used": null,
+  "overlay_errors": [],
+  "matrix": {
+    "schema_version": "harness/traceability/overlay/v1",
+    "project_id": "taskq-final",
+    "completeness": {
+      "total_requirements": 10,
+      "srs_coverage": "100.0%",
+      "code_coverage": "100.0%",
+      "test_coverage": "100.0%",
+      "verification_rate": "100.0%",
+      "total_links": 74,
+      "missing_mappings": {
+        "fr_without_srs": [],
+        "fr_without_code": [],
+        "fr_without_test": []
+      }
+    },
+    "missing": {
+      "fr_without_srs": [],
+      "fr_without_code": [],
+      "fr_without_test": []
+    },
+    "requirements": {
+      "FR-01": {
+        "fr_id": "FR-01",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/taskq_api/api/tasks.py",
+          "03-development/src/taskq_api/errors.py",
+          "03-development/src/taskq_api/models/orm.py",
+          "03-development/src/taskq_api/models/schemas.py",
+          "03-development/src/taskq_api/repository/task_repo.py",
+          "03-development/src/taskq_api/service/__init__.py",
+          "03-development/src/taskq_api/service/common.py",
+          "03-development/src/taskq_api/service/tasks.py",
+          "03-development/tests/integration/test_fr01.py",
+          "03-development/tests/test_fr01.py",
+          "tests/test_fr01.py"
+        ],
+        "test_files": [
+          "03-development/tests/integration/test_fr01.py",
+          "03-development/tests/test_fr01.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-02": {
+        "fr_id": "FR-02",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/taskq_api/api/tasks.py",
+          "03-development/src/taskq_api/models/orm.py",
+          "03-development/src/taskq_api/models/schemas.py",
+          "03-development/src/taskq_api/repository/task_repo.py",
+          "03-development/src/taskq_api/service/__init__.py",
+          "03-development/src/taskq_api/service/runner.py",
+          "03-development/src/taskq_api/service/tasks.py"
+        ],
+        "test_files": [
+          "03-development/tests/integration/test_fr02.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-03": {
+        "fr_id": "FR-03",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/taskq_api/__main__.py",
+          "03-development/src/taskq_api/api/deps.py",
+          "03-development/src/taskq_api/errors.py",
+          "03-development/src/taskq_api/models/orm.py",
+          "03-development/src/taskq_api/repository/key_repo.py",
+          "03-development/src/taskq_api/service/auth.py"
+        ],
+        "test_files": [
+          "03-development/tests/integration/test_fr03.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-04": {
+        "fr_id": "FR-04",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/taskq_api/api/deps.py",
+          "03-development/src/taskq_api/api/metrics.py",
+          "03-development/src/taskq_api/errors.py",
+          "03-development/src/taskq_api/service/auth.py",
+          "03-development/tests/integration/test_fr04.py",
+          "tests/test_fr04.py"
+        ],
+        "test_files": [
+          "03-development/tests/integration/test_fr04.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-05": {
+        "fr_id": "FR-05",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/taskq_api/app.py",
+          "03-development/src/taskq_api/errors.py",
+          "03-development/src/taskq_api/models/orm.py",
+          "03-development/src/taskq_api/repository/rate_repo.py",
+          "03-development/src/taskq_api/service/__init__.py",
+          "03-development/src/taskq_api/service/ratelimit.py"
+        ],
+        "test_files": [
+          "03-development/tests/integration/test_fr05.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-06": {
+        "fr_id": "FR-06",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/taskq_api/repository/key_repo.py",
+          "03-development/src/taskq_api/repository/task_repo.py"
+        ],
+        "test_files": [
+          "03-development/tests/integration/test_fr06.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-07": {
+        "fr_id": "FR-07",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/migrations/__init__.py",
+          "03-development/src/migrations/env.py",
+          "03-development/src/migrations/versions/__init__.py",
+          "03-development/src/migrations/versions/_shared/__init__.py",
+          "03-development/src/migrations/versions/v1_initial.py",
+          "03-development/src/migrations/versions/v2_tags.py",
+          "03-development/src/migrations/versions/v3_split_results.py"
+        ],
+        "test_files": [
+          "03-development/tests/integration/test_fr07.py",
+          "03-development/tests/test_fr07.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-08": {
+        "fr_id": "FR-08",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/taskq_api/service/runner.py"
+        ],
+        "test_files": [
+          "03-development/tests/integration/test_fr08.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-09": {
+        "fr_id": "FR-09",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/taskq_api/api/health.py",
+          "03-development/src/taskq_api/service/__init__.py",
+          "03-development/src/taskq_api/service/health.py"
+        ],
+        "test_files": [
+          "03-development/tests/integration/test_fr09.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      },
+      "FR-10": {
+        "fr_id": "FR-10",
+        "status": "verified",
+        "srs_section": "SAD.md",
+        "code_files": [
+          "03-development/src/taskq_api/app.py",
+          "03-development/src/taskq_api/errors.py",
+          "03-development/src/taskq_api/models/schemas.py"
+        ],
+        "test_files": [
+          "03-development/tests/integration/test_fr10.py"
+        ],
+        "sad_module": "—",
+        "priority": "HIGH"
+      }
+    },
+    "annotations": {}
+  }
+}

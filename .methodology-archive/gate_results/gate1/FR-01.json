@@ -1,0 +1,131 @@
+{
+  "gate": 1,
+  "phase": 3,
+  "fr_id": "FR-01",
+  "overall_score": 100.0,
+  "quality_complete": true,
+  "rounds_used": 1,
+  "breakdown": {
+    "linting": {
+      "score": 100.0,
+      "threshold": 100,
+      "tool_evidence": "All checks passed!",
+      "score_source": "framework",
+      "tool_output": ".methodology/gate_evidence/harness_verification/linting_harness.txt"
+    },
+    "type_safety": {
+      "score": 100.0,
+      "threshold": 100,
+      "tool_evidence": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 19, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.073}}",
+      "score_source": "framework",
+      "tool_output": ".methodology/gate_evidence/harness_verification/type_safety_harness.txt"
+    },
+    "test_coverage": {
+      "score": 100.0,
+      "threshold": 80,
+      "tests_passed": 24,
+      "tests_failed": 0,
+      "tests_skipped": 0,
+      "tool_evidence": "tests/test_fr01.py ........................                              [100%]\n\n============================== 24 passed in 0.35s ==============================\n{\"totals\": {\"covered_lines\": 310, \"num_statements\": 310, \"percent_covered\": 100.0}}",
+      "coverage_scope": "per_fr",
+      "coverage_scope_fr": "FR-01",
+      "score_source": "framework",
+      "tool_output": ".methodology/gate_evidence/harness_verification/test_coverage_harness_per_fr_FR-01.txt"
+    },
+    "architecture_constraints": {
+      "score": 100.0,
+      "threshold": 100,
+      "tool_evidence": "Analyzed 36 files, 66 dependencies. Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT. Contracts: 3 kept, 0 broken.",
+      "score_source": "framework",
+      "tool_output": ".methodology/gate_evidence/harness_verification/architecture_constraints_harness.txt"
+    }
+  },
+  "enforcer_sha": "f4af8962f193757d84e98ac60331d57af972ef6d",
+  "enforcer_surface": {
+    "core/quality_gate": "5adc0d5945ab97b6415a77f1e38a25cc20f4b746",
+    "harness/harness_bridge.py": "ce203273ad7961428965bd2c0000a799b95aec7a",
+    "harness/gate_configs": "d91e4c3c9409081ea44b75ae3060f3293fa59cab"
+  },
+  "evidence_digest": {
+    "secrets_scanning::.gitleaksignore": {
+      "source": ".gitleaksignore (score-altering exclusions)",
+      "kind": "file",
+      "sha256": "c7972b2ea37d544f71d6afcd1e2d29444d7f060e5657c6ab1136af8dfcb35210",
+      "bytes": 1253,
+      "head": "# agent_b_approvals/* contains SHA-256 assertion digests as FR-01..FR-10\n# evidence (test fixture hashes, not real API keys). 64-hex-char sequences\n# inside JSON value strings match gitleaks' generic-api-key rule by length+entropy.\n# Whitelisted by fingerprint below.\nb8721c5f64ef34e822b0adbec80e425f35b48c37:.methodology/agent_b_approvals/FR-03.json:generic-api-key:46\nb8721c5f64ef34e822b0adbec80e425f35b48c37:.methodology/agent_b_approvals/FR-03.json:generic-api-key:47\n\n# gate1_result.json:29 / :90 contain the test function name\n# \"test_invalid_api_key_returns_401\" inside a `tool_evidence` string. That\n# substring (\"_invalid_api_key_\") trips gitleaks' generic-api-key entropy\n# heuristic (entropy 3.94, token boundary on \"key\"). It is a pytest test id,\n# not a real credential — there is no API key material in this file. The\n# fingerprint is recorded here so future CI runs can verify the same false\n# positive remains the only entry, and so any future real leak in\n# gate1_result.json would not be masked (the allowlist is fingerprint-keyed,\n# not path-keyed).\n8bb7b79e0588432ff2923b5002b6f7635fbbe94d:.methodology/gate1_result.json:generic-api-key:29\n8bb7b79e0588432ff2923b5002b6f7635fbbe94d:.methodology/gate1_result.json:generic-api-key:90"
+    },
+    "mutation_testing::setup.cfg": {
+      "source": "setup.cfg (score-altering exclusions)",
+      "kind": "file",
+      "sha256": "db789aace0163003b56198c21005c6f01ea51917826c27eceec1d4abf27bbb9b",
+      "bytes": 1347,
+      "head": "[mutmut]\n# Mutation test scope — service + repository layers per SAB.json scope_layers.\n# Round 89 站2: this file is regenerated from the SAB at the P2→P3 handoff\n# (the scope decides what mutation_testing is judged on, so a drift here\n# blocks Gate 2/3/4 with the framework's \"scope disagrees with SAB\" infra\n# failure rather than silently picking a side).\nrunner=python3 -m pytest -m mutation_oracle --tb=no -q -p no:cacheprovider\npaths_to_mutate=03-development/src/taskq_api/service,03-development/src/taskq_api/repository\n\n[tool:pytest]\n# Gate 2 evaluation expects an integration suite under 03-development/tests/integration/\n# (NFR-10). That directory mirrors tests/test_*.py via symlinks so the framework's\n# `pytest 03-development/tests/integration --cov=03-development/src` invocation\n# produces a real measurement. Without this directive pytest's default discovery\n# would collect BOTH copies on `pytest --ignore=harness/tests` (i.e. `make\n# verify-system`), and a pytest session that finds the same test function under\n# two node-ids fails with collection errors. `norecursedirs` makes the\n# integration mirror opt-in: explicit `pytest 03-development/tests/integration`\n# still walks into it (the path is on the command line), but a bare `pytest`\n# from the project root skips it."
+    },
+    "test_coverage::setup.cfg": {
+      "source": "setup.cfg (score-altering exclusions)",
+      "kind": "file",
+      "sha256": "db789aace0163003b56198c21005c6f01ea51917826c27eceec1d4abf27bbb9b",
+      "bytes": 1347,
+      "head": "[mutmut]\n# Mutation test scope — service + repository layers per SAB.json scope_layers.\n# Round 89 站2: this file is regenerated from the SAB at the P2→P3 handoff\n# (the scope decides what mutation_testing is judged on, so a drift here\n# blocks Gate 2/3/4 with the framework's \"scope disagrees with SAB\" infra\n# failure rather than silently picking a side).\nrunner=python3 -m pytest -m mutation_oracle --tb=no -q -p no:cacheprovider\npaths_to_mutate=03-development/src/taskq_api/service,03-development/src/taskq_api/repository\n\n[tool:pytest]\n# Gate 2 evaluation expects an integration suite under 03-development/tests/integration/\n# (NFR-10). That directory mirrors tests/test_*.py via symlinks so the framework's\n# `pytest 03-development/tests/integration --cov=03-development/src` invocation\n# produces a real measurement. Without this directive pytest's default discovery\n# would collect BOTH copies on `pytest --ignore=harness/tests` (i.e. `make\n# verify-system`), and a pytest session that finds the same test function under\n# two node-ids fails with collection errors. `norecursedirs` makes the\n# integration mirror opt-in: explicit `pytest 03-development/tests/integration`\n# still walks into it (the path is on the command line), but a bare `pytest`\n# from the project root skips it."
+    },
+    "linting": {
+      "source": "tool_evidence (inline)",
+      "kind": "inline",
+      "sha256": "f0d0b1081d9d3ebb26c4c93543053ecdc0a58998f22c071dc4ddb26021b57645",
+      "bytes": 18,
+      "head": "All checks passed!"
+    },
+    "type_safety": {
+      "source": "tool_evidence (inline)",
+      "kind": "inline",
+      "sha256": "dd5087d49dec8d75dd6164a75014e535e4bd0b9d298d6542ca3045c1cbe04506",
+      "bytes": 135,
+      "head": "{\"version\": \"1.1.409\", \"summary\": {\"filesAnalyzed\": 19, \"errorCount\": 0, \"warningCount\": 0, \"informationCount\": 0, \"timeInSec\": 1.073}}"
+    },
+    "test_coverage": {
+      "source": "tool_evidence (inline)",
+      "kind": "inline",
+      "sha256": "e91b213a15118a86fd276013f9b2fd1ff9fd6b6e4c7c532c1463f215c4e0da14",
+      "bytes": 245,
+      "head": "tests/test_fr01.py ........................                              [100%]\n\n============================== 24 passed in 0.35s ==============================\n{\"totals\": {\"covered_lines\": 310, \"num_statements\": 310, \"percent_covered\": 100.0}}"
+    },
+    "architecture_constraints": {
+      "source": "tool_evidence (inline)",
+      "kind": "inline",
+      "sha256": "e4e37ef7fe8ab45a7816d60bf23fc85e3bd66bbd85caeede9766c3ab3b6a8300",
+      "bytes": 151,
+      "head": "Analyzed 36 files, 66 dependencies. Layer ordering KEPT, SQLAlchemy containment KEPT, Config and errors independence KEPT. Contracts: 3 kept, 0 broken."
+    }
+  },
+  "composite_score": 100.0,
+  "verdict": "PASS",
+  "passed": true,
+  "spec_undelivered": [],
+  "spec_declared": 0,
+  "denominator_provenance": {},
+  "measurement_scope": {
+    "weight_covered": 1.0,
+    "weight_total": 1.0,
+    "weight_artifact_verified": 0,
+    "dimensions_scored": [
+      "architecture_constraints",
+      "linting",
+      "test_coverage",
+      "type_safety"
+    ],
+    "dimensions_unscored": [],
+    "dimensions_artifact_verified": [],
+    "dimensions_declared_absent": [
+      "documentation",
+      "error_handling",
+      "execute_verification_target",
+      "integration_coverage",
+      "license_compliance",
+      "mutation_testing",
+      "performance",
+      "readability",
+      "security",
+      "test_assertion_quality"
+    ]
+  }
+}
