@@ -113,16 +113,36 @@ import migrations.versions._shared as migrations_shared  # noqa: F401, E402  -- 
 # ---------------------------------------------------------------------------
 
 
-@pytest.fixture
-def alembic_db_url(tmp_path: Path) -> str:
+def _db_url_for(tmp_path: Path) -> str:
     """Per-test SQLite URL — one fresh file per test.
 
     Returns a ``sqlite:///<tmp>/taskq.db`` URL so alembic can target the
     file directly without colliding with the parallel ``taskq.db`` at the
     project root.
+
+    This is a plain helper rather than a fixture *dependency* on purpose.
+    This module is reachable under two collection paths that resolve to
+    one real file (``03-development/tests/test_fr07.py`` is a symlink to
+    ``03-development/tests/integration/test_fr07.py``, which in turn
+    points at this file). A whole-suite run collects both paths; pytest
+    dedupes them onto a single module object and therefore calls
+    ``parsefactories`` only once, registering this module's fixtures
+    under the FIRST collected node id (``.../integration/...``). Tests
+    collected under the second node id then fail at setup with
+    "fixture 'alembic_db_url' not found". Builtin fixtures such as
+    ``tmp_path`` come from the plugin manager, not from this module, so
+    they resolve under both node ids — deriving the URL from
+    ``tmp_path`` keeps the AC-7.2 / AC-7.4 / AC-7.5 / AC-7.6 cases
+    executable in isolated *and* whole-suite runs.
     """
     db_path = tmp_path / "taskq.db"
     return f"sqlite:///{db_path}"
+
+
+@pytest.fixture
+def alembic_db_url(tmp_path: Path) -> str:
+    """Fixture form of :func:`_db_url_for` for tests that request it."""
+    return _db_url_for(tmp_path)
 
 
 def _alembic_env_with(db_url: str) -> dict[str, str]:
@@ -213,7 +233,7 @@ def test_alembic_upgrade_downgrade_base(
     start_revision, target_revision,
     expected_round_trip_exit, expected_downgrade_exit,
     scanned_path, forbidden_pattern, expected_hits,
-    alembic_db_url,
+    tmp_path,
 ):
     """FR-07 AC-7.4 / AC-7.2 / AC-7.6 / AC-7.7 — alembic migration
     round-trip and source-scan invariants.
@@ -257,6 +277,7 @@ def test_alembic_upgrade_downgrade_base(
     #         ``make verify-system`` target runs against a real SQLite
     #         file.
 
+    alembic_db_url = _db_url_for(tmp_path)
     env = _alembic_env_with(alembic_db_url)
 
     # ------------------------------------------------------------------
@@ -467,7 +488,7 @@ def test_v3_data_migration_round_trip_preserves_columns(
     sample_command, sample_exit_code, sample_stdout_tail,
     expected_field_equality, sample_count,
     expected_row_count_after,
-    alembic_db_url,
+    tmp_path,
 ):
     """FR-07 AC-7.5 — v3 data migration round trip preserves columns.
 
@@ -505,6 +526,7 @@ def test_v3_data_migration_round_trip_preserves_columns(
     #         a real SQLite file.
     from sqlalchemy import create_engine, text
 
+    alembic_db_url = _db_url_for(tmp_path)
     env = _alembic_env_with(alembic_db_url)
 
     # ---- AC-7.5 — seed sample rows under the v3 schema ----------
