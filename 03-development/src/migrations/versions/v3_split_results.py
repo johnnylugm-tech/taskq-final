@@ -42,6 +42,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
+from typing import Any, cast
 
 import sqlalchemy as sa
 from alembic import op
@@ -108,7 +109,7 @@ def _isoformat_or_none(value) -> str | None:
     return str(value)
 
 
-def _task_results_table_for_queries() -> sa.Table:
+def _task_results_table_for_queries() -> sa.TableClause:
     """Return an unbound ``sa.table`` mirror for raw SQL on ``task_results``.
 
     Derived from the canonical ``_TASK_RESULTS_COLUMNS`` so the column
@@ -118,11 +119,14 @@ def _task_results_table_for_queries() -> sa.Table:
     """
     return sa.table(
         "task_results",
-        *(sa.column(c.name, type_=c.type) for c in _TASK_RESULTS_COLUMNS),
+        *(
+            sa.column(c.name, type_=cast(Any, c.type))
+            for c in _TASK_RESULTS_COLUMNS
+        ),
     )
 
 
-def _tasks_table_for_queries(*, with_created_at: bool = False) -> sa.Table:
+def _tasks_table_for_queries(*, with_created_at: bool = False) -> sa.TableClause:
     """Return an unbound ``sa.table`` mirror for raw SQL on ``tasks``.
 
     ``with_created_at=True`` adds the ``created_at`` column so
@@ -130,7 +134,7 @@ def _tasks_table_for_queries(*, with_created_at: bool = False) -> sa.Table:
     a ``finished_at`` field ([T-15]); ``downgrade`` reads only ``id``
     / ``result_json`` and skips the extra column.
     """
-    columns = [
+    columns: list[sa.ColumnClause[Any]] = [
         sa.column("id", type_=sa.String(length=36)),
         sa.column("result_json", type_=sa.Text),
     ]
