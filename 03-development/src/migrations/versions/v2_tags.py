@@ -1,5 +1,4 @@
 """[FR-07] v2_tags — add ``tags``, ``task_tags`` and UNIQUE on ``tasks.name``.
-# pragma: no error-handling  # pure data/constants — no I/O to handle
 
 Revision ID: v2
 Revises:     v1

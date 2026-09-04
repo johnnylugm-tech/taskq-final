@@ -73,9 +73,8 @@ _TASK_RESULTS_COLUMNS = (
 
 # ---------------------------------------------------------------------------
 # Local helpers — small datetime coercions specific to this migration's
-# ``finished_at`` round-trip. JSON parsing is delegated to
-# :mod:`migrations.versions._shared` so future migrations that split /
-# merge JSON columns can reuse the same parser.
+# ``finished_at`` round-trip; the sa.table mirrors used by both the
+# upgrade and downgrade paths to compose raw SQL.
 # ---------------------------------------------------------------------------
 
 
@@ -109,6 +108,37 @@ def _isoformat_or_none(value) -> str | None:
     return str(value)
 
 
+def _task_results_table_for_queries() -> sa.Table:
+    """Return an unbound ``sa.table`` mirror for raw SQL on ``task_results``.
+
+    Derived from the canonical ``_TASK_RESULTS_COLUMNS`` so the column
+    names / types used in raw ``upgrade`` / ``downgrade`` expressions
+    stay in lockstep with the DDL emitted by ``op.create_table`` /
+    ``op.drop_table``.
+    """
+    return sa.table(
+        "task_results",
+        *(sa.column(c.name, type_=c.type) for c in _TASK_RESULTS_COLUMNS),
+    )
+
+
+def _tasks_table_for_queries(*, with_created_at: bool = False) -> sa.Table:
+    """Return an unbound ``sa.table`` mirror for raw SQL on ``tasks``.
+
+    ``with_created_at=True`` adds the ``created_at`` column so
+    ``upgrade`` can fall back on it when a ``result_json`` blob lacks
+    a ``finished_at`` field ([T-15]); ``downgrade`` reads only ``id``
+    / ``result_json`` and skips the extra column.
+    """
+    columns = [
+        sa.column("id", type_=sa.String(length=36)),
+        sa.column("result_json", type_=sa.Text),
+    ]
+    if with_created_at:
+        columns.append(sa.column("created_at", type_=sa.DateTime(timezone=True)))
+    return sa.table("tasks", *columns)
+
+
 def upgrade() -> None:
     """Split ``tasks.result_json`` into the new ``task_results`` table."""
     # Step 1 — create ``task_results`` with the v3 column set. Runs in
@@ -131,22 +161,8 @@ def upgrade() -> None:
     # so the upgrade works on both SQLite (test target) and PostgreSQL
     # (production target) without a live ``MetaData`` binding.
     bind = op.get_bind()
-    task_results = sa.table(
-        "task_results",
-        sa.column("id", sa.String),
-        sa.column("task_id", sa.String),
-        sa.column("exit_code", sa.Integer),
-        sa.column("stdout_tail", sa.String),
-        sa.column("stderr_tail", sa.String),
-        sa.column("duration_ms", sa.Integer),
-        sa.column("finished_at", sa.DateTime),
-    )
-    tasks = sa.table(
-        "tasks",
-        sa.column("id", sa.String),
-        sa.column("result_json", sa.Text),
-        sa.column("created_at", sa.DateTime),
-    )
+    task_results = _task_results_table_for_queries()
+    tasks = _tasks_table_for_queries(with_created_at=True)
 
     rows = bind.execute(
         sa.select(tasks.c.id, tasks.c.result_json, tasks.c.created_at).select_from(tasks)
@@ -213,20 +229,8 @@ def downgrade() -> None:
     # Step 2 — merge every ``task_results`` row back into
     # ``tasks.result_json``.
     bind = op.get_bind()
-    task_results = sa.table(
-        "task_results",
-        sa.column("task_id", sa.String),
-        sa.column("exit_code", sa.Integer),
-        sa.column("stdout_tail", sa.String),
-        sa.column("stderr_tail", sa.String),
-        sa.column("duration_ms", sa.Integer),
-        sa.column("finished_at", sa.DateTime),
-    )
-    tasks = sa.table(
-        "tasks",
-        sa.column("id", sa.String),
-        sa.column("result_json", sa.Text),
-    )
+    task_results = _task_results_table_for_queries()
+    tasks = _tasks_table_for_queries()
 
     rows = bind.execute(
         sa.select(
