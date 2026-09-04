@@ -16,3 +16,14 @@ b8721c5f64ef34e822b0adbec80e425f35b48c37:.methodology/agent_b_approvals/FR-03.js
 # not path-keyed).
 8bb7b79e0588432ff2923b5002b6f7635fbbe94d:.methodology/gate1_result.json:generic-api-key:29
 8bb7b79e0588432ff2923b5002b6f7635fbbe94d:.methodology/gate1_result.json:generic-api-key:90
+
+# The P8 milestone push (d2fe01b) committed .methodology-archive/, a copy of
+# the .methodology/ evidence tree. Lines 43-48 of its agent_b_approvals/FR-03.json
+# are byte-identical to the original allowlisted above, so the same two
+# `assertion_digests` values re-trip generic-api-key under a new commit+path
+# fingerprint. The values are sha256(ast.dump(test_fn)) digests produced by
+# core.quality_gate.criteria_review._assertion_digests — test-function AST
+# hashes, not credentials. Fingerprint-keyed (not path-keyed) so a future real
+# leak anywhere else in the archive is still reported.
+d2fe01b61f5aecf2e1d7b13d06af63983c4a8a03:.methodology-archive/agent_b_approvals/FR-03.json:generic-api-key:46
+d2fe01b61f5aecf2e1d7b13d06af63983c4a8a03:.methodology-archive/agent_b_approvals/FR-03.json:generic-api-key:47
